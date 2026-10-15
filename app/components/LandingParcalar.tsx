@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
@@ -176,34 +176,149 @@ export function SureHesap() {
   );
 }
 
-// ---------- Örnek rapor seçici (referanstaki "6 görünüm" listesi) ----------
+// ---------- Örnek rapor seçici: seçilen işin öne çıkan kısmına kayan A4 sayfa ----------
+// "hedef" is the exact <h4> text of the block in RaporSayfa that the description talks about.
 const ORNEKLER = [
-  { no: "SR-2026-0048", ad: "Kombi bakımı", d: "Parça değişimi, KDV'li toplam, sonraki bakım tarihi." },
-  { no: "SR-2026-0047", ad: "Klima bakımı", d: "Önce / sonra fotoğraflı, havale ile ödendi." },
-  { no: "SR-2026-0046", ad: "Beyaz eşya tamiri", d: "Uygulanmayan madde üstü çizili, ödeme bekliyor." },
-  { no: "SR-2026-0045", ad: "Elektrik arızası", d: "Parça tablosu metre ve adetle." },
-  { no: "SR-2026-0044", ad: "İlaçlama", d: "Site yönetimine, kontrol tarihiyle." },
-  { no: "SR-2026-0042", ad: "Garanti işi", d: "Parçalar listelenir, ücret yansıtılmaz." },
+  { no: "SR-2026-0048", ad: "Kombi bakımı", d: "Parça değişimi, KDV'li toplam, sonraki bakım tarihi.", hedef: "Parça ve işçilik", etiket: "Parça, KDV ve sonraki bakım" },
+  { no: "SR-2026-0047", ad: "Klima bakımı", d: "Önce / sonra fotoğraflı, havale ile ödendi.", hedef: "Fotoğraflar", etiket: "Önce / sonra fotoğraflar" },
+  { no: "SR-2026-0046", ad: "Beyaz eşya tamiri", d: "Uygulanmayan madde üstü çizili, ödeme bekliyor.", hedef: "Yapılan işlemler · kontrol listesi", etiket: "Yapılmayan madde çizili" },
+  { no: "SR-2026-0045", ad: "Elektrik arızası", d: "Parça tablosu metre ve adetle.", hedef: "Parça ve işçilik", etiket: "Metre ve adetle parçalar" },
+  { no: "SR-2026-0044", ad: "İlaçlama", d: "Site yönetimine, kontrol tarihiyle.", hedef: "Parça ve işçilik", etiket: "Sonraki kontrol tarihi" },
+  { no: "SR-2026-0042", ad: "Garanti işi", d: "Parçalar listelenir, ücret yansıtılmaz.", hedef: "Parça ve işçilik", etiket: "Ücret yansıtılmaz" },
 ];
+const IMZA_SPOT = { hedef: "Müşteri onayı", etiket: "Müşteri imzası" };
+const TUR_MS = 5500;
+type Spot = { hedef: string; etiket: string };
+const hareketsiz = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function OrnekRapor() {
   const [i, setI] = useState(0);
+  const [spot, setSpot] = useState<Spot | null>(null); // null = top of the page, no highlight
+  const [kutu, setKutu] = useState<{ y: number; top: number; left: number; w: number; h: number } | null>(null);
+  const [nabiz, setNabiz] = useState(0);
+  const [gecis, setGecis] = useState(false);
+  const [gorunur, setGorunur] = useState(false);
+  const [tur, setTur] = useState<"acik" | "durdu" | "bitti">("acik");
+  const kok = useRef<HTMLDivElement>(null);
+  const pencere = useRef<HTMLDivElement>(null);
+  const kayan = useRef<HTMLDivElement>(null);
   const r = DEMO_RAPORLAR.find((x) => x.no === ORNEKLER[i].no)!;
+
+  // Find the target block inside the scaled A4 and move the page so it sits in view.
+  const olc = useCallback(() => {
+    const p = pencere.current;
+    const k = kayan.current;
+    if (!p || !k) return;
+    if (!spot) {
+      setKutu(null);
+      return;
+    }
+    const baslik = Array.from(k.querySelectorAll(".a4 h4")).find((e) => e.textContent?.trim() === spot.hedef);
+    const blok = baslik?.parentElement;
+    if (!blok) {
+      setKutu(null);
+      return;
+    }
+    const kb = k.getBoundingClientRect();
+    const bb = blok.getBoundingClientRect();
+    const top = bb.top - kb.top;
+    const left = bb.left - kb.left;
+    // Scroll only as far as needed to show the whole block (tall blocks align to the top).
+    const ist = bb.height + 100 > p.clientHeight ? top - 40 : top + bb.height + 60 - p.clientHeight;
+    const y = Math.max(0, Math.min(k.offsetHeight - p.clientHeight, ist));
+    setKutu({ y, top, left, w: bb.width, h: bb.height });
+  }, [spot]);
+
+  useEffect(() => {
+    const t = setTimeout(olc, 60);
+    const ro = new ResizeObserver(() => olc());
+    if (kayan.current) ro.observe(kayan.current);
+    return () => {
+      clearTimeout(t);
+      ro.disconnect();
+    };
+  }, [olc, i]);
+
+  // Replay the ring pulse whenever the highlighted block changes.
+  useEffect(() => {
+    if (spot) setNabiz((n) => n + 1);
+  }, [spot]);
+
+  // Is the section on screen (and the tab visible)?
+  useEffect(() => {
+    const el = kok.current;
+    if (!el) return;
+    let ekranda = false;
+    const guncelle = () => setGorunur(ekranda && document.visibilityState === "visible");
+    const io = new IntersectionObserver(([e]) => {
+      ekranda = e.isIntersecting;
+      guncelle();
+    }, { threshold: 0.35 });
+    io.observe(el);
+    document.addEventListener("visibilitychange", guncelle);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", guncelle);
+    };
+  }, []);
+
+  const sec = (j: number, elle: boolean) => {
+    if (elle) setTur("durdu");
+    const yeni = { hedef: ORNEKLER[j].hedef, etiket: ORNEKLER[j].etiket };
+    if (j === i || hareketsiz()) {
+      setI(j);
+      setSpot(yeni);
+      return;
+    }
+    setGecis(true);
+    setTimeout(() => {
+      setI(j);
+      setSpot(yeni);
+      setGecis(false);
+    }, 180);
+  };
+
+  // First time on screen: show the header (logo, tax info) for a moment, then the first example's highlight.
+  useEffect(() => {
+    if (!gorunur || spot || hareketsiz()) return;
+    const t = setTimeout(() => setSpot({ hedef: ORNEKLER[0].hedef, etiket: ORNEKLER[0].etiket }), 1200);
+    return () => clearTimeout(t);
+  }, [gorunur, spot]);
+
+  // Auto tour: one round through the examples while the section is on screen; any touch stops it.
+  useEffect(() => {
+    if (tur !== "acik" || !gorunur || !spot || hareketsiz()) return;
+    if (i === ORNEKLER.length - 1) {
+      setTur("bitti");
+      return;
+    }
+    const t = setTimeout(() => sec(i + 1, false), TUR_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i, spot, tur, gorunur]);
+
+  const imzaya = () => {
+    setTur("durdu");
+    setSpot(IMZA_SPOT);
+  };
+  const ilerliyor = tur === "acik" && gorunur && !!spot;
+
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_1fr]">
+    <div ref={kok} data-ornek={i} data-tur={tur} data-spot={spot ? spot.hedef : ""} className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_1fr]">
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600, margin: "0 0 10px 4px" }}>Bir iş seç, raporunu gör.</div>
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
           {ORNEKLER.map((o, j) => {
             const on = i === j;
             return (
-              <button key={o.no} onClick={() => setI(j)} aria-pressed={on} style={{ textAlign: "left", cursor: "pointer", borderRadius: 12, padding: "11px 13px", border: `1px solid ${on ? "var(--ink)" : "var(--line)"}`, background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)", display: "flex", gap: 10, alignItems: "flex-start", boxShadow: on ? "var(--shadow-md)" : "none" }}>
+              <button key={o.no} onClick={() => sec(j, true)} aria-pressed={on} style={{ position: "relative", overflow: "hidden", textAlign: "left", cursor: "pointer", borderRadius: 12, padding: "11px 13px", border: `1px solid ${on ? "var(--ink)" : "var(--line)"}`, background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)", display: "flex", gap: 10, alignItems: "flex-start", boxShadow: on ? "var(--shadow-md)" : "none" }}>
                 <span className="num" style={{ flex: "none", width: 20, height: 20, borderRadius: 10, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800, background: on ? "rgba(255,255,255,.14)" : "var(--tile)", color: on ? "#fff" : "var(--muted)", marginTop: 1 }}>{j + 1}</span>
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "block", fontWeight: 800, fontSize: 14 }}>{o.ad}</span>
                   <span className="hidden sm:block" style={{ fontSize: 12, marginTop: 2, color: on ? "rgba(255,255,255,.7)" : "var(--muted)", lineHeight: 1.4 }}>{o.d}</span>
                 </span>
                 {on && <Ikon ad="sag" boy={16} style={{ marginLeft: "auto", marginTop: 2 }} />}
+                {on && ilerliyor && <span key={`${i}-${spot ? spot.hedef : ""}`} className="or-ilerleme" style={{ "--sure": `${TUR_MS}ms` } as React.CSSProperties} aria-hidden="true" />}
               </button>
             );
           })}
@@ -215,11 +330,18 @@ export function OrnekRapor() {
           <span style={{ display: "flex", gap: 6 }}>
             <span className="pill" style={{ background: "#fff" }}>A4</span>
             <span className="pill" style={{ background: "#fff" }}>PDF</span>
-            <span className="pill ok">İmzalı</span>
+            <button type="button" className="pill ok or-imza" onClick={imzaya} aria-label="İmzaya git">İmzalı<Ikon ad="asagi" boy={11} kalinlik={3} /></button>
           </span>
         </div>
-        <div style={{ maxHeight: 640, maxWidth: 635, margin: "0 auto", overflow: "hidden", borderRadius: "10px 10px 0 0", boxShadow: "var(--shadow-md)" }}>
-          <Olcekli max={0.8}><RaporSayfa r={r} f={DEMO_FIRMA} /></Olcekli>
+        <div ref={pencere} onPointerDown={() => setTur("durdu")} style={{ maxHeight: 640, maxWidth: 635, margin: "0 auto", overflow: "hidden", borderRadius: "10px 10px 0 0", boxShadow: "var(--shadow-md)" }}>
+          <div ref={kayan} className="or-kayan" style={{ transform: `translateY(${-(kutu ? kutu.y : 0)}px)`, opacity: gecis ? 0 : 1 }}>
+            <Olcekli max={0.8}><RaporSayfa r={r} f={DEMO_FIRMA} /></Olcekli>
+            {kutu && spot && (
+              <div key={nabiz} className="or-halka" aria-hidden="true" style={{ top: kutu.top - 6, left: kutu.left - 8, width: kutu.w + 16, height: kutu.h + 12 }}>
+                <span className="or-etiket">{spot.etiket}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

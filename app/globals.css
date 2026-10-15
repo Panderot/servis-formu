@@ -271,6 +271,19 @@ textarea.field { resize: vertical; min-height: 76px; }
   [data-gor] .nc-bar, [data-gor] .nc-ok, [data-gor] .nc-ok-ikon, [data-gor] .nc-tik, [data-gor] .nc-g1, [data-gor] .nc-g2 { transition: none !important; }
 }
 
+/* ---------- örnek rapor: seçilen özelliğe kayan sayfa, vurgu halkası, otomatik tur ---------- */
+.or-kayan { position: relative; transition: transform .65s cubic-bezier(.2,.7,.2,1), opacity .18s; }
+.or-halka { position: absolute; border: 2px solid var(--accent); border-radius: 8px; pointer-events: none; animation: or-nabiz 1.2s ease 2; }
+.or-etiket { position: absolute; right: -2px; top: -12px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+.or-imza { border: none; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 3px; }
+.or-imza:hover { background: #d3ecdd; }
+.or-ilerleme { position: absolute; left: 0; bottom: 0; width: 100%; height: 2px; background: #7cc4d6; transform-origin: left; animation: or-dol var(--sure) linear forwards; }
+@keyframes or-nabiz { 50% { box-shadow: 0 0 0 6px rgba(13, 91, 115, .18); } }
+@keyframes or-dol { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .or-kayan { transition: none; }
+  .or-halka, .or-ilerleme { animation: none; }
+}
 details.sss > summary::-webkit-details-marker { display: none; }
 details.sss[open] .ok-ic { transform: rotate(180deg); }
 

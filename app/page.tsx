@@ -289,7 +289,7 @@ export default function Home() {
           <div className="text-center">
             <span className="eyebrow">Müşterinin eline geçen sayfa</span>
             <h2 className="h2 mt-4">Senin firmanın raporu.</h2>
-            <p className="sub mt-3">Logon, vergi bilgin ve garanti notun başlıkta. İş değişir, sayfa hep aynı düzende kalır.</p>
+            <p className="sub mt-3">Logon ve vergi bilgin başlıkta, garanti notun altta. İş değişir, sayfa hep aynı düzende kalır.</p>
           </div>
           <div className="mt-12"><OrnekRapor /></div>
         </div>
