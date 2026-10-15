@@ -16,6 +16,7 @@
   --accent: #0d5b73;      /* petrol mavisi (tek aksan) */
   --accent-ink: #08455a;  /* aksan rengi metin için */
   --accent-soft: #e3f0f3;
+  --accent-mark: #c9e2ea;  /* başlık vurgu çizgisi */
   --ok: #16794c;
   --ok-soft: #e6f4ec;
   --warn: #93590a;
@@ -129,7 +130,42 @@ textarea.field { resize: vertical; min-height: 76px; }
 @keyframes suz { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
 .suz { animation: suz 6s ease-in-out infinite; }
 .suz2 { animation: suz 7s ease-in-out -2s infinite; }
-@media (prefers-reduced-motion: reduce) { .suz, .suz2 { animation: none; } html { scroll-behavior: auto; } }
+
+/* ---------- hero başlık: kelime kelime açılış + vurgu çizgisi ---------- */
+@keyframes heroWord { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes heroMark { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes heroRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.hero-word { display: inline-block; opacity: 0; animation: heroWord .6s cubic-bezier(.2,.7,.2,1) both; }
+/* vurgu çizgisi her kelimenin altında ayrı span; 2. satır 390 pxde sarınca taşmaz */
+.hero-mark { position: relative; z-index: 0; }
+.hero-mark::before {
+  content: ""; position: absolute; left: -0.04em; right: -0.04em; bottom: 0.07em; height: 0.3em;
+  background: var(--accent-mark); z-index: -1; border-radius: 2px;
+  transform: scaleX(0); transform-origin: left center;
+  animation: heroMark .7s cubic-bezier(.2,.7,.2,1) 1s forwards;
+}
+.hero-rise { opacity: 0; animation: heroRise .5s cubic-bezier(.2,.7,.2,1) .8s both; }
+
+/* ---------- hero maket: akışın parçaları ---------- */
+@keyframes heroSign { to { stroke-dashoffset: 0; } }
+.hero-sign path { stroke-dasharray: 360; stroke-dashoffset: 360; }
+.hero-sign.on path { animation: heroSign 1.3s ease forwards; }
+@keyframes heroPop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.hero-pop { display: inline-block; }
+.hero-pop.on { animation: heroPop .3s ease; }
+@keyframes heroFlash { from { background: var(--accent-soft); } to { background: transparent; } }
+.hero-newrow { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .5s ease, opacity .5s ease; }
+.hero-newrow.on { max-height: 48px; opacity: 1; animation: heroFlash 1.4s ease forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .suz, .suz2 { animation: none; }
+  html { scroll-behavior: auto; }
+  .hero-word, .hero-rise { opacity: 1 !important; transform: none !important; animation: none !important; }
+  .hero-mark::before { transform: scaleX(1) !important; animation: none !important; }
+  .hero-sign path { stroke-dashoffset: 0 !important; animation: none !important; }
+  .hero-pop.on { animation: none !important; }
+  .hero-newrow.on { animation: none !important; }
+}
 
 /* range kaydırıcı */
 .range { width: 100%; accent-color: var(--accent); height: 22px; cursor: pointer; }

@@ -2,146 +2,14 @@
 import Link from "next/link";
 import Ikon, { Isaret } from "./components/Ikon";
 import { SureHesap, OrnekRapor, IsDongu, Fiyat } from "./components/LandingParcalar";
+import HeroMaket from "./components/HeroMaket";
 import {
-  type Rapor, DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, hesapla, tl, tarihTR, ozet, musteriler, waMetin, telefonGoster, demoFoto, demoImza,
+  DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, tl, tarihTR, musteriler, waMetin, telefonGoster, demoFoto, demoImza,
 } from "./lib/servis";
 
-// ---------- maket verisi: hepsi motorun demo kayıtlarından hesaplanır ----------
-const DEMO_GUN = "2026-10-03";
-const AY = DEMO_GUN.slice(0, 7);
-const OZ = ozet(DEMO_RAPORLAR, AY);
-const SIRALI = [...DEMO_RAPORLAR].sort((a, b) => (b.tarih + b.saat).localeCompare(a.tarih + a.saat));
-const YAKLASAN = DEMO_RAPORLAR.filter((r) => r.sonrakiBakim && r.sonrakiBakim > DEMO_GUN).sort((a, b) => a.sonrakiBakim.localeCompare(b.sonrakiBakim));
-const GUNLER = Array.from({ length: 7 }, (_, i) => {
-  const d = new Date(2026, 8, 27 + i);
-  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return { g: ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"][d.getDay()], n: DEMO_RAPORLAR.filter((r) => r.tarih === iso).length };
-});
-const MAXG = Math.max(1, ...GUNLER.map((x) => x.n));
+// ---------- bölümlerde kullanılan örnek kayıt ve müşteri ----------
 const ORNEK = DEMO_RAPORLAR.find((r) => r.no === "SR-2026-0048")!;
 const AYSE = musteriler(DEMO_RAPORLAR).find((m) => m.ad === "Ayşe Kaplan")!;
-const BEKLEYEN_N = DEMO_RAPORLAR.filter((r) => r.odeme === "bekliyor").length;
-
-function Durum({ r }: { r: Rapor }) {
-  if (r.odeme === "bekliyor") return <span className="pill warn">Ödeme bekliyor</span>;
-  if (r.odeme === "garanti") return <span className="pill info">Garanti</span>;
-  return <span className="pill ok">Gönderildi</span>;
-}
-const buyuk = (s: string) => s.toLocaleUpperCase("tr-TR");
-
-// ================= HERO MAKETİ =================
-function PanelMaket() {
-  return (
-    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "20px 20px 0 0", boxShadow: "0 -2px 40px rgba(16,39,58,.07)", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
-        {[0, 1, 2].map((i) => <span key={i} style={{ width: 9, height: 9, borderRadius: 5, background: "var(--line-2)" }} />)}
-        <span style={{ margin: "0 auto", fontSize: 11, color: "var(--faint)", fontWeight: 600, paddingRight: 40 }}>Fixnote · panel</span>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", minHeight: 430 }}>
-        <div style={{ borderRight: "1px solid var(--line)", padding: "16px 10px", background: "var(--panel)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 800, fontSize: 13, padding: "0 6px 14px" }}><Isaret boy={18} />Fixnote</div>
-          {[["belge", "Raporlar", true], ["kisiler", "Müşteriler", false], ["ayar", "Firma ve şablonlar", false]].map(([ik, t, on]) => (
-            <div key={t as string} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, color: on ? "var(--ink)" : "var(--muted)", background: on ? "var(--tile)" : "none" }}>
-              <Ikon ad={ik as string} boy={14} style={{ color: on ? "var(--accent)" : "var(--faint)" }} />{t as string}
-            </div>
-          ))}
-          <div className="mini" style={{ padding: "18px 8px 6px" }}>Şablonlar</div>
-          {SABLONLAR.slice(0, 4).map((s) => <div key={s.id} style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, padding: "4px 8px", display: "flex", justifyContent: "space-between" }}>{s.ad}<span style={{ color: "var(--faint)" }}>{s.maddeler.length}</span></div>)}
-        </div>
-        <div style={{ padding: "18px 20px", paddingRight: 250, background: "#fff" }}>
-          <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em" }}>Günaydın Emre.</div>
-          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{DEMO_FIRMA.ad} · 3 Ekim 2026</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 10, marginTop: 14 }}>
-            <div style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}><span className="mini">Bu ay rapor</span><span className="pill ok" style={{ fontSize: 9 }}>%{OZ.imzali} imzalı</span></div>
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
-                <span className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em" }}>{OZ.adet}</span>
-                <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 34, flex: 1 }}>
-                  {GUNLER.map((x, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ height: 4 + (x.n / MAXG) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#a9cfdb" : "var(--tile)" }} />
-                      <div style={{ fontSize: 7.5, color: "var(--faint)", fontWeight: 700, marginTop: 2 }}>{x.g}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px" }}>
-              <span className="mini">Bu ay tutar</span>
-              <div className="num" style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6 }}>{tl(OZ.ciro)}</div>
-              <div style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>KDV dahil</div>
-            </div>
-            <div style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px" }}>
-              <span className="mini">Tahsil bekleyen</span>
-              <div className="num" style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6 }}>{tl(OZ.bekleyen)}</div>
-              <span className="pill warn" style={{ fontSize: 9, marginTop: 3 }}>{BEKLEYEN_N} rapor</span>
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
-            <div style={{ background: "var(--accent)", color: "#fff", borderRadius: 10, padding: "9px 12px", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={13} kalinlik={2.6} /></span>Yeni servis formu</div>
-            <div style={{ border: "1px solid var(--line)", borderRadius: 10, padding: "9px 12px", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, color: "var(--muted)" }}><Ikon ad="ara" boy={14} />Müşteri, telefon, seri no ara</div>
-          </div>
-          <div style={{ border: "1px solid var(--line)", borderRadius: 12, marginTop: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "9px 12px", fontSize: 12, fontWeight: 800 }}>Son raporlar<span style={{ fontSize: 10.5, color: "var(--faint)" }}>Tümü</span></div>
-            {SIRALI.slice(0, 4).map((r) => (
-              <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 12px", borderTop: "1px solid var(--line)" }}>
-                <span className="doc-ico" style={{ width: 26, height: 26, borderRadius: 7 }}><Ikon ad="belge" boy={13} /></span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.no} · {buyuk(r.musteri.ad)}</div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 2 }}><Durum r={r} /><span style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600 }}>{r.hizmet} · {r.cihaz.marka || r.cihaz.model}</span></div>
-                </div>
-                <span className="num" style={{ fontSize: 10, color: "var(--faint)", fontWeight: 700 }}>{tarihTR(r.tarih).slice(0, 5)}</span>
-                <Ikon ad="sag" boy={12} style={{ color: "var(--faint)" }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TelefonMaket({ kucuk = false }: { kucuk?: boolean }) {
-  return (
-    <div style={{ width: kucuk ? 280 : 292, background: "#fff", borderRadius: 46, padding: 6, border: "1px solid var(--line)", boxShadow: "var(--shadow-lg)" }}>
-      <div style={{ borderRadius: 40, background: "var(--panel)", boxShadow: "inset 0 0 0 1px var(--line)", padding: "14px 14px 18px", overflow: "hidden" }}>
-        <div style={{ width: 70, height: 6, borderRadius: 4, background: "var(--line)", margin: "0 auto 12px" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Isaret boy={22} />
-          <span style={{ display: "flex", gap: 6 }}>
-            {["takvim", "ayar"].map((x) => <span key={x} style={{ width: 26, height: 26, borderRadius: 8, border: "1px solid var(--line)", background: "#fff", display: "grid", placeItems: "center", color: "var(--muted)" }}><Ikon ad={x} boy={13} /></span>)}
-          </span>
-        </div>
-        <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 12 }}>Günaydın Emre</div>
-        <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>3 Ekim Cumartesi · bu ay {OZ.adet} rapor</div>
-        <div style={{ background: "var(--ink)", color: "#fff", borderRadius: 10, padding: "8px 11px", fontSize: 10.5, fontWeight: 700, marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ color: "rgba(255,255,255,.6)" }}>Firma</span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Akyol Isı ve Klima</span><span style={{ marginLeft: "auto", color: "rgba(255,255,255,.6)", whiteSpace: "nowrap" }}>2 teknisyen</span>
-        </div>
-        <div style={{ background: "var(--accent)", color: "#fff", borderRadius: 14, padding: "14px 14px", marginTop: 10, display: "flex", alignItems: "center", gap: 10, fontWeight: 800, fontSize: 14 }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={16} /></span>
-          Yeni servis formu<Ikon ad="ok" boy={16} style={{ marginLeft: "auto" }} />
-        </div>
-        <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "9px 11px", marginTop: 8, display: "flex", gap: 9, alignItems: "center" }}>
-          <span style={{ width: 24, height: 24, borderRadius: 12, border: "1px solid var(--line)", display: "grid", placeItems: "center", color: "var(--muted)" }}><Ikon ad="mesaj" boy={12} /></span>
-          <span style={{ minWidth: 0 }}><span style={{ display: "block", fontSize: 11, fontWeight: 800 }}>Son rapor gönderildi</span><span style={{ display: "block", fontSize: 9.5, color: "var(--muted)", fontWeight: 600 }}>{ORNEK.no} · {ORNEK.musteri.ad}</span></span>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 14 }}>
-          <b style={{ fontSize: 13.5 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 10.5, color: "var(--accent)", fontWeight: 800 }}>Tümü</span>
-        </div>
-        {YAKLASAN.slice(0, kucuk ? 2 : 3).map((r, i) => (
-          <div key={r.id} style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "8px 10px", marginTop: 7, display: "flex", gap: 10, alignItems: "stretch" }}>
-            <div className="num" style={{ fontSize: 11, fontWeight: 800, lineHeight: 1.25, minWidth: 38 }}>{tarihTR(r.sonrakiBakim).slice(0, 5)}<div style={{ fontSize: 9, color: "var(--faint)" }}>{r.sonrakiBakim.slice(0, 4)}</div></div>
-            <span style={{ width: 2, borderRadius: 2, background: i === 0 ? "var(--accent)" : "var(--line-2)" }} />
-            <div style={{ minWidth: 0 }}>
-              <div className="mini" style={{ fontSize: 8 }}>{r.hizmet}</div>
-              <div style={{ fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.musteri.ad}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ================= SORUN: kağıt yığını =================
 function KagitYigini() {
@@ -208,28 +76,30 @@ export default function Home() {
             <Ikon ad="anahtar" boy={14} style={{ color: "var(--accent)" }} />Kombi, klima, beyaz eşya ve ilaçlama servisleri için
           </span>
           <h1 className="h1" style={{ marginTop: 22 }}>
-            İmzalı servis raporu,<br /><span style={{ color: "#6f8396" }}>kapıdan çıkmadan gider.</span>
+            <span className="hero-word" style={{ animationDelay: "0ms" }}>Rapor</span>{" "}
+            <span className="hero-word" style={{ animationDelay: "70ms" }}>kapıda</span>{" "}
+            <span className="hero-word" style={{ animationDelay: "140ms" }}>biter,</span>
+            <br />
+            <span className="hero-word hero-mark" style={{ animationDelay: "260ms", color: "var(--accent)" }}>akşamın</span>{" "}
+            <span className="hero-word hero-mark" style={{ animationDelay: "330ms", color: "var(--accent)" }}>sana</span>{" "}
+            <span className="hero-word hero-mark" style={{ animationDelay: "400ms", color: "var(--accent)" }}>kalır.</span>
           </h1>
-          <p className="sub mx-auto" style={{ maxWidth: 640, marginTop: 20, fontSize: 16 }}>
+          <p className="sub mx-auto hero-rise" style={{ maxWidth: 640, marginTop: 20, fontSize: 16 }}>
             Teknisyen telefondan formu doldurur, müşteriye parmağıyla imzalatır. Temiz bir A4 rapor bir dakikada hazır: PDF olarak kaydet, WhatsApp&apos;tan gönder.
           </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-2.5">
+          <div className="mt-7 flex flex-wrap justify-center gap-2.5 hero-rise">
             <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
             <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</Link>
           </div>
         </div>
-        <div className="relative mx-auto mt-14 max-w-[1160px] px-4">
-          <div className="hidden lg:block" style={{ marginRight: 40, height: 440, overflow: "hidden" }}><PanelMaket /></div>
-          <div className="hidden lg:block suz" style={{ position: "absolute", right: 16, top: -28 }}><TelefonMaket /></div>
-          <div className="flex justify-center lg:hidden" style={{ height: 520, overflow: "hidden" }}><TelefonMaket kucuk /></div>
-        </div>
+        <HeroMaket />
       </section>
 
       {/* SORUN: önce / sonra */}
       <section style={{ background: "#fff", borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-28">
           <div className="text-center">
-            <h2 className="h2">Rapor sahada biter,<br />akşam ofiste değil.</h2>
+            <h2 className="h2">Koçan kaybolur,<br />imzalı rapor kalır.</h2>
             <p className="sub mt-3">Her şey iş yapılırken, teknisyenin telefonunda.</p>
           </div>
           <div className="mt-14 grid items-center gap-14 md:grid-cols-2">
