@@ -33,10 +33,10 @@ export default function Ikon({ ad, boy = 18, kalinlik = 1.9, className, style }:
   );
 }
 
-// Marka işareti: petrol mavisi kare içinde onay işareti (Valideo'nun eğik çizgisi alınmadı).
+// Marka işareti: petrol mavisi kare damga içinde onay işareti.
 export function Isaret({ boy = 22 }: { boy?: number }) {
   return (
-    <span aria-hidden="true" style={{ width: boy, height: boy, borderRadius: Math.round(boy * 0.3), background: "var(--accent)", color: "#fff", display: "inline-grid", placeItems: "center", flex: "none" }}>
+    <span aria-hidden="true" style={{ width: boy, height: boy, borderRadius: Math.max(3, Math.round(boy * 0.22)), background: "var(--accent)", color: "#fff", display: "inline-grid", placeItems: "center", flex: "none" }}>
       <svg width={boy * 0.62} height={boy * 0.62} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
     </span>
   );
