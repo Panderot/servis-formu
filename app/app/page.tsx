@@ -158,30 +158,30 @@ export default function Uygulama() {
       <div className="screen-only" style={{ minHeight: "100vh" }}>
         <div className="lg:grid" style={{ gridTemplateColumns: "232px 1fr", minHeight: "100vh" }}>
           {/* Masaüstü yan menü (referans maketindeki beyaz ince menü) */}
-          <aside className="hidden lg:flex" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100vh" }}>
-            <Link href="/" className="font-display" style={{ fontWeight: 600, fontSize: 18, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
+          <aside className="side-dark hidden lg:flex" style={{ background: "var(--ink)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100vh" }}>
+            <Link href="/" className="font-display" style={{ fontWeight: 600, fontSize: 18, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px", color: "#fff" }}>
               <Isaret boy={22} />Fixnote
             </Link>
-            <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || "Firma adı girilmedi"}</div>
+            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,.55)", fontWeight: 500, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || "Firma adı girilmedi"}</div>
             <button className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }} onClick={() => yeniForm()}>
               <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>Yeni servis formu
             </button>
             <nav style={{ marginTop: 16, display: "grid", gap: 2 }}>
               {NAV.map(([g, t, ik, n]) => (
                 <button key={g} className={`navlink ${gor === g ? "on" : ""}`} onClick={() => git(g)}>
-                  <Ikon ad={ik} boy={16} /><span style={{ flex: 1 }}>{t}</span>{n !== null && <span className="num" style={{ fontSize: 11.5, color: "var(--faint)" }}>{n}</span>}
+                  <Ikon ad={ik} boy={16} /><span style={{ flex: 1 }}>{t}</span>{n !== null && <span className="num" style={{ fontSize: 11.5, color: "rgba(255,255,255,.4)" }}>{n}</span>}
                 </button>
               ))}
             </nav>
-            <div className="mini" style={{ padding: "20px 10px 6px" }}>Şablonlar</div>
+            <div className="mini" style={{ padding: "20px 10px 6px", color: "rgba(255,255,255,.4)" }}>Şablonlar</div>
             <div style={{ display: "grid", gap: 1 }}>
               {sablonlar.slice(0, 7).map((s) => (
-                <button key={s.id} onClick={() => { git("raporlar"); setFiltre(s.id); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: "5px 10px", fontSize: 12.5, fontWeight: 600, color: filtre === s.id && gor === "raporlar" ? "var(--accent-ink)" : "var(--muted)", textAlign: "left" }}>
-                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.ad}</span><span className="num" style={{ color: "var(--faint)" }}>{raporlar.filter((r) => r.sablonId === s.id).length}</span>
+                <button key={s.id} onClick={() => { git("raporlar"); setFiltre(s.id); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: "5px 10px", fontSize: 12.5, fontWeight: 500, color: filtre === s.id && gor === "raporlar" ? "#6cc0d4" : "rgba(255,255,255,.62)", textAlign: "left" }}>
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.ad}</span><span className="num" style={{ color: "rgba(255,255,255,.4)" }}>{raporlar.filter((r) => r.sablonId === s.id).length}</span>
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: "auto", fontSize: 11.5, color: "var(--faint)", fontWeight: 600, lineHeight: 1.5, padding: "0 8px" }}>
+            <div style={{ marginTop: "auto", fontSize: 11.5, color: "rgba(255,255,255,.5)", fontWeight: 500, lineHeight: 1.5, padding: "0 8px" }}>
               {demoVar && <span className="pill acc" style={{ marginBottom: 8 }}>Demo mod · örnek kayıtlar</span>}
               <div>Kayıtlar bu cihazda saklanır.</div>
               <div>Kullanılan alan: {depoKB()} KB</div>
@@ -261,13 +261,13 @@ export default function Uygulama() {
             <div className="grid grid-cols-2 lg:grid-cols-4" style={{ gap: 1, background: "var(--line)" }}>
               <div className="col-span-2 lg:col-span-1" style={{ background: "var(--paper)", padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span className="mini">Bu ay rapor</span><span className="pill ok" style={{ fontSize: 9.5 }}>%{oz.imzali} imzalı</span></div>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginTop: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
                   <span className="num font-display" style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.1 }}>{oz.adet}</span>
-                  <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
+                  <div style={{ display: "flex", gap: 5, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
                     {gunler.map((x, i) => (
                       <div key={i} style={{ flex: 1, textAlign: "center" }} title={`${x.g}: ${x.n} rapor`}>
-                        <div style={{ height: 4 + (x.n / maxg) * 22, borderRadius: 1, background: i === 6 ? "var(--accent)" : x.n ? "#9cc6d2" : "var(--tile)" }} />
-                        <div style={{ fontSize: 8, color: "var(--faint)", fontWeight: 600, marginTop: 2 }}>{x.g}</div>
+                        <div style={{ height: 24, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? 0.4 + 0.6 * (x.n / maxg) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
+                        <div style={{ fontSize: 8, color: "var(--faint)", fontWeight: 600, marginTop: 3 }}>{x.g}</div>
                       </div>
                     ))}
                   </div>

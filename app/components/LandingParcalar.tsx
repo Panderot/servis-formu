@@ -68,27 +68,22 @@ export function OrnekRapor() {
   const [i, setI] = useState(0);
   const r = DEMO_RAPORLAR.find((x) => x.no === ORNEKLER[i].no)!;
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[300px_1fr]">
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 500, margin: "0 0 10px 2px" }}>Bir iş seç, raporunu gör.</div>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
-          {ORNEKLER.map((o, j) => {
-            const on = i === j;
-            return (
-              <button key={o.no} onClick={() => setI(j)} aria-pressed={on} style={{ textAlign: "left", cursor: "pointer", borderRadius: 7, padding: "11px 13px", border: `1px solid ${on ? "var(--ink)" : "var(--line)"}`, background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                <span className="num" style={{ flex: "none", width: 20, height: 20, borderRadius: 4, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: on ? "rgba(255,255,255,.14)" : "var(--tile)", color: on ? "#fff" : "var(--muted)", marginTop: 1 }}>{j + 1}</span>
-                <span style={{ minWidth: 0 }}>
-                  <span style={{ display: "block", fontWeight: 700, fontSize: 14 }}>{o.ad}</span>
-                  <span className="hidden sm:block" style={{ fontSize: 12, marginTop: 2, color: on ? "rgba(255,255,255,.7)" : "var(--muted)", lineHeight: 1.4 }}>{o.d}</span>
-                </span>
-                {on && <Ikon ad="sag" boy={16} style={{ marginLeft: "auto", marginTop: 2 }} />}
-              </button>
-            );
-          })}
-        </div>
+    <div>
+      <div style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 500, margin: "0 0 10px 2px" }}>Bir iş seç, raporunu gör.</div>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+        {ORNEKLER.map((o, j) => {
+          const on = i === j;
+          return (
+            <button key={o.no} onClick={() => setI(j)} aria-pressed={on} style={{ textAlign: "left", cursor: "pointer", borderRadius: 7, padding: "11px 12px", border: `1px solid ${on ? "var(--ink)" : "var(--line)"}`, background: on ? "var(--ink)" : "#fff", color: on ? "#fff" : "var(--ink)", display: "flex", flexDirection: "column", gap: 7 }}>
+              <span className="num" style={{ width: 20, height: 20, borderRadius: 4, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: on ? "rgba(255,255,255,.14)" : "var(--tile)", color: on ? "#fff" : "var(--muted)" }}>{j + 1}</span>
+              <span style={{ fontWeight: 700, fontSize: 13.5, lineHeight: 1.2 }}>{o.ad}</span>
+              <span style={{ fontSize: 11.5, color: on ? "rgba(255,255,255,.72)" : "var(--muted)", lineHeight: 1.35 }}>{o.d}</span>
+            </button>
+          );
+        })}
       </div>
-      <div style={{ minWidth: 0, background: "var(--panel)", borderRadius: 10, padding: "16px 16px 0", border: "1px solid var(--line)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+      <div style={{ marginTop: 18, background: "var(--panel)", borderRadius: 10, padding: "16px 16px 0", border: "1px solid var(--line)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap", maxWidth: 635, marginLeft: "auto", marginRight: "auto" }}>
           <span className="num" style={{ fontSize: 12.5, fontWeight: 600 }}><span className="mini" style={{ color: "var(--accent)", marginRight: 6 }}>Örnek</span>{r.no} · {r.musteri.ad}</span>
           <span style={{ display: "flex", gap: 6 }}>
             <span className="pill mute nodot" style={{ background: "#fff" }}>A4</span>

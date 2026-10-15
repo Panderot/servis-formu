@@ -62,10 +62,10 @@ function PanelMaket() {
               <div style={{ display: "flex", justifyContent: "space-between" }}><span className="mini">Bu ay rapor</span><span className="pill ok nodot" style={{ fontSize: 9 }}>%{OZ.imzali} imzalı</span></div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 12, marginTop: 4 }}>
                 <span className="num font-display" style={{ fontSize: 26, fontWeight: 600 }}>{OZ.adet}</span>
-                <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 34, flex: 1 }}>
+                <div style={{ display: "flex", gap: 4, flex: 1 }}>
                   {GUNLER.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ height: 4 + (x.n / MAXG) * 22, borderRadius: 1, background: i === 6 ? "var(--accent)" : x.n ? "#9cc6d2" : "var(--tile)" }} />
+                      <div style={{ height: 22, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? 0.4 + 0.6 * (x.n / MAXG) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
                       <div style={{ fontSize: 7.5, color: "var(--faint)", fontWeight: 600, marginTop: 2 }}>{x.g}</div>
                     </div>
                   ))}
@@ -222,15 +222,15 @@ export default function Home() {
         </nav>
       </div>
 
-      {/* HERO: sola yaslı asimetrik */}
+      {/* HERO: sola yaslı kopya + altında bindirmesiz cihaz vitrini */}
       <section>
-        <div className="mx-auto grid max-w-[1160px] items-center gap-12 px-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]" style={{ paddingTop: 56, paddingBottom: 64 }}>
-          <div>
+        <div className="mx-auto max-w-[1120px] px-4" style={{ paddingTop: 56, paddingBottom: 56 }}>
+          <div style={{ maxWidth: 680 }}>
             <Kick><Ikon ad="anahtar" boy={14} style={{ color: "var(--accent)" }} />Kombi, klima, beyaz eşya ve ilaçlama servisleri için</Kick>
             <h1 className="h1" style={{ marginTop: 20 }}>
               İmzalı servis raporu,<br />kapıdan çıkmadan gider.
             </h1>
-            <p className="sub" style={{ maxWidth: 520, marginTop: 20 }}>
+            <p className="sub" style={{ maxWidth: 560, marginTop: 20 }}>
               Teknisyen telefondan formu doldurur, müşteriye parmağıyla imzalatır. Temiz bir A4 rapor bir dakikada hazır: PDF olarak kaydet, WhatsApp&apos;tan gönder.
             </p>
             <div className="mt-8 flex flex-wrap gap-2.5">
@@ -238,13 +238,11 @@ export default function Home() {
               <Link href="/app" className="btn btn-ghost" style={{ minWidth: 180 }}>Örnek raporları gör</Link>
             </div>
           </div>
-          <div className="relative">
-            <div className="hidden lg:block" style={{ border: "1px solid var(--line)", borderRadius: 12, background: "var(--panel)", padding: "14px 14px 0", boxShadow: "var(--shadow-md)", overflow: "hidden" }}>
-              <PanelMaket />
-            </div>
-            <div className="hidden lg:block suz" style={{ position: "absolute", right: -26, bottom: -92, transform: "scale(.72)", transformOrigin: "bottom right" }}><TelefonMaket /></div>
-            <div className="flex justify-center lg:hidden"><TelefonMaket kucuk /></div>
+          <div className="mt-12 hidden items-end gap-5 lg:flex" style={{ border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)", padding: 18 }}>
+            <div style={{ flex: 1, minWidth: 0, border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", boxShadow: "var(--shadow-md)" }}><PanelMaket /></div>
+            <div style={{ flex: "none" }}><TelefonMaket /></div>
           </div>
+          <div className="mt-10 flex justify-center lg:hidden"><TelefonMaket kucuk /></div>
         </div>
       </section>
 
@@ -420,10 +418,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* KOYU BANT: iş */}
-      <section style={{ background: "var(--dark)", color: "#fff" }}>
-        <div className="mx-auto max-w-[1120px] px-4 py-16 md:flex md:items-baseline md:gap-6">
-          <div style={{ fontSize: 14.5, fontWeight: 500, color: "rgba(255,255,255,.62)", whiteSpace: "nowrap" }}>Fixnote senin işine uyar</div>
+      {/* PETROL BANT: iş */}
+      <section style={{ background: "var(--accent)", color: "#fff" }}>
+        <div className="mx-auto max-w-[1120px] px-4 py-20 md:flex md:items-baseline md:gap-6">
+          <div style={{ fontSize: 15, fontWeight: 500, color: "rgba(255,255,255,.82)", whiteSpace: "nowrap" }}>Fixnote senin işine uyar</div>
           <div className="h2" style={{ marginTop: 10, color: "#fff", minHeight: "1.1em" }}><IsDongu /></div>
         </div>
       </section>
@@ -541,17 +539,17 @@ export default function Home() {
       <section style={{ background: "var(--dark)", color: "#fff" }}>
         <div className="mx-auto grid max-w-[1120px] gap-10 px-4 py-16 md:grid-cols-[1.2fr_1fr_1fr] md:items-start">
           <div>
-            <div className="mini" style={{ color: "rgba(255,255,255,.5)" }}>Ne kazanırsın</div>
+            <div className="mini" style={{ color: "rgba(255,255,255,.64)" }}>Ne kazanırsın</div>
             <div className="font-display" style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.15, marginTop: 10 }}>Rapor, sen kapıdan çıkmadan müşteride.</div>
           </div>
           <div>
-            <div className="mini" style={{ color: "rgba(255,255,255,.5)" }}>Önce</div>
+            <div className="mini" style={{ color: "rgba(255,255,255,.64)" }}>Önce</div>
             {["Karbon kopyalı koçan", "Akşam ofiste temize çekmek", "İki gün sonra göndermek"].map((x) => (
               <div key={x} style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, fontSize: 14, fontWeight: 400, color: "rgba(255,255,255,.5)", textDecoration: "line-through" }}><Ikon ad="carpi" boy={14} />{x}</div>
             ))}
           </div>
           <div style={{ borderLeft: "1px solid rgba(255,255,255,.14)", paddingLeft: 24 }}>
-            <div className="mini" style={{ color: "rgba(255,255,255,.5)" }}>Fixnote ile</div>
+            <div className="mini" style={{ color: "rgba(255,255,255,.64)" }}>Fixnote ile</div>
             {["İş yapılırken doldurulur", "Telefonda imzalanır", "Kapıdan çıkmadan gider"].map((x) => (
               <div key={x} style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, fontSize: 14, fontWeight: 600 }}><Ikon ad="tik" boy={15} kalinlik={2.6} style={{ color: "#7cc4d6" }} />{x}</div>
             ))}
