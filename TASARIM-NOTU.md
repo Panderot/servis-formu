@@ -1,63 +1,67 @@
-# Servis Formu: tasarım notu (referans: valideo.app)
+# Fixnote: tasarım notu — "Servis kartı / saha defteri"
 
-Referans: `yeni-kitler/ref/servisformu/valideo-0..4.jpg` + `tasarim-icerik.json` (tarayıcıda ölçülmüş stil). Bu not yeniden giydirmeden önce yazıldı; landing ve panel bu nota göre kuruldu. Motor (`app/lib/*`), veri modeli, localStorage anahtarları (`sf_*`) ve akışlar aynı kaldı.
+Estetik: iyi tutulmuş bir servis kartı. Kombi/klima/beyaz eşya/ilaçlama ustasına güven veren,
+sade, okunaklı, profesyonel bir saha aracı. Motor (`app/lib/*`), veri modeli, localStorage
+anahtarları (`sf_*`) ve akışlar değişmez; bu not yalnızca görünümü anlatır.
 
-## 1. Referansın bölüm sırası ve ikna işi
-| # | Referans bölümü | Ne iş yapıyor | Servis Formu karşılığı |
-|---|---|---|---|
-| nav | Sayfanın üstünde yüzen beyaz kart nav (köşe 18 px, ince çerçeve, yumuşak gölge), solda logo, ortada 6 link, sağda "Connexion" + turuncu "Réserver une démo" | Yön | Aynı yüzen kart: Nasıl çalışır, Rapor, Şablonlar, Fiyat, SSS; sağda "Uygulamayı aç" + turuncu "İlk raporu oluştur" |
-| hero | Ortalanmış: beyaz hap rozet (4,9/5 yıldız), iki tonlu dev başlık (1. satır mürekkep, 2. satır arduvaz gri), iki buton, altında tarayıcı penceresinde panel maketi + sağa bindirilmiş telefon maketi, maket bölüm sonunda kesiliyor | Ürünün "bitmiş ve gerçek" olduğunu ilk ekranda gösterir | Rozet: "Kombi, klima, beyaz eşya ve ilaçlama servisleri için" (puan/indirme sayısı YOK). Başlık: "İmzalı servis raporu, / kapıdan çıkmadan gider." Maket: panelin kendisi (demo verisinden: bu ay rapor, tahsil bekleyen, son raporlar, yaklaşan bakımlar) + telefonda "Günaydın Emre" ekranı |
-| sorun | "Le rapport se termine sur le terrain, pas le soir chez vous." Sol: "Sans Valideo" kağıt yığını + üstünde yüzen şikayet bildirimleri; sağ: "Avec Valideo" tek kart, 3 zaman damgalı adım, yeşil "Terminée" rozeti | Önce/sonra; acıyı somut mesajlarla gösterir | Sol: çizimle kağıt koçan yığını + yüzen mesajlar ("Parçayı değiştirdiğinizi nereden bileyim?", karbon kopya okunmuyor, akşam temize çekme hatırlatması). Sağ: "Kombi bakımı · Erzene Mah." kartı, 3 adım (sahada dolduruldu / imzalandı / WhatsApp'tan gitti), yeşil "Tamamlandı" |
-| hesap | "Combien de temps vous prennent vos rapports ?" iki kaydırıcı (aylık rapor, rapor başı süre) → bugün / Valideo ile saat, "≈24 jours/an" | Kazancı kullanıcının kendi rakamıyla hesaplatır | Aynı hesaplayıcı (gerçek çalışır): aylık rapor + rapor başı süre → bugün / Servis Formu ile (rapor başı 2 dk varsayımı açıkça yazılı), ayda kazanılan saat, yılda iş günü |
-| nasıl | "Faire un rapport n'a jamais été aussi simple": 3 kart, her kartın içinde mini maket (form + imza, PDF üretiliyor, rapor hazır + gönder), numaralı alt başlıklar, iki buton | Akışı 3 adımda gösterir | 1 Sahada doldur (form, anahtar düğmeli kontrol listesi, imza), 2 A4 rapor oluşur, 3 PDF kaydet + WhatsApp'la gönder |
-| görünüm | "Un rapport à votre image": solda 6 seçenekli liste (seçili koyu), sağda gri tuval üstünde gerçek A4 önizleme, renk noktaları | Çıktının kalitesini gösterir | Solda 6 örnek iş (kombi, klima, beyaz eşya, elektrik, ilaçlama, garanti işi), seçince sağda motorun gerçek A4 raporu (`RaporSayfa`) değişir |
-| koyu bant | "Valideo s'adapte à votre métier" + dönen meslek adı | Kapsam | "Servis Formu senin işine uyar" + dönen iş adı (kombi bakımı, klima servisi, beyaz eşya, ilaçlama, elektrik, asansör bakımı) |
-| editör | "Créez votre propre modèle": solda alan kartları, sağda alan türü listesi | Esneklik | "Kendi kontrol listeni kur": solda yapım halinde "Asansör periyodik bakım" şablonu, sağda hazır şablonlar ve madde sayıları (Ayarlar'daki gerçek özellik) |
-| IA | "Valideo embarque l'IA": gri kutu, solda 4 maddelik turuncu tikli liste, sağda yüzen kartlar | Ek değer | **Yapay zeka bölümü ALINMADI** (ürün yapmıyor). Aynı kutu dilinde "Telefon numarasından bütün geçmiş": müşteri kartı, kayıtlı cihaz, sonraki bakım, bekleyen tahsilat yüzen kartları |
-| fiyat | Üstte "Découverte" ücretsiz şerit + aylık/yıllık anahtarı, 3 plan kartı, kullanıcı sayısı +/- sayacı, dahil/dahil değil listeleri | Fiyat itirazı | Üst şerit: 14 gün ücretsiz deneme; aylık/yıllık anahtarı (yıllıkta 2 ay hediye); teknisyen sayısı sayaçlı tek plan kartı (299 TL/ay teknisyen başı, KDV hariç ve dahil hesaplanır) + "neler dahil" kartı |
-| koyu bant 2 | "Ce que vous gagnez": ÖNCE (üstü çizili) / SONRA (tikli) | Özet | Aynı: kağıt koçan, akşam temize çekme, iki gün sonra gönderme / sahada dolduruldu, telefonda imzalandı, kapıdan çıkmadan gitti |
-| yorumlar | App Store yorum kaydırıcısı | Sosyal kanıt | **ALINMADI** (sahte yorum yok) |
-| e-fatura | Sol metin + iki özellik satırı + butonlar; sağda elde telefon fotoğrafı | Ek modül | "Rapor WhatsApp'tan gider": sağda fotoğraf yerine koyu kart üstünde telefon maketi, içinde motorun `waMetin()` ürettiği gerçek mesaj. E-fatura iddiası YOK (SSS'de "bu bir e-fatura değil") |
-| SSS | Ortalanmış, beyaz yuvarlak kartlar, ilki açık, turuncu ok | İtiraz kırma | Aynı, 7 soru |
-| makaleler | Blog kartları | SEO | **ALINMADI** (blog yok) |
-| son CTA | Gri zemin, hap rozet "Démo de 15 minutes", başlık, turuncu buton | Kapanış | "2 dakikada dene" rozeti, "Bir sonraki servisi kağıtsız kapat." |
-| footer | Lacivert, logo + açıklama, 3 sütun, dev soluk marka yazısı | Kapanış | Aynı; dev "Servis Formu" yazısı düz, bir ton açık lacivert (gradyan yok) |
+## 1. Tipografi
+- Başlık/display: **Fraunces** (serif, `--font-display`), ağırlık 500-600, hafif negatif izleme.
+  Tek renk mürekkep; iki-tonlu kelime vurgusu yok.
+- Gövde/UI/rakam: **Inter** (`--font-body`). Rakamlar tabular (`.num`).
+- A4 servis raporu kendi sabit yüzünde **Manrope** kalır (`--font-report`; `.a4` içinde
+  `--font-display/--font-mono` buna sabitlenir), böylece basılı/PDF çıktı değişmez.
+- İki arayüz ailesi (Fraunces + Inter) net biçimde ayrı; hepsi latin-ext (Türkçe ş ğ ı İ ç ö ü).
 
-## 2. Tipografi (ölçülen → kullanılan)
-Referansın tek yüzü **Manrope** (400-800). Google Fonts'ta var; aynısı `next/font/google` ile, `subsets: ["latin","latin-ext"]` (ş ğ ı İ ç ö ü kontrol edildi). İkinci bir yüz yok; rakamlar `tabular-nums`.
-- H1: 76 px, 800, satır 1,0, harf aralığı -0,05em (-3,8 px). Mobil `clamp(40px, 10.5vw, 76px)`.
-- H2: 40-46 px, 800, satır 1,05, -0,04em. Mobil 30 px.
-- Alt başlık paragrafı: 14,5-16 px, 600, arduvaz `#5f7284`.
-- Gövde 15 px; nav 13,5 px 600.
-- Hap rozet (eyebrow): 10,5 px, 800, büyük harf, harf aralığı 0,12em, beyaz zemin, 1 px çizgi, tam yuvarlak.
-- Maket içi küçük etiketler: 9-10 px büyük harf, 700-800, 0,08em.
+## 2. Palet (tek aksan, gradyan yok)
+- Zemin `--bg #efeee8` (ılık nötr), kağıt `--paper #fff`, inset tepsi `--panel #f6f5ef`.
+- Mürekkep `--ink #1c2735`, ikincil `--muted #4d5860`, soluk `--faint #6c767c`.
+- Çizgi `--line #e2e1d7`, `--line-2 #cdccc0`, tile `--tile #eae9e0`.
+- Tek aksan **petrol mavisi `--accent #0d5b73`** (koyu `--accent-ink #08455a`, yıkama
+  `--accent-soft #e3f0f3`). Koyu yüzeylerde açık petrol `#6cc0d4` / `#7cc4d6`.
+- Durum: Ödendi yeşil `#16794c`, Ödeme bekliyor amber `#93590a`, Garanti mavi `#2b5bb8`,
+  İmzasız kırmızı `#b7352a` (her biri yıkama zeminiyle). WhatsApp yeşili `#16794c`.
+- Koyu bant/footer/panel yan menüsü düz `--dark #1c2735`.
 
-## 3. Palet
-Referans: zemin `#f4f6f8`, kart beyaz, mürekkep `#1e2836` / `#10273a`, ikincil `#6b7f91`, soluk `#93a4b3`, çizgi `#ebeff4`, tek aksan turuncu `#ff6b2c`, başarı yeşili `#1f7a55` (`#eaf6f0`), koyu bant `#1e2836` (referansta koyu bantta gradyan değişkeni de var).
-Servis Formu (gradyan yok, mor-mavi yok, lime yok):
-- Zemin `#f3f5f7`, kart `#ffffff`, panel `#fafbfc`, çizgi `#e6ebf0`, çizgi-2 `#d5dde5`
-- Mürekkep `#1c2735`, ikincil `#5f7284` (beyazda 4,97:1), soluk `#94a3b2`
-- **Tek aksan: servis turuncusu `#d44b12`** (beyaz yazı 4,4:1; referansın `#ff6b2c` turuncusu beyazla 2,8:1 kaldığı için koyultuldu), yıkama `#fdeee6`, aksan mürekkebi `#a83a0b`
-- Durum: Ödendi yeşil `#16794c` / `#e6f4ec`; Ödeme bekliyor amber `#93590a` / `#fdf2de`; Garanti mavi `#2b5bb8` / `#eaf0fb`; İmzasız kırmızı `#b7352a` / `#fdecea`
-- Koyu bant ve footer: düz `#1c2735`
+## 3. Bileşen dili
+- Köşe `--r 7px` (yumuşak değil, sıfır da değil). Gölge yerine **ince hairline kenarlık**;
+  tek gerçek yükseklik hero telefon/önizlemede.
+- Buton: Inter 600, köşe 7px. Birincil petrol/beyaz, ikincil beyaz/çerçeve, koyu lacivert, WhatsApp yeşil.
+- Kicker etiketi (`.eyebrow`): kare köşeli, cümle düzeni, solunda kısa petrol çubuk.
+- Durum göstergesi (`.pill`): kare etiket + sol renk şeridi (yuvarlak hap değil); renk/anlam sabit.
+- Kontrol listesi (`.check`): kare onay kutusu (damga), pill-switch değil.
+- Form adım göstergesi: 6 parçalı numaralı kare step track (tamamlanan tikli).
+- Metrik: tek kap içinde hairline bölücülü şerit; "bu ay rapor" 7 kareli aktivite ısı şeridi.
+- Yaklaşan bakımlar: nokta + chevron'lu dikey zaman çizgisi.
 
-## 4. Buton / kart / rozet dili
-- Buton: Manrope 14 px 700, köşe 12 px, dolgu 12px 20px. Birincil turuncu zemin beyaz yazı; ikincil beyaz zemin, 1 px `#e6ebf0` çerçeve, mürekkep yazı. Koyu buton lacivert.
-- Kart: beyaz, 1 px `#e6ebf0`, köşe 14-20 px, gölge `0 10px 30px rgba(16,39,58,.06)`; maket kartları `0 18px 40px rgba(16,39,58,.12)`; telefon maketi köşe 46 px, 6 px beyaz çerçeve, `0 30px 70px rgba(16,39,58,.16)`.
-- Durum rozeti: 10,5-11 px 700, köşe 6 px, dolgu `2px 7px`, yıkama zemin + koyu ton yazı (referanstaki "En cours" / "Envoyé" hapları).
-- Liste satırı: solda 32 px açık gri ikon karesi (belge simgesi), "SR-2026-0048 · AYŞE KAPLAN" kalın büyük harf satırı, altında rozet + gri açıklama, sağda tarih ve ok.
-- Kontrol listesi: referansın "Vérifications" maketindeki gibi satır + sağda turuncu anahtar düğme (switch).
-- Adım göstergesi: üstte 6 parça ince turuncu çubuk.
+## 4. Landing bölüm sırası (`app/page.tsx`)
+Zemin tektir (ılık nötr); bölümler hairline + boşlukla ayrılır, iki vurgu bandı renk katar.
 
-## 5. Boşluk ritmi
-Bölüm dikey dolgu 96-120 px (mobil 64 px). Başlık ile içerik arası 48-56 px. İçerik genişliği 1120 px (maket 1160 px). Zemin sırası: gri hero → beyaz → gri → beyaz → gri → lacivert bant → gri → beyaz → gri → lacivert → beyaz → gri → lacivert footer, yani referanstaki gibi gri/beyaz dönüşümlü.
+| # | Bölüm | İş |
+|---|---|---|
+| nav | Tam genişlik düz üst bar, alt hairline | Yön |
+| hero | Sola yaslı Fraunces başlık + altında bindirmesiz cihaz vitrini (konsol baskın + telefon) | Ürünün gerçekliği |
+| sorun | İşaretlenmiş karbon koçan (yazısız) + kenar notları / tamamlanan iş kartı | Önce-sonra |
+| hesap | Süre hesaplayıcı (gerçek çalışır) | Kazanç |
+| nasıl | 3 adımlı bağlı ruled akış, içinde mini maketler | Akış |
+| rapor | Üstte 6'lı iş seçici ızgara + ortalanmış gerçek A4 (`RaporSayfa`) | Çıktı kalitesi |
+| petrol bant | Petrol zemin + dönen iş adı (`IsDongu`) | Kapsam |
+| şablon | Kendi kontrol listeni kur (Ayarlar'daki gerçek özellik) | Esneklik |
+| müşteri | Telefon numarasından geçmiş, yüzen müşteri kartları | Ek değer |
+| fiyat | Teknisyen sayaçlı tek plan + "dahil" kartı | Fiyat itirazı |
+| koyu bant | Önce (üstü çizili) / sonra (tikli) | Özet |
+| whatsapp | Koyu tepside telefon + `waMetin()` gerçek mesajı | Dağıtım |
+| sss | Düz ruled akordeon | İtiraz kırma |
+| son cta | Kağıtsız kapat | Kapanış |
+| footer | Lacivert, 3 sütun link (dev soluk marka yazısı yok) | Kapanış |
 
-## 6. Hero ürün maketi nasıl kurulmuş
-Referansta: 20 px üst köşeli beyaz tarayıcı penceresi (üç gri nokta + ortada adres), solda ikonlu ince menü, "Bonjour Julien." karşılama, üç metrik kartı (küçük çubuk grafik, yeşil artış hapı, önce/sonra süre kutusu), turuncu "Nouveau rapport" düğmesi, son raporlar listesi (ikon karesi, numara + ad, renkli hap, tarih), sağda günlük plan; sağ alt köşeye bindirilmiş 46 px köşeli telefon: "Bonjour Julien", tarih, koyu sekme şeridi, büyük turuncu "Nouveau" kartı, yardım kartı, yaklaşan iş kartları (saat + renkli dikey çizgi). Maket bölüm sonunda kesilir.
-Servis Formu'nda aynı kurgu, veriler motorun demo kayıtlarından hesaplanır: menü (Raporlar, Müşteriler, Firma ve şablonlar), "Günaydın Emre.", metrikler (Bu ay rapor + 6 aylık mini çubuk, Bu ay tutar, Tahsil bekleyen), turuncu "Yeni servis formu", son 4 rapor, sağda "Yaklaşan bakımlar" (sonraki bakım tarihleri). Telefonda: "Günaydın Emre", tarih, koyu şerit (firma adı), turuncu "Yeni servis formu" kartı, son raporlar kartları. Maketin üstünde "örnek veri" notu yok ama panelde "Demo mod" etiketi var.
+## 5. Panel (`/app`)
+Koyu lacivert yan menü (beyaz menü değil): marka, firma, birincil "Yeni servis formu",
+ışıklı navlink'ler, şablon listesi. Gri uygulama zemini; saate göre karşılama (Fraunces);
+hairline bölücülü metrik şeridi (aktivite ısı şeridiyle); dikey yaklaşan-bakım zaman çizgisi;
+ruled rapor listesi; detayda gerçek A4. Form: numaralı step track, beyaz inputlar, kare onay
+kutulu kontrol listesi, imza kartı, canlı A4 önizleme. Mobilde koyu üst bar, büyük petrol
+"Yeni servis formu" kartı, alt sekme çubuğu. "Demo mod" etiketi üst barda ve yan menüde.
 
-## 7. Panel (`/app`) aynı dili taşır
-Koyu yan menü yerine referans maketindeki gibi beyaz yan menü (ikon + etiket, seçili satır gri zemin + turuncu ikon), gri uygulama zemini, "Günaydın Emre." karşılaması, metrik kartları (büyük harf mini etiket + 26 px sayı + 6 aylık mini çubuk), yaklaşan bakımlar şeridi, rapor listesi maketteki satır dilinde, detayda A4 rapor. Form: üstte 6 parçalı turuncu ilerleme çubuğu, beyaz kartlar, kontrol listesi anahtar düğmeli satırlar, imza kartı. Mobilde: beyaz üst bar, telefon maketindeki "Günaydın" + büyük turuncu "Yeni servis formu" kartı, altta beyaz sekme çubuğu. "Demo mod" etiketi üst barda ve yan menüde.
-
-## 8. Bilerek alınmayanlar
-Valideo adı, logosu (turuncu eğik çizgi), metinler (çeviri değil, yeniden yazıldı), 4,9/5 puan ve "+1000 indirme" rozeti, App Store yorumu, müşteri adları (Thermibat, Duval & Fils), fiyatlar (30/69/99 €), yapay zeka bölümü, e-fatura bölümü, blog makaleleri, gerçek fotoğraflar (elde telefon, kağıt yığını), parlak `#ff6b2c` turuncu (kontrast için koyultuldu), koyu bant gradyanı.
+## 6. Dokunulmazlar
+Motor dosyaları (`app/lib/*`, `ImzaPad.tsx`, `RaporSayfa.tsx`) ve `app/globals.css` sonundaki
+yazdırma (print) CSS'i değişmez. A4 rapor ve PDF çıktısı birebir aynı kalır.

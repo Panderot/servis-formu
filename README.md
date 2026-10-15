@@ -31,7 +31,7 @@ Ayrıca: rapor arşivi + arama (ad, telefon, rapor no, seri no, marka), hizmet f
 ## Teknik
 - Next.js 15 (App Router) + React 19 + Tailwind 4, tamamen client-side
 - Motor: `app/lib/servis.ts` (saf mantık), `app/lib/gorsel.ts` (foto küçültme), `app/components/ImzaPad.tsx`, `app/components/RaporSayfa.tsx`
-- Font: Manrope (tek aile, 400-800); palet ve bileşen dili `TASARIM-NOTU.md` içinde (referans: Valideo)
+- Font: başlık Fraunces (serif) + gövde/UI Inter; A4 rapor sabit Manrope. Palet ve bileşen dili `TASARIM-NOTU.md` içinde
 - Görünüm: `app/page.tsx` + `app/components/LandingParcalar.tsx` (landing), `app/app/page.tsx` (panel), `app/components/Ikon.tsx`
 
 ## Bilinmesi gerekenler
