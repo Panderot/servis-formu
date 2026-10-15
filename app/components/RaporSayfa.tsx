@@ -4,7 +4,7 @@ import { type Firma, type Rapor, hesapla, tl, tarihTR, ODEME, telefonGoster } fr
 function Rozet({ ad }: { ad: string }) {
   const harf = (ad.trim()[0] || "S").toLocaleUpperCase("tr-TR");
   return (
-    <div style={{ width: 52, height: 52, borderRadius: 6, background: "#1c2735", color: "#d44b12", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26 }}>
+    <div style={{ width: 52, height: 52, borderRadius: 6, background: "#0d5b73", color: "#fff", display: "grid", placeItems: "center", fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26 }}>
       {harf}
     </div>
   );
@@ -44,7 +44,7 @@ export default function RaporSayfa({ r, f }: { r: Rapor; f: Firma }) {
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".16em", color: "#5f7284" }}>SERVİS RAPORU</div>
           <div style={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 17, marginTop: 2 }}>{r.no}</div>
           <div style={{ fontSize: 11.5, marginTop: 2 }}>{tarihTR(r.tarih)}, {r.saat}</div>
-          <div style={{ display: "inline-block", marginTop: 6, background: "#fdeee6", color: "#a83a0b", borderRadius: 5, padding: "3px 9px", fontWeight: 800, fontSize: 11 }}>{r.hizmet || "Hizmet"}</div>
+          <div style={{ display: "inline-block", marginTop: 6, background: "#e3f0f3", color: "#08455a", borderRadius: 5, padding: "3px 9px", fontWeight: 800, fontSize: 11 }}>{r.hizmet || "Hizmet"}</div>
         </div>
       </div>
 
@@ -83,7 +83,7 @@ export default function RaporSayfa({ r, f }: { r: Rapor; f: Firma }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 22, rowGap: 3 }}>
             {r.maddeler.map((m, i) => (
               <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", color: m.ok ? "#1c2735" : "#94a3b2" }}>
-                <span style={{ flex: "none", width: 13, height: 13, marginTop: 2, border: m.ok ? "1.3px solid #d44b12" : "1.3px solid #c3cfda", borderRadius: 3, background: m.ok ? "#d44b12" : "#fff", color: "#fff", fontSize: 9, lineHeight: "11px", textAlign: "center", fontWeight: 800 }}>{m.ok ? "✓" : ""}</span>
+                <span style={{ flex: "none", width: 13, height: 13, marginTop: 2, border: m.ok ? "1.3px solid #0d5b73" : "1.3px solid #c3cfda", borderRadius: 3, background: m.ok ? "#0d5b73" : "#fff", color: "#fff", fontSize: 9, lineHeight: "11px", textAlign: "center", fontWeight: 800 }}>{m.ok ? "✓" : ""}</span>
                 <span style={{ textDecoration: m.ok ? "none" : "line-through" }}>{m.ad}</span>
               </div>
             ))}

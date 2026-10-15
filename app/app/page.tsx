@@ -160,7 +160,7 @@ export default function Uygulama() {
           {/* Masaüstü yan menü (referans maketindeki beyaz ince menü) */}
           <aside className="hidden lg:flex" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100vh" }}>
             <Link href="/" style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
-              <Isaret boy={22} />Servis Formu
+              <Isaret boy={22} />Fixnote
             </Link>
             <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || "Firma adı girilmedi"}</div>
             <button className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }} onClick={() => yeniForm()}>
@@ -192,7 +192,7 @@ export default function Uygulama() {
             {/* Mobil üst bar */}
             <header className="flex lg:hidden no-print" style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,255,255,.92)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)", padding: "10px 16px", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
               <Link href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8 }}>
-                <Isaret boy={22} />Servis Formu
+                <Isaret boy={22} />Fixnote
               </Link>
               {demoVar ? <span className="pill acc">Demo mod</span> : <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, maxWidth: 170, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad}</span>}
             </header>
@@ -218,7 +218,7 @@ export default function Uygulama() {
         )}
 
         {mesaj && (
-          <div role="status" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 92, zIndex: 50, background: "var(--ink)", color: "#fff", padding: "12px 18px", borderRadius: 12, fontWeight: 700, fontSize: 14, maxWidth: "calc(100vw - 32px)", boxShadow: "var(--shadow-lg)", display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={16} kalinlik={2.6} style={{ color: "#f08a5d" }} />{mesaj}</div>
+          <div role="status" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 92, zIndex: 50, background: "var(--ink)", color: "#fff", padding: "12px 18px", borderRadius: 12, fontWeight: 700, fontSize: 14, maxWidth: "calc(100vw - 32px)", boxShadow: "var(--shadow-lg)", display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={16} kalinlik={2.6} style={{ color: "#7cc4d6" }} />{mesaj}</div>
         )}
       </div>
 
@@ -251,7 +251,7 @@ export default function Uygulama() {
             <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni servis formu</button></div>
           </div>
 
-          {/* Mobil: büyük turuncu kart (referanstaki telefon maketi) */}
+          {/* Mobil: büyük petrol mavisi kart (referanstaki telefon maketi) */}
           <div className="lg:hidden"><button onClick={() => yeniForm()} style={{ marginTop: 14, width: "100%", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 16, padding: "16px 16px", display: "flex", alignItems: "center", gap: 12, fontWeight: 800, fontSize: 16, cursor: "pointer", textAlign: "left" }}>
             <span style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={18} /></span>
             Yeni servis formu<Ikon ad="ok" boy={18} style={{ marginLeft: "auto" }} />
@@ -265,7 +265,7 @@ export default function Uygulama() {
                 <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
                   {gunler.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }} title={`${x.g}: ${x.n} rapor`}>
-                      <div style={{ height: 4 + (x.n / maxg) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#f6c3ab" : "var(--tile)" }} />
+                      <div style={{ height: 4 + (x.n / maxg) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#a9cfdb" : "var(--tile)" }} />
                       <div style={{ fontSize: 8, color: "var(--faint)", fontWeight: 700, marginTop: 2 }}>{x.g}</div>
                     </div>
                   ))}

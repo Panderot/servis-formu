@@ -1,10 +1,10 @@
-# Servis Formu: kişiselleştirme rehberi
+# Fixnote: kişiselleştirme rehberi
 
 Kullanıcı "Kuruluma başla" dediğinde sırayla sor, cevaba göre değişiklikleri sen yap:
 
-1) **Marka adı** (vars. Servis Formu). Değişecek yerler: `app/page.tsx` (yüzen nav, hero maketleri, footer ve dev soluk marka yazısı, metinler), `app/components/LandingParcalar.tsx` (fiyat kartı), `app/app/page.tsx` (yan menü ve mobil üst bar), `app/layout.tsx` (title/description).
+1) **Marka adı** (vars. Fixnote). Değişecek yerler: `app/page.tsx` (yüzen nav, hero maketleri, footer ve dev soluk marka yazısı, metinler), `app/components/LandingParcalar.tsx` (fiyat kartı), `app/app/page.tsx` (yan menü ve mobil üst bar), `app/layout.tsx` (title/description).
 2) **Logo** (aşağıdaki "Logo ekleme" bölümü, marka adından hemen sonra).
-3) **Aksan renk** (vars. servis turuncusu `#d44b12`, tek aksan) → `app/globals.css` içinde `--accent`, koyu tonu `--accent-ink`, yıkama tonu `--accent-soft`. Butonlarda yazı beyazdır; çok açık bir renk seçilirse `.btn` içindeki `color: #fff` değerini `var(--ink)` yap. A4 raporda turuncu sabit yazılıdır: `app/components/RaporSayfa.tsx` içinde `#d44b12`, `#fdeee6`, `#a83a0b` değerlerini aynı renge çevir. Landing'deki mini çubuk grafikte açık ton `#f6c3ab` ve koyu bantlardaki tik rengi `#f08a5d` de aksanın açık tonlarıdır.
+3) **Aksan renk** (vars. petrol mavisi `#0d5b73`, tek aksan) → `app/globals.css` içinde `--accent`, koyu tonu `--accent-ink` (`#08455a`), yıkama tonu `--accent-soft` (`#e3f0f3`). Butonlarda yazı beyazdır; çok açık bir renk seçilirse `.btn` içindeki `color: #fff` değerini `var(--ink)` yap. A4 raporda renk sabit yazılıdır: `app/components/RaporSayfa.tsx` içinde `#0d5b73`, `#e3f0f3`, `#08455a` değerlerini aynı renge çevir. Landing'deki mini çubuk grafikte açık ton `#a9cfdb` ve koyu bantlardaki tik rengi `#7cc4d6` de aksanın açık tonlarıdır.
    Diğer renkler (`app/globals.css`): zemin `--bg #f3f5f7`, mürekkep `--ink #1c2735`, ikincil `--muted #5f7284`, çizgi `--line #e6ebf0`, koyu bant/footer `--dark #1c2735`. Gradyan kullanma.
    Font: Manrope (tek aile, `app/layout.tsx`, `next/font/google`, `subsets: ["latin","latin-ext"]`). Değiştirilirse Türkçe karakter (ş ğ ı İ) desteği olan bir Google fontu seç.
 4) **Fiyat** (vars. 299 TL/ay teknisyen başı, yıllıkta 2 ay hediye) → `app/components/LandingParcalar.tsx` içinde `FIYAT` sabiti ve `DAHIL` listesi.

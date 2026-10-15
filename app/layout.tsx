@@ -6,7 +6,7 @@ import "./globals.css";
 const manrope = Manrope({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700", "800"], variable: "--font-body", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Servis Formu: sahada 1 dakikada servis raporu",
+  title: "Fixnote: sahada 1 dakikada servis raporu",
   description:
     "Teknisyen sahada servis raporunu telefondan doldurur, müşteriye parmakla imzalatır, PDF olarak kaydeder ve WhatsApp ile gönderir. Kağıt form, karbon kopya, kayıp fiş yok.",
 };

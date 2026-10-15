@@ -33,7 +33,7 @@ export default function Ikon({ ad, boy = 18, kalinlik = 1.9, className, style }:
   );
 }
 
-// Marka işareti: turuncu kare içinde onay işareti (Valideo'nun eğik çizgisi alınmadı).
+// Marka işareti: petrol mavisi kare içinde onay işareti (Valideo'nun eğik çizgisi alınmadı).
 export function Isaret({ boy = 22 }: { boy?: number }) {
   return (
     <span aria-hidden="true" style={{ width: boy, height: boy, borderRadius: Math.round(boy * 0.3), background: "var(--accent)", color: "#fff", display: "inline-grid", placeItems: "center", flex: "none" }}>

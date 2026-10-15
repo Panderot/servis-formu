@@ -7,7 +7,7 @@ import Ikon from "./Ikon";
 import { DEMO_FIRMA, DEMO_RAPORLAR, tl } from "../lib/servis";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
-const YENI_DK = 2; // Servis Formu ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
+const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
 
 export function SureHesap() {
   const [adet, setAdet] = useState(60);
@@ -40,7 +40,7 @@ export function SureHesap() {
           </div>
           <Ikon ad="ok" boy={16} style={{ color: "var(--faint)" }} />
           <div style={{ background: "var(--accent)", color: "#fff", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
-            <div className="mini" style={{ color: "rgba(255,255,255,.75)" }}>Servis Formu ile</div>
+            <div className="mini" style={{ color: "rgba(255,255,255,.75)" }}>Fixnote ile</div>
             <div className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 2 }}>{s(yeni)} sa</div>
           </div>
         </div>
@@ -48,7 +48,7 @@ export function SureHesap() {
           <span>Ayda <b style={{ color: "var(--ink)" }}>{s(kazanc)} saat</b> geri kazanırsın</span>
           <span className="pill mute" style={{ fontSize: 11.5 }}>yılda ≈ {gun} iş günü</span>
         </div>
-        <div style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 8 }}>Hesap: Servis Formu ile rapor başına {YENI_DK} dk varsayılır. Kendi rakamınla dene.</div>
+        <div style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 8 }}>Hesap: Fixnote ile rapor başına {YENI_DK} dk varsayılır. Kendi rakamınla dene.</div>
       </div>
     </div>
   );

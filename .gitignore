@@ -7,3 +7,5 @@ node_modules/
 next-env.d.ts
 .vercel
 !.env.example
+fixnote-tasarim-goal-prompt.txt
+sil.sh

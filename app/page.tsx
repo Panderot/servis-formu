@@ -35,11 +35,11 @@ function PanelMaket() {
     <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "20px 20px 0 0", boxShadow: "0 -2px 40px rgba(16,39,58,.07)", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", borderBottom: "1px solid var(--line)" }}>
         {[0, 1, 2].map((i) => <span key={i} style={{ width: 9, height: 9, borderRadius: 5, background: "var(--line-2)" }} />)}
-        <span style={{ margin: "0 auto", fontSize: 11, color: "var(--faint)", fontWeight: 600, paddingRight: 40 }}>Servis Formu · panel</span>
+        <span style={{ margin: "0 auto", fontSize: 11, color: "var(--faint)", fontWeight: 600, paddingRight: 40 }}>Fixnote · panel</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", minHeight: 430 }}>
         <div style={{ borderRight: "1px solid var(--line)", padding: "16px 10px", background: "var(--panel)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 800, fontSize: 13, padding: "0 6px 14px" }}><Isaret boy={18} />Servis Formu</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 800, fontSize: 13, padding: "0 6px 14px" }}><Isaret boy={18} />Fixnote</div>
           {[["belge", "Raporlar", true], ["kisiler", "Müşteriler", false], ["ayar", "Firma ve şablonlar", false]].map(([ik, t, on]) => (
             <div key={t as string} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 8px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, color: on ? "var(--ink)" : "var(--muted)", background: on ? "var(--tile)" : "none" }}>
               <Ikon ad={ik as string} boy={14} style={{ color: on ? "var(--accent)" : "var(--faint)" }} />{t as string}
@@ -59,7 +59,7 @@ function PanelMaket() {
                 <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 34, flex: 1 }}>
                   {GUNLER.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ height: 4 + (x.n / MAXG) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#f6c3ab" : "var(--tile)" }} />
+                      <div style={{ height: 4 + (x.n / MAXG) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#a9cfdb" : "var(--tile)" }} />
                       <div style={{ fontSize: 7.5, color: "var(--faint)", fontWeight: 700, marginTop: 2 }}>{x.g}</div>
                     </div>
                   ))}
@@ -175,7 +175,7 @@ const SSS = [
   ["WhatsApp'a PDF ekleniyor mu?", "WhatsApp düğmesi müşterinin numarasına rapor özetini (rapor no, yapılan işlemler, toplam, teknisyen) hazır mesaj olarak açar. Kaydettiğin PDF'i aynı sohbete ek olarak eklersin."],
   ["Hangi işler için uygun?", "Müşterinin evine ya da işyerine gidip iş teslim eden herkes için: kombi ve klima servisleri, beyaz eşya tamircileri, ilaçlama firmaları, elektrikçi ve tesisatçılar, asansör bakımı, kamera ve alarm kurulumu."],
   ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adı ve her satıra bir işlem yazarsın; yeni formda hizmet türü olarak çıkar ve maddeler hazır işaretli gelir."],
-  ["Bu bir e-fatura mı?", "Hayır. Servis Formu iş teslim raporudur: ne yapıldı, ne değişti, müşteri onayladı mı. Faturayı mevcut yönteminle kesmeye devam edersin."],
+  ["Bu bir e-fatura mı?", "Hayır. Fixnote iş teslim raporudur: ne yapıldı, ne değişti, müşteri onayladı mı. Faturayı mevcut yönteminle kesmeye devam edersin."],
   ["Kayıtlar nerede duruyor?", "Telefonunun tarayıcısında. Sunucuya veri gitmez. Ayarlar'dan tek dosyalık yedek indirip başka cihaza yükleyebilirsin."],
 ];
 
@@ -186,7 +186,7 @@ export default function Home() {
       {/* NAV: yüzen kart */}
       <div style={{ position: "sticky", top: 0, zIndex: 40, padding: "12px 16px 0" }}>
         <nav className="mx-auto flex max-w-[1120px] items-center justify-between gap-3" style={{ background: "rgba(255,255,255,.88)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", border: "1px solid var(--line)", borderRadius: 18, boxShadow: "var(--shadow-sm)", padding: "9px 10px 9px 16px" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 18, letterSpacing: "-0.03em" }}><Isaret boy={24} />Servis Formu</Link>
+          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 18, letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</Link>
           <div className="hidden items-center gap-7 lg:flex" style={{ fontSize: 13.5, fontWeight: 600, color: "var(--muted)" }}>
             <a href="#nasil" className="hover:text-[var(--ink)]">Nasıl çalışır</a>
             <a href="#rapor" className="hover:text-[var(--ink)]">Rapor</a>
@@ -245,7 +245,7 @@ export default function Home() {
               <div style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600 }}>Kim neyi değiştirdi, kimse bilmiyor.</div>
             </div>
             <div className="text-center">
-              <span className="eyebrow" style={{ background: "var(--ink)", borderColor: "var(--ink)", color: "#fff" }}>Servis Formu ile</span>
+              <span className="eyebrow" style={{ background: "var(--ink)", borderColor: "var(--ink)", color: "#fff" }}>Fixnote ile</span>
               <div className="card mx-auto mt-6 text-left" style={{ maxWidth: 430, borderRadius: 16, overflow: "hidden", boxShadow: "var(--shadow-md)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--line)" }}>
                   <div>
@@ -296,7 +296,7 @@ export default function Home() {
           <div className="text-center">
             <span className="eyebrow">Servis raporu, sadeleşti</span>
             <h2 className="h2 mt-4">Rapor yazmak hiç bu kadar kısa sürmemişti.</h2>
-            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Sen iş yaparken formu doldurursun, Servis Formu A4 raporu dizer ve göndermeye hazırlar. Araca binmeden iş kapanır.</p>
+            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Sen iş yaparken formu doldurursun, Fixnote A4 raporu dizer ve göndermeye hazırlar. Araca binmeden iş kapanır.</p>
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {/* 1 */}
@@ -399,7 +399,7 @@ export default function Home() {
       {/* KOYU BANT: iş */}
       <section style={{ background: "var(--dark)", color: "#fff" }}>
         <div className="mx-auto max-w-[1120px] px-4 py-14 text-center">
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: "rgba(255,255,255,.66)" }}>Servis Formu senin işine uyar</div>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: "rgba(255,255,255,.66)" }}>Fixnote senin işine uyar</div>
           <div className="h2" style={{ marginTop: 10, color: "#fff", minHeight: "1.1em" }}><IsDongu /></div>
         </div>
       </section>
@@ -527,9 +527,9 @@ export default function Home() {
             ))}
           </div>
           <div style={{ borderLeft: "1px solid rgba(255,255,255,.14)", paddingLeft: 24 }}>
-            <div className="mini" style={{ color: "rgba(255,255,255,.55)" }}>Servis Formu ile</div>
+            <div className="mini" style={{ color: "rgba(255,255,255,.55)" }}>Fixnote ile</div>
             {["İş yapılırken doldurulur", "Telefonda imzalanır", "Kapıdan çıkmadan gider"].map((x) => (
-              <div key={x} style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, fontSize: 14, fontWeight: 800 }}><Ikon ad="tik" boy={15} kalinlik={2.6} style={{ color: "#f08a5d" }} />{x}</div>
+              <div key={x} style={{ display: "flex", gap: 9, alignItems: "center", marginTop: 10, fontSize: 14, fontWeight: 800 }}><Ikon ad="tik" boy={15} kalinlik={2.6} style={{ color: "#7cc4d6" }} />{x}</div>
             ))}
           </div>
         </div>
@@ -607,7 +607,7 @@ export default function Home() {
         <div className="mx-auto max-w-[900px] px-4 pt-16">
           <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Servis Formu</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
               <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>Teknisyenin sahada servis raporunu doldurup imzalatması ve WhatsApp&apos;tan göndermesi için. Kayıtlar senin cihazında durur.</p>
             </div>
             {[
@@ -624,11 +624,11 @@ export default function Home() {
             ))}
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:justify-between" style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 18, fontSize: 12, fontWeight: 600 }}>
-            <span>© 2026 Servis Formu</span>
+            <span>© 2026 Fixnote</span>
             <span>Bu bir e-fatura değil, iş teslim raporudur.</span>
           </div>
         </div>
-        <div aria-hidden="true" style={{ textAlign: "center", fontWeight: 800, fontSize: "clamp(56px, 12vw, 170px)", letterSpacing: "-0.06em", lineHeight: 0.8, color: "#243246", marginTop: 30, marginBottom: -18, whiteSpace: "nowrap" }}>Servis Formu</div>
+        <div aria-hidden="true" style={{ textAlign: "center", fontWeight: 800, fontSize: "clamp(56px, 12vw, 170px)", letterSpacing: "-0.06em", lineHeight: 0.8, color: "#243246", marginTop: 30, marginBottom: -18, whiteSpace: "nowrap" }}>Fixnote</div>
       </footer>
     </main>
   );

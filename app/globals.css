@@ -13,9 +13,9 @@
   --line: #e6ebf0;
   --line-2: #d5dde5;
   --tile: #eef2f6;
-  --accent: #d44b12;      /* servis turuncusu (tek aksan) */
-  --accent-ink: #a83a0b;  /* aksan rengi metin için */
-  --accent-soft: #fdeee6;
+  --accent: #0d5b73;      /* petrol mavisi (tek aksan) */
+  --accent-ink: #08455a;  /* aksan rengi metin için */
+  --accent-soft: #e3f0f3;
   --ok: #16794c;
   --ok-soft: #e6f4ec;
   --warn: #93590a;
@@ -38,7 +38,7 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
   font-size: 15px;
 }
-::selection { background: #fbd5c2; }
+::selection { background: #c9e2ea; }
 .font-display { font-family: var(--font-display), system-ui, sans-serif; letter-spacing: -0.03em; }
 .font-mono { font-family: var(--font-body), system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 .num { font-variant-numeric: tabular-nums; }
@@ -113,7 +113,7 @@ textarea.field { resize: vertical; min-height: 76px; }
 .row-btn { width: 100%; text-align: left; background: var(--paper); border: none; border-bottom: 1px solid var(--line); padding: 13px 14px; cursor: pointer; display: block; }
 .row-btn:last-child { border-bottom: none; }
 .row-btn:hover { background: var(--panel); }
-.row-btn.on { background: #fff8f4; box-shadow: inset 3px 0 0 var(--accent); }
+.row-btn.on { background: #f1f8fa; box-shadow: inset 3px 0 0 var(--accent); }
 
 .doc-ico { flex: none; width: 32px; height: 32px; border-radius: 9px; background: var(--tile); color: var(--muted); display: grid; place-items: center; }
 
