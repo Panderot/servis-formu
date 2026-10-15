@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Ikon, { Isaret } from "./components/Ikon";
 import { SureHesap, OrnekRapor, IsDongu, Fiyat } from "./components/LandingParcalar";
+import GorununceOynat from "./components/GorununceOynat";
 import HeroMaket from "./components/HeroMaket";
 import {
   DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, tl, tarihTR, musteriler, waMetin, telefonGoster, demoFoto, demoImza,
@@ -16,7 +17,7 @@ function KagitYigini() {
   return (
     <div aria-hidden="true" style={{ position: "relative", width: 230, height: 190, margin: "0 auto" }}>
       {[-7, 4, -3, 6, -1].map((r, i) => (
-        <div key={i} style={{ position: "absolute", left: 10 + (i % 2) * 8, right: 10 - (i % 2) * 8, top: 26 + i * 26, height: 64, transform: `rotate(${r}deg)`, background: ["#efe6d3", "#f6f1e6", "#e8dcc4", "#faf7f0", "#efe6d3"][i], border: "1px solid #d9cdb3", borderRadius: 3, boxShadow: "0 4px 10px rgba(80,60,20,.08)" }}>
+        <div key={i} className="kb-kagit" style={{ "--r": `${r}deg`, "--d": `${i * 130}ms`, position: "absolute", left: 10 + (i % 2) * 8, right: 10 - (i % 2) * 8, top: 26 + i * 26, height: 64, background: ["#efe6d3", "#f6f1e6", "#e8dcc4", "#faf7f0", "#efe6d3"][i], border: "1px solid #d9cdb3", borderRadius: 3, boxShadow: "0 4px 10px rgba(80,60,20,.08)" } as React.CSSProperties}>
           {[0, 1, 2].map((j) => <div key={j} style={{ height: 2, background: "#d6c9ad", margin: `${j === 0 ? 14 : 8}px 16px 0`, width: `${70 - j * 15}%` }} />)}
         </div>
       ))}
@@ -24,9 +25,9 @@ function KagitYigini() {
   );
 }
 
-function Bildirim({ ik, kim, ne, t, style }: { ik: string; kim: string; ne: string; t: string; style?: React.CSSProperties }) {
+function Bildirim({ ik, kim, ne, t, d = 0, style }: { ik: string; kim: string; ne: string; t: string; d?: number; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", boxShadow: "0 14px 32px rgba(16,39,58,.16)", display: "flex", gap: 10, width: 260, ...style }}>
+    <div className="kb-bildirim" style={{ "--d": `${d}ms`, background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", boxShadow: "0 14px 32px rgba(16,39,58,.16)", display: "flex", gap: 10, width: 260, textAlign: "left", ...style } as React.CSSProperties}>
       <span style={{ flex: "none", width: 30, height: 30, borderRadius: 8, background: "var(--bad-soft)", color: "var(--bad)", display: "grid", placeItems: "center" }}><Ikon ad={ik} boy={15} /></span>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 800 }}>{kim} <span style={{ fontWeight: 600, color: "var(--faint)", fontSize: 10.5, marginLeft: 4 }}>{t}</span></div>
@@ -102,44 +103,51 @@ export default function Home() {
             <h2 className="h2">Koçan kaybolur,<br />imzalı rapor kalır.</h2>
             <p className="sub mt-3">Her şey iş yapılırken, teknisyenin telefonunda.</p>
           </div>
-          <div className="mt-14 grid items-center gap-14 md:grid-cols-2">
+          <GorununceOynat className="mt-14 grid items-start gap-14 md:grid-cols-2">
             <div className="text-center">
               <span className="eyebrow" style={{ background: "var(--tile)", borderColor: "var(--tile)" }}>Kağıt koçanla</span>
               <div className="relative mx-auto mt-6" style={{ maxWidth: 420, height: 330 }}>
                 <div style={{ position: "absolute", left: 0, right: 0, top: 60 }}><KagitYigini /></div>
-                <div className="suz" style={{ position: "absolute", left: 0, top: 6 }}><Bildirim ik="telefon" kim="Hakan Bey" t="2 gün önce" ne="“Pompayı değiştirdiğinizi nereden bileyim? Ödemeyi yapmıyorum.”" /></div>
-                <div className="suz2" style={{ position: "absolute", right: 0, top: 128 }}><Bildirim ik="kalem" kim="Murat, Buca servisi" t="dün 21:40" ne="“Karbon kopya silik çıkmış, seri no okunmuyor.”" style={{ width: 240 }} /></div>
-                <div className="suz" style={{ position: "absolute", left: 10, bottom: 0 }}><Bildirim ik="saat" kim="Hatırlatma" t="3 gün" ne="12 servis fişi temize çekilmeyi bekliyor." style={{ width: 250 }} /></div>
+                <div className="suz" style={{ position: "absolute", left: 0, top: 6 }}><Bildirim d={650} ik="telefon" kim="Hakan Bey" t="2 gün önce" ne="“Pompayı değiştirdiğinizi nereden bileyim? Ödemeyi yapmıyorum.”" /></div>
+                <div className="suz2" style={{ position: "absolute", right: 0, top: 128 }}><Bildirim d={1070} ik="kalem" kim="Murat, Buca servisi" t="dün 21:40" ne="“Karbon kopya silik çıkmış, seri no okunmuyor.”" style={{ width: 240 }} /></div>
+                <div className="suz" style={{ position: "absolute", left: 10, bottom: 0 }}><Bildirim d={1490} ik="saat" kim="Hatırlatma" t="3 gün" ne="12 servis fişi temize çekilmeyi bekliyor." style={{ width: 250 }} /></div>
               </div>
               <div style={{ fontWeight: 800, marginTop: 22 }}>Her şey dağınık</div>
               <div style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600 }}>Kim neyi değiştirdi, kimse bilmiyor.</div>
+              <span className="pill bad" style={{ marginTop: 8 }}>2 gün sonra hâlâ tartışma</span>
             </div>
             <div className="text-center">
               <span className="eyebrow" style={{ background: "var(--ink)", borderColor: "var(--ink)", color: "#fff" }}>Fixnote ile</span>
-              <div className="card mx-auto mt-6 text-left" style={{ maxWidth: 430, borderRadius: 16, overflow: "hidden", boxShadow: "var(--shadow-md)" }}>
+              <div className="mt-6 md:min-h-[330px]">
+              <div className="card mx-auto text-left" style={{ maxWidth: 430, borderRadius: 16, overflow: "hidden", boxShadow: "var(--shadow-md)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, padding: "14px 16px", borderBottom: "1px solid var(--line)" }}>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: 14 }}>Kombi bakımı · Erzene Mah.</div>
                     <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600 }}>3 Ekim Cumartesi · {ORNEK.teknisyen}</div>
                   </div>
-                  <span className="pill ok" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Ikon ad="tik" boy={11} kalinlik={3} />Tamamlandı</span>
+                  <span className="pill ok kb-tamam" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Ikon ad="tik" boy={11} kalinlik={3} />Tamamlandı</span>
                 </div>
-                {[
-                  ["belge", "Form sahada dolduruldu", "15:32", "9 madde, 2 parça, KDV'li toplam.", "var(--info-soft)", "var(--info)"],
-                  ["imza", "Müşteri imzaladı", "15:38", "Ayşe Hanım parmağıyla, telefonun ekranına.", "var(--accent-soft)", "var(--accent)"],
-                  ["mesaj", "WhatsApp'tan gönderildi", "15:40", "PDF rapor kapıdan çıkmadan müşteride.", "var(--ok-soft)", "var(--ok)"],
-                ].map(([ik, t, s, d, bg, fg]) => (
-                  <div key={t} style={{ display: "flex", gap: 12, padding: "13px 16px", borderBottom: "1px solid var(--line)" }}>
-                    <span style={{ flex: "none", width: 34, height: 34, borderRadius: 9, background: bg, color: fg, display: "grid", placeItems: "center" }}><Ikon ad={ik} boy={17} /></span>
-                    <div><div style={{ fontWeight: 800, fontSize: 13.5 }}>{t} <span className="num" style={{ fontSize: 11, color: "var(--faint)", marginLeft: 4 }}>{s}</span></div><div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{d}</div></div>
-                  </div>
-                ))}
-                <div style={{ background: "var(--panel)", textAlign: "center", padding: "10px", fontSize: 12, fontWeight: 800, color: "var(--muted)" }}>Akşam temize çekmek yok.</div>
+                <div className="kb-adimlar">
+                  <span className="kb-ray" aria-hidden="true"><i /></span>
+                  {[
+                    ["belge", "Form sahada dolduruldu", "15:32", "9 madde, 2 parça, KDV'li toplam.", "var(--accent-soft)", "var(--accent)", 2000],
+                    ["imza", "Müşteri imzaladı", "15:38", "Ayşe Hanım parmağıyla, telefonun ekranına.", "var(--accent-soft)", "var(--accent)", 2900],
+                    ["mesaj", "WhatsApp'tan gönderildi", "15:40", "PDF rapor kapıdan çıkmadan müşteride.", "var(--ok-soft)", "var(--ok)", 3800],
+                  ].map(([ik, t, s, d, bg, fg, ms]) => (
+                    <div key={t as string} className="kb-adim" style={{ "--d": `${ms}ms`, display: "flex", gap: 12, padding: "13px 16px", borderBottom: "1px solid var(--line)" } as React.CSSProperties}>
+                      <span className="kb-ikon" style={{ "--bg": bg, "--fg": fg, flex: "none", width: 34, height: 34, borderRadius: 9, display: "grid", placeItems: "center" } as React.CSSProperties}><Ikon ad={ik as string} boy={17} /></span>
+                      <div><div className="kb-adim-baslik" style={{ fontWeight: 800, fontSize: 13.5 }}>{t} <span className="num" style={{ fontSize: 11, color: "var(--faint)", marginLeft: 4 }}>{s}</span></div><div className="kb-adim-acik" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{d}</div></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="kb-alt" style={{ background: "var(--panel)", textAlign: "center", padding: "10px", fontSize: 12, fontWeight: 800, color: "var(--muted)" }}>Akşam temize çekmek yok.</div>
+              </div>
               </div>
               <div style={{ fontWeight: 800, marginTop: 22 }}>Her şey tek yerde</div>
               <div style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600 }}>Müşteri imzalı raporunu aynı gün alır.</div>
+              <span className="pill acc" style={{ marginTop: 8 }}>8 dakikada bitti</span>
             </div>
-          </div>
+          </GorununceOynat>
         </div>
       </section>
 

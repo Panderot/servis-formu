@@ -170,6 +170,34 @@ textarea.field { resize: vertical; min-height: 76px; }
 /* range kaydırıcı */
 .range { width: 100%; accent-color: var(--accent); height: 22px; cursor: pointer; }
 
+/* ---------- koçan / Fixnote bölümü: görününce bir kez oynar (GorununceOynat) ---------- */
+.kb-kagit { transform: translateY(0) rotate(var(--r)); }
+.kb-adimlar { position: relative; }
+.kb-ray { position: absolute; left: 32px; top: 30px; bottom: 31px; width: 2px; background: var(--line); }
+.kb-ray > i { position: absolute; inset: 0; background: var(--accent); transform-origin: top; }
+.kb-ikon { position: relative; z-index: 1; background: var(--bg); color: var(--fg); }
+[data-gor="hayir"] .kb-kagit { opacity: 0; transform: translateY(-46px) rotate(var(--r)); }
+[data-gor="hayir"] .kb-bildirim { opacity: 0; transform: scale(.88) translateY(8px); }
+[data-gor="hayir"] .kb-ray > i { transform: scaleY(0); }
+[data-gor="hayir"] .kb-ikon { background: var(--tile); color: var(--faint); }
+[data-gor="hayir"] .kb-adim-baslik { color: var(--faint); }
+[data-gor="hayir"] .kb-adim-acik { opacity: 0; transform: translateY(3px); }
+[data-gor="hayir"] .kb-tamam { opacity: 0; transform: scale(.6); }
+[data-gor="hayir"] .kb-alt { opacity: 0; }
+[data-gor="evet"] .kb-kagit { transition: opacity .3s var(--d), transform .55s cubic-bezier(.3,1.4,.5,1) var(--d); }
+[data-gor="evet"] .kb-bildirim { transition: opacity .3s var(--d), transform .45s cubic-bezier(.3,1.5,.5,1) var(--d); animation: kb-salla .38s calc(var(--d) + 350ms); }
+[data-gor="evet"] .kb-ray > i { transition: transform 1.8s linear 2s; }
+[data-gor="evet"] .kb-ikon { transition: background .3s var(--d), color .3s var(--d); }
+[data-gor="evet"] .kb-adim-baslik { transition: color .3s var(--d); }
+[data-gor="evet"] .kb-adim-acik { transition: opacity .4s var(--d), transform .4s var(--d); }
+[data-gor="evet"] .kb-tamam { transition: opacity .3s 4s, transform .45s cubic-bezier(.3,1.6,.5,1) 4s; }
+[data-gor="evet"] .kb-alt { transition: opacity .5s 4s; }
+@keyframes kb-salla { 0%,100% { transform: none } 25% { transform: translateX(-3px) rotate(-1deg) } 75% { transform: translateX(3px) rotate(1deg) } }
+@media (prefers-reduced-motion: reduce) {
+  [data-gor] .kb-kagit, [data-gor] .kb-bildirim, [data-gor] .kb-ray > i, [data-gor] .kb-ikon,
+  [data-gor] .kb-adim-baslik, [data-gor] .kb-adim-acik, [data-gor] .kb-tamam, [data-gor] .kb-alt { transition: none !important; animation: none !important; }
+}
+
 details.sss > summary::-webkit-details-marker { display: none; }
 details.sss[open] .ok-ic { transform: rotate(180deg); }
 

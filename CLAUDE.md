@@ -19,7 +19,7 @@ Motor dosyaları (markalamada DEĞİŞTİRİLMEZ, sadece şablon eklenir):
 - `app/components/ImzaPad.tsx`: parmakla imza.
 - `app/components/RaporSayfa.tsx`: A4 rapor; yazdırma CSS'i `app/globals.css` sonunda (`.print-only`).
 
-Görünüm dosyaları (markalamada serbestçe değişir): `app/page.tsx` (landing, bölüm sırası `TASARIM-NOTU.md`'de), `app/components/LandingParcalar.tsx` (süre hesaplayıcı, örnek rapor seçici, dönen iş adı, fiyat kartı), `app/components/Ikon.tsx` (çizgi ikonlar + marka işareti `Isaret`), `app/globals.css` (renkler, buton/kart/rozet sınıfları).
+Görünüm dosyaları (markalamada serbestçe değişir): `app/page.tsx` (landing, bölüm sırası `TASARIM-NOTU.md`'de), `app/components/LandingParcalar.tsx` (süre hesaplayıcı, örnek rapor seçici, dönen iş adı, fiyat kartı), `app/components/Ikon.tsx` (çizgi ikonlar + marka işareti `Isaret`), `app/components/GorununceOynat.tsx` (bölümü görününce bir kez oynatır), `app/globals.css` (renkler, buton/kart/rozet sınıfları).
 
 "Canlıya al" denirse: `npx vercel --prod` (kullanıcının Vercel hesabıyla). Ortam değişkeni gerekmez.
 
