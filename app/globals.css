@@ -198,6 +198,31 @@ textarea.field { resize: vertical; min-height: 76px; }
   [data-gor] .kb-adim-baslik, [data-gor] .kb-adim-acik, [data-gor] .kb-tamam, [data-gor] .kb-alt { transition: none !important; animation: none !important; }
 }
 
+/* ---------- zaman hesabı: dert -> çözüm listesi (GorununceOynat) ve hesaplayıcı vurgusu ---------- */
+.zh-ikon { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
+.zh-dert { position: relative; font-size: 14px; font-weight: 700; color: var(--muted); }
+.zh-dert::after { content: ""; position: absolute; left: -2px; right: -2px; top: 55%; height: 2px; background: var(--accent); transform-origin: left; }
+.zh-cozum { display: flex; align-items: center; gap: 5px; margin-top: 2px; font-size: 13px; font-weight: 700; color: var(--accent); }
+[data-gor="hayir"] .zh-ikon { background: #fff; border-color: var(--line); color: var(--muted); }
+[data-gor="hayir"] .zh-dert { color: var(--ink); }
+[data-gor="hayir"] .zh-dert::after { transform: scaleX(0); }
+[data-gor="hayir"] .zh-cozum { opacity: 0; transform: translateY(-3px); }
+[data-gor="evet"] .zh-ikon { transition: background .3s var(--d), color .3s var(--d), border-color .3s var(--d); }
+[data-gor="evet"] .zh-dert { transition: color .3s var(--d); }
+[data-gor="evet"] .zh-dert::after { transition: transform .45s cubic-bezier(.2,.7,.2,1) var(--d); }
+[data-gor="evet"] .zh-cozum { transition: opacity .35s calc(var(--d) + 200ms), transform .35s calc(var(--d) + 200ms); }
+.zh-kazanc { display: inline-block; transition: transform .25s, color .25s; }
+.zh-kazanc.pop { transform: scale(1.15); color: var(--accent); }
+.zh-fx { transition: transform .25s; }
+.zh-fx.pop { transform: scale(1.04); }
+.zh-ok.nd { animation: zh-nd .45s; }
+@keyframes zh-nd { 50% { transform: translateX(5px); color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) {
+  [data-gor] .zh-ikon, [data-gor] .zh-dert, [data-gor] .zh-dert::after, [data-gor] .zh-cozum,
+  .zh-kazanc, .zh-fx { transition: none !important; }
+  .zh-ok.nd { animation: none !important; }
+}
+
 details.sss > summary::-webkit-details-marker { display: none; }
 details.sss[open] .ok-ic { transform: rotate(180deg); }
 

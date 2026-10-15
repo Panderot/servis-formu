@@ -154,16 +154,31 @@ export default function Home() {
       {/* SÜRE HESABI */}
       <section>
         <div className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-24">
-          <div>
-            <span className="eyebrow">Zaman kazan</span>
-            <h2 className="h2 mt-4">Servis fişleri sana ayda kaç saate mal oluyor?</h2>
-            <p className="sub mt-4" style={{ maxWidth: 440 }}>Ayda kaç rapor yazdığını ve bir raporun bugün kaç dakikanı aldığını seç.</p>
-            <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", display: "grid", gap: 8, fontSize: 14, fontWeight: 700 }}>
-              {["Koçanı doldurmak, kopyayı ayırmak", "Akşam fişleri temize çekmek", "Fotoğrafları bulup müşteriye ayrıca atmak", "\"Hangi parçayı taktınız\" telefonlarına bakmak"].map((x) => (
-                <li key={x} style={{ display: "flex", gap: 10, alignItems: "center" }}><span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--accent)" }} />{x}</li>
+          <GorununceOynat>
+            <span className="eyebrow">Zaman hesabı</span>
+            <h2 className="h2 mt-4">Usta sahada kazanır,<br />masada kaybeder.</h2>
+            <p className="sub mt-4" style={{ maxWidth: 440 }}>Rapor başına birkaç dakika, ayda saatler eder. İki rakamı kendi işine göre kaydır, masada kaybettiğin süreyi gör.</p>
+            <ul style={{ listStyle: "none", padding: 0, margin: "22px 0 0", display: "grid", gap: 12 }}>
+              {[
+                ["kalem", "Karbonlu koçanı doldurup kopyasını ayırmak", "Telefonda form, parmakla imza"],
+                ["saat", "Gün bitince fişleri temize çekmek", "A4 rapor kendiliğinden hazır"],
+                ["kamera", "Fotoğrafları bulup müşteriye ayrı ayrı atmak", "Fotoğraflar raporun içinde"],
+                ["telefon", "“Hangi parça takıldı?” sorusuna eski fiş aramak", "Telefon numarasından bütün geçmiş"],
+              ].map(([ik, dert, cozum], i) => (
+                <li key={dert} className="zh-madde" style={{ "--d": `${2900 + i * 520}ms`, display: "flex", gap: 12, alignItems: "flex-start" } as React.CSSProperties}>
+                  <span className="zh-ikon"><Ikon ad={ik} boy={15} /></span>
+                  <div style={{ minWidth: 0 }}>
+                    <span className="zh-dert">{dert}</span>
+                    <div className="zh-cozum"><Ikon ad="tik" boy={13} kalinlik={2.6} />{cozum}</div>
+                  </div>
+                </li>
               ))}
             </ul>
-          </div>
+            <div style={{ marginTop: 18, fontSize: 13.5, fontWeight: 600, color: "var(--muted)" }}>
+              Kurulum yok, kart yok.{" "}
+              <Link href="/app?yeni=1" style={{ color: "var(--accent)", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>İlk raporu 2 dakikada oluştur<Ikon ad="ok" boy={14} /></Link>
+            </div>
+          </GorununceOynat>
           <SureHesap />
         </div>
       </section>

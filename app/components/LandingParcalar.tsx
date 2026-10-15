@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
@@ -9,44 +9,166 @@ import { DEMO_FIRMA, DEMO_RAPORLAR, tl } from "../lib/servis";
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
 
+type Sureler = { bugun: number; yeni: number; kazanc: number; gun: number };
+
+// Shown numbers glide to new values (350 ms) instead of jumping. Off when "akici" is false
+// (the auto demo drives the sliders every frame) or when the user prefers reduced motion.
+function useAkis(hedef: Sureler, akici: boolean): Sureler {
+  const [goster, setGoster] = useState(hedef);
+  const simdi = useRef(hedef);
+  const anahtar = `${hedef.bugun}|${hedef.yeni}|${hedef.kazanc}|${hedef.gun}`;
+  useEffect(() => {
+    if (!akici || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      simdi.current = hedef;
+      setGoster(hedef);
+      return;
+    }
+    const bas = simdi.current;
+    const t0 = performance.now();
+    let raf = 0;
+    const adim = (t: number) => {
+      const p = Math.min(1, (t - t0) / 350);
+      const e = 1 - Math.pow(1 - p, 3);
+      const v = {
+        bugun: bas.bugun + (hedef.bugun - bas.bugun) * e,
+        yeni: bas.yeni + (hedef.yeni - bas.yeni) * e,
+        kazanc: bas.kazanc + (hedef.kazanc - bas.kazanc) * e,
+        gun: bas.gun + (hedef.gun - bas.gun) * e,
+      };
+      simdi.current = v;
+      setGoster(v);
+      if (p < 1) raf = requestAnimationFrame(adim);
+    };
+    raf = requestAnimationFrame(adim);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anahtar, akici]);
+  return goster;
+}
+
 export function SureHesap() {
   const [adet, setAdet] = useState(60);
   const [dk, setDk] = useState(15);
+  // statik: final values, no demo (server render, reduced motion, or already visible on load)
+  // bekliyor: off-screen, waiting; oynuyor: auto demo running; bitti: demo done or user took over
+  const [durum, setDurum] = useState<"statik" | "bekliyor" | "oynuyor" | "bitti">("statik");
+  const [vurgu, setVurgu] = useState(false);
+  const kart = useRef<HTMLDivElement>(null);
+  const demo = useRef(0);
+
   const bugun = (adet * dk) / 60;
   const yeni = (adet * YENI_DK) / 60;
   const kazanc = Math.max(0, bugun - yeni);
   const gun = Math.round((kazanc * 12) / 8);
+  const sonKazanc = useRef(kazanc);
+  const g = useAkis({ bugun, yeni, kazanc, gun }, durum === "statik" || durum === "bitti");
   const s = (n: number) => (n >= 10 ? Math.round(n).toString() : n.toFixed(1).replace(".", ","));
+
+  // Short highlight when the saved hours change noticeably (not while the demo is sliding).
+  useEffect(() => {
+    if (durum === "oynuyor" || durum === "bekliyor") return;
+    if (Math.abs(kazanc - sonKazanc.current) < 0.5) return;
+    sonKazanc.current = kazanc;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setVurgu(true);
+    const t = setTimeout(() => setVurgu(false), 260);
+    return () => clearTimeout(t);
+  }, [kazanc, durum]);
+
+  // Auto demo: when the card first scrolls into view, the sliders move 10 -> 60 and 5 -> 15.
+  useEffect(() => {
+    const el = kart.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let ilk = true;
+    let kapandi = false;
+    const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    const kay = (bas: number, son: number, ms: number, adimBoy: number, yaz: (n: number) => void, kimlik: number) =>
+      new Promise<boolean>((coz) => {
+        const t0 = performance.now();
+        const f = (t: number) => {
+          if (kapandi || demo.current !== kimlik) return coz(false);
+          const p = Math.min(1, (t - t0) / ms);
+          const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          yaz(Math.round((bas + (son - bas) * e) / adimBoy) * adimBoy);
+          if (p < 1) requestAnimationFrame(f);
+          else coz(true);
+        };
+        requestAnimationFrame(f);
+      });
+    const oynat = async () => {
+      const kimlik = ++demo.current;
+      setDurum("oynuyor");
+      await bekle(300);
+      if (!(await kay(10, 60, 1100, 5, setAdet, kimlik))) return;
+      await bekle(150);
+      if (!(await kay(5, 15, 900, 1, setDk, kimlik))) return;
+      if (kapandi || demo.current !== kimlik) return;
+      setDurum("bitti");
+      setVurgu(true);
+      setTimeout(() => setVurgu(false), 260);
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (ilk) {
+          ilk = false;
+          if (e.isIntersecting) io.disconnect();
+          else {
+            setAdet(10);
+            setDk(5);
+            setDurum("bekliyor");
+          }
+          return;
+        }
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        oynat();
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    return () => {
+      kapandi = true;
+      demo.current++;
+      io.disconnect();
+    };
+  }, []);
+
+  // The user touches a slider: the demo stops and the user is in control.
+  const elle = () => {
+    demo.current++;
+    setDurum((d) => (d === "statik" ? d : "bitti"));
+  };
+
   return (
-    <div className="card" style={{ borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow-md)" }}>
+    <div ref={kart} data-demo={durum} className="card" style={{ borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow-md)" }}>
       <div style={{ padding: "22px 22px 8px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
           <label htmlFor="h-adet" style={{ fontWeight: 700, fontSize: 13.5, color: "var(--muted)" }}>Ayda kaç servis raporu</label>
           <b className="num" style={{ fontSize: 22, letterSpacing: "-0.02em" }}>{adet}</b>
         </div>
-        <input id="h-adet" className="range" type="range" min={10} max={200} step={5} value={adet} onChange={(e) => setAdet(+e.target.value)} style={{ marginTop: 12 }} />
+        <input id="h-adet" className="range" type="range" min={10} max={200} step={5} value={adet} onPointerDown={elle} onKeyDown={elle} onChange={(e) => { elle(); setAdet(+e.target.value); }} style={{ marginTop: 12 }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 22 }}>
           <label htmlFor="h-dk" style={{ fontWeight: 700, fontSize: 13.5, color: "var(--muted)" }}>Rapor başına bugün harcanan</label>
           <b className="num" style={{ fontSize: 22, letterSpacing: "-0.02em" }}>{dk} dk</b>
         </div>
-        <input id="h-dk" className="range" type="range" min={5} max={45} step={1} value={dk} onChange={(e) => setDk(+e.target.value)} style={{ marginTop: 12 }} />
+        <input id="h-dk" className="range" type="range" min={5} max={45} step={1} value={dk} onPointerDown={elle} onKeyDown={elle} onChange={(e) => { elle(); setDk(+e.target.value); }} style={{ marginTop: 12 }} />
       </div>
       <div style={{ background: "var(--panel)", borderTop: "1px solid var(--line)", padding: "16px 22px 20px", marginTop: 18 }}>
         <div className="mini" style={{ color: "var(--muted)" }}>Raporlara giden süre, ayda</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center", marginTop: 10 }}>
           <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
             <div className="mini">Bugün</div>
-            <div className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 2 }}>{s(bugun)} sa</div>
+            <div className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 2 }}>{s(g.bugun)} sa</div>
           </div>
-          <Ikon ad="ok" boy={16} style={{ color: "var(--faint)" }} />
-          <div style={{ background: "var(--accent)", color: "#fff", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+          <Ikon ad="ok" boy={16} className={vurgu ? "zh-ok nd" : "zh-ok"} style={{ color: "var(--faint)" }} />
+          <div className={vurgu ? "zh-fx pop" : "zh-fx"} style={{ background: "var(--accent)", color: "#fff", borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
             <div className="mini" style={{ color: "rgba(255,255,255,.75)" }}>Fixnote ile</div>
-            <div className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 2 }}>{s(yeni)} sa</div>
+            <div className="num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 2 }}>{s(g.yeni)} sa</div>
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 14, fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>
-          <span>Ayda <b style={{ color: "var(--ink)" }}>{s(kazanc)} saat</b> geri kazanırsın</span>
-          <span className="pill mute" style={{ fontSize: 11.5 }}>yılda ≈ {gun} iş günü</span>
+          <span>Ayda <b className={vurgu ? "zh-kazanc pop" : "zh-kazanc"} style={{ color: vurgu ? undefined : "var(--ink)" }}>{s(g.kazanc)} saat</b> geri kazanırsın</span>
+          <span className="pill mute" style={{ fontSize: 11.5 }}>yılda ≈ {Math.round(g.gun)} iş günü</span>
         </div>
         <div style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 8 }}>Hesap: Fixnote ile rapor başına {YENI_DK} dk varsayılır. Kendi rakamınla dene.</div>
       </div>
