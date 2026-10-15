@@ -210,10 +210,10 @@ export default function Uygulama() {
         {gor !== "form" && (
           <nav className="grid lg:hidden" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, background: "var(--paper)", borderTop: "1px solid var(--line)", gridTemplateColumns: "1fr 1fr 1.25fr 1fr", alignItems: "center", padding: "6px 8px calc(6px + env(safe-area-inset-bottom))", boxShadow: "0 -8px 24px rgba(16,39,58,.06)" }}>
             {([["raporlar", "Raporlar", "belge"], ["musteriler", "Müşteriler", "kisiler"]] as const).map(([g, t, ik]) => (
-              <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
+              <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", borderTop: gor === g ? "2px solid var(--accent)" : "2px solid transparent", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--muted)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--muted)" }} />{t}</button>
             ))}
             <button className="btn" style={{ padding: "11px 8px", fontSize: 13.5 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni form</button>
-            <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />Ayarlar</button>
+            <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", borderTop: gor === "ayarlar" ? "2px solid var(--accent)" : "2px solid transparent", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--muted)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--muted)" }} />Ayarlar</button>
           </nav>
         )}
 
@@ -433,8 +433,8 @@ export default function Uygulama() {
           <div style={{ display: "flex", marginTop: 14, border: "1px solid var(--line)", borderRadius: 7, overflow: "hidden", background: "var(--paper)" }}>
             {ADIMLAR.map((a, i) => (
               <button key={a} onClick={() => setAdim(i)} aria-label={`${i + 1}. adım: ${a}`} style={{ flex: 1, minWidth: 0, background: i === adim ? "var(--accent-soft)" : "transparent", border: "none", borderRight: i < ADIMLAR.length - 1 ? "1px solid var(--line)" : "none", padding: "8px 4px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <span className="num" style={{ width: 20, height: 20, borderRadius: 5, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: i < adim ? "var(--accent)" : i === adim ? "var(--accent-ink)" : "var(--tile)", color: i <= adim ? "#fff" : "var(--faint)" }}>{i < adim ? <Ikon ad="tik" boy={11} kalinlik={3} /> : i + 1}</span>
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: i === adim ? "var(--accent-ink)" : "var(--faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{a}</span>
+                <span className="num" style={{ width: 20, height: 20, borderRadius: 5, display: "grid", placeItems: "center", fontSize: 11, fontWeight: 700, background: i < adim ? "var(--accent)" : i === adim ? "var(--accent-ink)" : "var(--tile)", color: i <= adim ? "#fff" : "var(--muted)" }}>{i < adim ? <Ikon ad="tik" boy={11} kalinlik={3} /> : i + 1}</span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: i === adim ? "var(--accent-ink)" : "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{a}</span>
               </button>
             ))}
           </div>

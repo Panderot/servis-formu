@@ -150,7 +150,7 @@ export function Fiyat() {
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1.1fr]">
-        <div className="card" style={{ padding: 26, boxShadow: "var(--shadow-md)" }}>
+        <div className="card" style={{ padding: 26, boxShadow: "var(--shadow-md)", borderTop: "3px solid var(--accent)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <b style={{ fontSize: 17 }}>Teknisyen</b>
             <span className="pill acc nodot">En çok seçilen</span>
