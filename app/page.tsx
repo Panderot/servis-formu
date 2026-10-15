@@ -187,14 +187,16 @@ export default function Home() {
       <section id="nasil" style={{ background: "#fff", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", scrollMarginTop: 80 }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-28">
           <div className="text-center">
-            <span className="eyebrow">Servis raporu, sadeleşti</span>
-            <h2 className="h2 mt-4">Rapor yazmak hiç bu kadar kısa sürmemişti.</h2>
-            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Sen iş yaparken formu doldurursun, Fixnote A4 raporu dizer ve göndermeye hazırlar. Araca binmeden iş kapanır.</p>
+            <span className="eyebrow">Üç adımda rapor</span>
+            <h2 className="h2 mt-4">Doldur, imzalat, gönder. Gerisi Fixnote&apos;ta.</h2>
+            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Formu iş sürerken doldurursun; firma başlıklı A4 raporu Fixnote hazırlar. İş, araca binmeden kapanır.</p>
           </div>
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
+          <GorununceOynat className="mt-14">
+            <div className="nc-cizgi hidden md:block" aria-hidden="true"><i /></div>
+            <div className="grid gap-6 md:mt-5 md:grid-cols-3">
             {/* 1 */}
             <div>
-              <div style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, overflow: "hidden" }}>
+              <div className="nc-kart" style={{ "--d": "100ms", "--sure": "2400ms", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, overflow: "hidden" } as React.CSSProperties}>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 4 }}>{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} style={{ height: 3, borderRadius: 2, background: i < 5 ? "var(--accent)" : "var(--line-2)" }} />)}</div>
                 <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
                   {[["kisiler", "Ayşe Kaplan"], ["anahtar", "Kombi bakımı"]].map(([ik, t]) => <span key={t} style={{ flex: 1, background: "#fff", border: "1px solid var(--line)", borderRadius: 8, padding: "6px 8px", fontSize: 10.5, fontWeight: 800, display: "flex", gap: 5, alignItems: "center" }}><Ikon ad={ik} boy={11} style={{ color: "var(--muted)" }} />{t}</span>)}
@@ -207,47 +209,50 @@ export default function Home() {
                 </div>
                 <div className="mini" style={{ marginTop: 12 }}>Kontrol listesi</div>
                 {SABLONLAR[0].maddeler.slice(0, 3).map((m, i) => (
-                  <div key={m} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, padding: "5px 0", color: i === 2 ? "var(--faint)" : "var(--ink)" }}>
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m}</span>
-                    <span style={{ flex: "none", width: 26, height: 15, borderRadius: 8, background: i === 2 ? "var(--line-2)" : "var(--accent)", position: "relative" }}><span style={{ position: "absolute", top: 2, left: i === 2 ? 2 : 13, width: 11, height: 11, borderRadius: 6, background: "#fff" }} /></span>
+                  <div key={m} style={{ "--d": `${500 + i * 400}ms`, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 11, fontWeight: 700, padding: "5px 0", color: i === 2 ? "var(--faint)" : "var(--ink)" } as React.CSSProperties}>
+                    <span className={i === 2 ? undefined : "nc-madde"} style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m}</span>
+                    <span className={i === 2 ? "nc-sw" : "nc-sw nc-acik"} />
                   </div>
                 ))}
                 <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 10, marginTop: 8, padding: "6px 10px" }}>
                   <div className="mini" style={{ fontSize: 8.5 }}>Müşteri imzası</div>
-                  <img src={demoImza(31)} alt="" style={{ height: 34, display: "block", margin: "0 auto" }} />
+                  <img className="nc-imza" src={demoImza(31)} alt="" style={{ height: 34, display: "block", margin: "0 auto" }} />
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                <span className="num" style={{ flex: "none", width: 20, height: 20, borderRadius: 6, background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>1</span>
-                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>Formu sahada doldur</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Hizmeti seç, liste hazır gelir. Yapılmayanı kapat, fotoğrafı çek, imzalat.</div></div>
+                <span className="num nc-no" style={{ "--d": "100ms", flex: "none", width: 20, height: 20, borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" } as React.CSSProperties}>1</span>
+                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>Sahada doldur ve imzalat</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Hizmeti seç, kontrol listesi hazır gelir. Yapılmayanı kapat, fotoğrafı çek, müşteriye parmağıyla imzalat.</div></div>
               </div>
             </div>
             {/* 2 */}
             <div>
-              <div style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, display: "grid", placeItems: "center" }}>
+              <div className="nc-kart" style={{ "--d": "2500ms", "--sure": "1600ms", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, display: "grid", placeItems: "center" } as React.CSSProperties}>
                 <div style={{ width: "100%", maxWidth: 250, background: "#fff", border: "1px solid var(--line)", borderRadius: 14, padding: 16, boxShadow: "var(--shadow-md)" }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <span className="doc-ico" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}><Ikon ad="belge" boy={16} /></span>
-                    <div><div style={{ fontWeight: 800, fontSize: 13 }}>A4 rapor diziliyor</div><div style={{ fontSize: 10.5, color: "var(--muted)", fontWeight: 600 }}>{ORNEK.no}</div></div>
+                    <div>
+                      <div className="nc-baslik" style={{ fontWeight: 800, fontSize: 13 }}><span className="nc-b1" aria-hidden="true">A4 rapor diziliyor</span><span className="nc-b2">A4 rapor hazır</span></div>
+                      <div style={{ fontSize: 10.5, color: "var(--muted)", fontWeight: 600 }}>{ORNEK.no}</div>
+                    </div>
                   </div>
-                  <div style={{ height: 5, borderRadius: 3, background: "var(--tile)", marginTop: 14, overflow: "hidden" }}><div style={{ width: "72%", height: "100%", background: "var(--accent)" }} /></div>
-                  {[["Firma başlığı ve rapor no", true], ["Kontrol listesi, parça, KDV", true], ["Fotoğraf ve imza", false]].map(([t, ok]) => (
-                    <div key={t as string} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 11.5, fontWeight: 700, marginTop: 9, color: ok ? "var(--ink)" : "var(--faint)" }}>
-                      <span style={{ width: 16, height: 16, borderRadius: 8, display: "grid", placeItems: "center", background: ok ? "var(--ok-soft)" : "var(--tile)", color: "var(--ok)" }}>{ok ? <Ikon ad="tik" boy={10} kalinlik={3} /> : null}</span>{t as string}
+                  <div style={{ height: 5, borderRadius: 3, background: "var(--tile)", marginTop: 14, overflow: "hidden" }}><div className="nc-bar" style={{ width: "100%", height: "100%", background: "var(--accent)" }} /></div>
+                  {["Firma başlığı ve rapor no", "Kontrol listesi, parça, KDV", "Fotoğraf ve imza"].map((t, i) => (
+                    <div key={t} className="nc-ok" style={{ "--d": `${2800 + i * 400}ms`, display: "flex", gap: 8, alignItems: "center", fontSize: 11.5, fontWeight: 700, marginTop: 9 } as React.CSSProperties}>
+                      <span className="nc-ok-ikon" style={{ width: 16, height: 16, borderRadius: 8, display: "grid", placeItems: "center" }}><Ikon ad="tik" boy={10} kalinlik={3} /></span>{t}
                     </div>
                   ))}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                <span className="num" style={{ flex: "none", width: 20, height: 20, borderRadius: 6, background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>2</span>
-                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>Rapor kendiliğinden dizilir</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Firma logon, numara, parça tablosu ve KDV&apos;li toplam tek sayfada.</div></div>
+                <span className="num nc-no" style={{ "--d": "2500ms", flex: "none", width: 20, height: 20, borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" } as React.CSSProperties}>2</span>
+                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>A4 rapor kendini hazırlar</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Firma logon, rapor numarası, parça tablosu ve KDV&apos;li toplam tek sayfada. Elle yazacak bir şey kalmaz.</div></div>
               </div>
             </div>
             {/* 3 */}
             <div>
-              <div style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, display: "grid", placeItems: "center" }}>
+              <div className="nc-kart" style={{ "--d": "4100ms", "--sure": "1500ms", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, height: 330, padding: 16, display: "grid", placeItems: "center" } as React.CSSProperties}>
                 <div style={{ width: "100%", maxWidth: 260, textAlign: "center" }}>
-                  <span style={{ width: 34, height: 34, borderRadius: 17, border: "1.5px solid var(--ok)", color: "var(--ok)", display: "inline-grid", placeItems: "center" }}><Ikon ad="tik" boy={18} kalinlik={2.6} /></span>
+                  <span className="nc-tik" style={{ width: 34, height: 34, borderRadius: 17, border: "1.5px solid var(--ok)", color: "var(--ok)", display: "inline-grid", placeItems: "center" }}><Ikon ad="tik" boy={18} kalinlik={2.6} /></span>
                   <div style={{ fontWeight: 800, fontSize: 15, marginTop: 8 }}>Raporun hazır</div>
                   <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 10, padding: "8px 10px", marginTop: 12, textAlign: "left" }}>
                     <div className="mini" style={{ fontSize: 8.5 }}>Dosya</div>
@@ -260,16 +265,17 @@ export default function Home() {
                   <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 10, padding: "8px 10px", marginTop: 6, textAlign: "left" }}>
                     <div style={{ fontSize: 11, fontWeight: 800 }}>WhatsApp&apos;la gönder</div>
                     <div className="num" style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginTop: 1 }}>{telefonGoster(ORNEK.musteri.telefon)}</div>
-                    <div style={{ background: "var(--ok)", color: "#fff", borderRadius: 8, padding: "7px", fontSize: 11, fontWeight: 800, textAlign: "center", marginTop: 7 }}>Raporu gönder</div>
+                    <div className="nc-gonder" style={{ background: "var(--ok)", color: "#fff", borderRadius: 8, padding: "7px", fontSize: 11, fontWeight: 800, textAlign: "center", marginTop: 7 }}><span className="nc-g1" aria-hidden="true">Raporu gönder</span><span className="nc-g2">Gönderildi <Ikon ad="tik" boy={11} kalinlik={3} /></span></div>
                   </div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                <span className="num" style={{ flex: "none", width: 20, height: 20, borderRadius: 6, background: "var(--accent)", color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" }}>3</span>
-                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>PDF kaydet, WhatsApp&apos;la gönder</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Müşterinin numarasına hazır mesaj açılır, PDF&apos;i ekleyip gönderirsin.</div></div>
+                <span className="num nc-no" style={{ "--d": "4100ms", flex: "none", width: 20, height: 20, borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 800, display: "grid", placeItems: "center" } as React.CSSProperties}>3</span>
+                <div><div style={{ fontWeight: 800, fontSize: 14.5 }}>PDF kaydet, WhatsApp&apos;la gönder</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Müşterinin numarasına hazır mesaj açılır, PDF&apos;i ekleyip gönderirsin. Rapor arşivde kalır.</div></div>
               </div>
             </div>
-          </div>
+            </div>
+          </GorununceOynat>
           <div className="mt-12 flex flex-wrap justify-center gap-2.5">
             <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
             <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</Link>

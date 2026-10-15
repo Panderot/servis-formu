@@ -26,8 +26,8 @@ Görünüm dosyaları (markalamada serbestçe değişir): `app/page.tsx` (landin
 ## Logo ekleme (kişiselleştirmenin parçası, marka adından hemen sonra sor)
 
 "Logon var mı? Dosyayı (png/jpg/svg) bu klasöre bırakman yeterli, ben yerleştiririm."
-- Dosya verirse: `public/logo.png` olarak kopyala. Landing'deki nav ve footer'da marka adının yanındaki turuncu tikli kareyi (`<Isaret />`, `app/components/Ikon.tsx`) bu logoyla değiştir (yükseklik ~28px, köşeleri hafif yuvarlat); uygulamanın yan menüsünde ve mobil üst barında da aynısını yap.
+- Dosya verirse: `public/logo.png` olarak kopyala. Landing'deki nav ve footer'da marka adının yanındaki petrol mavisi tikli kareyi (`<Isaret />`, `app/components/Ikon.tsx`) bu logoyla değiştir (yükseklik ~28px, köşeleri hafif yuvarlat); uygulamanın yan menüsünde ve mobil üst barında da aynısını yap.
 - Aynı görseli `app/icon.png` olarak da kaydet; Next.js bunu otomatik favicon yapar.
-- Logo yoksa: "Sorun değil, marka adının yanında sade bir turuncu tik işareti zaten var; logon hazır olunca dosyayı bırakman yeterli" de.
+- Logo yoksa: "Sorun değil, marka adının yanında sade bir petrol mavisi tik işareti zaten var; logon hazır olunca dosyayı bırakman yeterli" de.
 - Not: Bu, ürünün (senin markanın) logosudur. Uygulamayı kullanan servis firmasının kendi logosu ise uygulama içinde **Firma ve şablonlar > Logo yükle** ile girilir ve A4 raporun başlığına basılır.
 - Logoyu yerleştirdikten sonra kullanıcıya ekranda nasıl göründüğünü kontrol ettir.
