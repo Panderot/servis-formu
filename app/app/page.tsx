@@ -269,8 +269,8 @@ export default function Uygulama() {
                   <div style={{ display: "flex", gap: 5, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
                     {gunler.map((x, i) => (
                       <div key={i} style={{ flex: 1, textAlign: "center" }} title={`${x.g}: ${x.n} rapor`}>
-                        <div style={{ height: 24, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? 0.4 + 0.6 * (x.n / maxg) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
-                        <div style={{ fontSize: 8, color: "var(--faint)", fontWeight: 600, marginTop: 3 }}>{x.g}</div>
+                        <div style={{ height: 24, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? (x.n >= maxg ? 1 : 0.55) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
+                        <div style={{ fontSize: 8.5, color: "var(--muted)", fontWeight: 600, marginTop: 3 }}>{x.g}</div>
                       </div>
                     ))}
                   </div>
@@ -292,18 +292,19 @@ export default function Uygulama() {
 
           {yaklasan.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><b style={{ fontSize: 14 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>tıkla, aynı müşteriye form aç</span></div>
-              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><b style={{ fontSize: 14 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>tıkla, aynı müşteriye form aç</span></div>
+              <div style={{ marginTop: 10, border: "1px solid var(--line)", borderRadius: 8, overflow: "hidden", background: "var(--paper)" }}>
                 {yaklasan.map((x, i) => {
                   const f = gunFark(x.sonrakiBakim);
                   return (
-                    <button key={x.id} onClick={() => yeniForm({ musteri: { ...x.musteri }, cihaz: { ...x.cihaz } })} className="card" style={{ flex: "0 0 auto", minWidth: 220, padding: "9px 12px", display: "flex", gap: 10, alignItems: "stretch", cursor: "pointer", textAlign: "left", boxShadow: "none" }}>
-                      <div className="num" style={{ fontSize: 12.5, fontWeight: 800, lineHeight: 1.25, minWidth: 40 }}>{tarihTR(x.sonrakiBakim).slice(0, 5)}<div style={{ fontSize: 10, color: "var(--faint)" }}>{x.sonrakiBakim.slice(0, 4)}</div></div>
-                      <span style={{ width: 2, borderRadius: 2, background: i === 0 ? "var(--accent)" : "var(--line-2)" }} />
-                      <div style={{ minWidth: 0 }}>
-                        <div className="mini" style={{ fontSize: 8.5 }}>{x.hizmet} · {f === 0 ? "bugün" : `${f} gün sonra`}</div>
-                        <div style={{ fontSize: 13, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 170 }}>{x.musteri.ad}</div>
+                    <button key={x.id} onClick={() => yeniForm({ musteri: { ...x.musteri }, cihaz: { ...x.cihaz } })} className="row-btn" style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 14px" }}>
+                      <div className="num" style={{ textAlign: "right", minWidth: 50, fontWeight: 700, fontSize: 12.5, lineHeight: 1.2 }}>{tarihTR(x.sonrakiBakim).slice(0, 5)}<div style={{ fontSize: 10, color: "var(--faint)", fontWeight: 600 }}>{x.sonrakiBakim.slice(0, 4)}</div></div>
+                      <span style={{ width: 10, height: 10, borderRadius: 5, flex: "none", background: i === 0 ? "var(--accent)" : "var(--paper)", border: `2px solid ${i === 0 ? "var(--accent)" : "var(--line-2)"}` }} />
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.musteri.ad}</div>
+                        <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 500 }}>{x.hizmet} · {f === 0 ? "bugün" : `${f} gün sonra`}</div>
                       </div>
+                      <Ikon ad="sag" boy={14} style={{ color: "var(--faint)" }} />
                     </button>
                   );
                 })}

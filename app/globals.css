@@ -146,7 +146,8 @@ textarea.field { resize: vertical; min-height: 76px; }
 .pill.bad { color: var(--bad); background: var(--bad-soft); }
 .pill.acc { color: var(--accent-ink); background: var(--accent-soft); }
 .pill.mute { color: var(--muted); background: var(--tile); }
-.pill.nodot::before { display: none; }
+.pill.mute::before, .pill.nodot::before { display: none; }
+.pill.mute { padding-left: 8px; }
 
 /* yüzen maket hareketi */
 @keyframes suz { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }

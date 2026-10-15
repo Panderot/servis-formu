@@ -65,7 +65,7 @@ function PanelMaket() {
                 <div style={{ display: "flex", gap: 4, flex: 1 }}>
                   {GUNLER.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }}>
-                      <div style={{ height: 22, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? 0.4 + 0.6 * (x.n / MAXG) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
+                      <div style={{ height: 22, borderRadius: 4, background: x.n ? "var(--accent)" : "var(--tile)", opacity: x.n ? (x.n >= MAXG ? 1 : 0.55) : 1, border: i === 6 ? "1.5px solid var(--accent)" : "1.5px solid transparent" }} />
                       <div style={{ fontSize: 7.5, color: "var(--faint)", fontWeight: 600, marginTop: 2 }}>{x.g}</div>
                     </div>
                   ))}
@@ -233,14 +233,14 @@ export default function Home() {
             <p className="sub" style={{ maxWidth: 560, marginTop: 20 }}>
               Teknisyen telefondan formu doldurur, müşteriye parmağıyla imzalatır. Temiz bir A4 rapor bir dakikada hazır: PDF olarak kaydet, WhatsApp&apos;tan gönder.
             </p>
-            <div className="mt-8 flex flex-wrap gap-2.5">
+            <div className="mt-8 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
               <Link href="/app?yeni=1" className="btn" style={{ minWidth: 180 }}>İlk raporu oluştur</Link>
               <Link href="/app" className="btn btn-ghost" style={{ minWidth: 180 }}>Örnek raporları gör</Link>
             </div>
           </div>
-          <div className="mt-12 hidden items-end gap-5 lg:flex" style={{ border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)", padding: 18 }}>
+          <div className="mt-12 hidden items-end gap-4 lg:flex" style={{ border: "1px solid var(--line)", borderRadius: 14, background: "var(--panel)", padding: 18 }}>
             <div style={{ flex: 1, minWidth: 0, border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", boxShadow: "var(--shadow-md)" }}><PanelMaket /></div>
-            <div style={{ flex: "none" }}><TelefonMaket /></div>
+            <div style={{ flex: "none", transform: "scale(.84)", transformOrigin: "bottom right" }}><TelefonMaket /></div>
           </div>
           <div className="mt-10 flex justify-center lg:hidden"><TelefonMaket kucuk /></div>
         </div>
