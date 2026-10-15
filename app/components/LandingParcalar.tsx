@@ -70,7 +70,7 @@ export function OrnekRapor() {
   return (
     <div>
       <div style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 500, margin: "0 0 10px 2px" }}>Bir iş seç, raporunu gör.</div>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
         {ORNEKLER.map((o, j) => {
           const on = i === j;
           return (

@@ -231,8 +231,11 @@ export default function Uygulama() {
   function RaporlarGorunum() {
     const r = seciliR;
     const bg = bugun().tarih;
+    // 7 günlük aktivite şeridi: en son rapor gününde biter ki boş pencere görünmesin.
+    const sonIso = raporlar.length ? raporlar.map((x) => x.tarih).reduce((a, b) => (a > b ? a : b)) : bg;
+    const sonGun = new Date(sonIso + "T00:00");
     const gunler = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - 6 + i);
+      const d = new Date(sonGun); d.setDate(d.getDate() - 6 + i);
       const iso = bugun(d).tarih;
       return { g: ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"][d.getDay()], n: raporlar.filter((x) => x.tarih === iso).length };
     });

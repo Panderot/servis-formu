@@ -89,7 +89,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 
 input, select, textarea { font-family: inherit; }
 .field {
-  width: 100%; background: var(--panel); border: 1px solid var(--line-2); border-radius: 6px;
+  width: 100%; background: #fff; border: 1px solid var(--line-2); border-radius: 6px;
   padding: 11px 12px; font-size: 16px; color: var(--ink); outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
 }
 .field:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-soft); }
@@ -138,8 +138,8 @@ textarea.field { resize: vertical; min-height: 76px; }
 .doc-ico { flex: none; width: 32px; height: 32px; border-radius: 6px; background: var(--tile); color: var(--muted); display: grid; place-items: center; }
 
 /* durum göstergesi: kare etiket (yuvarlak hap değil), renk/anlam aynı */
-.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; letter-spacing: .01em; background: var(--tile); color: var(--muted); }
-.pill::before { content: ""; width: 5px; height: 5px; border-radius: 1px; background: currentColor; flex: none; opacity: .85; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; padding: 3px 8px 3px 7px; border-radius: 3px; white-space: nowrap; letter-spacing: .01em; background: var(--tile); color: var(--muted); }
+.pill::before { content: ""; width: 3px; height: 11px; border-radius: 1px; background: currentColor; flex: none; opacity: .9; }
 .pill.ok { color: var(--ok); background: var(--ok-soft); }
 .pill.warn { color: var(--warn); background: var(--warn-soft); }
 .pill.info { color: var(--info); background: var(--info-soft); }

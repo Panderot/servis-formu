@@ -247,14 +247,14 @@ export default function Home() {
       </section>
 
       {/* SORUN: önce / sonra */}
-      <section style={{ borderTop: "1px solid var(--line)", background: "var(--paper)" }}>
+      <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-24">
           <div style={{ maxWidth: 560 }}>
             <h2 className="h2">Rapor sahada biter,<br />akşam ofiste değil.</h2>
             <p className="sub mt-3">Her şey iş yapılırken, teknisyenin telefonunda.</p>
           </div>
           <div className="mt-14 grid items-stretch gap-6 md:grid-cols-2">
-            <div style={{ border: "1px solid var(--line)", borderRadius: 10, padding: "22px 20px", background: "var(--bg)" }}>
+            <div style={{ border: "1px solid var(--line)", borderRadius: 10, padding: "22px 20px", background: "var(--paper)" }}>
               <span className="eyebrow" style={{ background: "var(--tile)", borderColor: "var(--line-2)" }}>Kağıt koçanla</span>
               <div className="relative mx-auto mt-8" style={{ maxWidth: 420, minHeight: 340 }}>
                 <div style={{ position: "absolute", left: 0, right: 0, top: 16 }}><KocanKarti /></div>
@@ -295,7 +295,7 @@ export default function Home() {
       </section>
 
       {/* SÜRE HESABI */}
-      <section>
+      <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-24">
           <div>
             <Kick>Zaman kazan</Kick>
@@ -312,7 +312,7 @@ export default function Home() {
       </section>
 
       {/* NASIL ÇALIŞIR */}
-      <section id="nasil" style={{ background: "var(--paper)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", scrollMarginTop: 72 }}>
+      <section id="nasil" style={{ borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", scrollMarginTop: 72 }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-24">
           <div style={{ maxWidth: 580 }}>
             <Kick>Servis raporu, sadeleşti</Kick>
@@ -475,13 +475,13 @@ export default function Home() {
       </section>
 
       {/* MÜŞTERİ GEÇMİŞİ */}
-      <section style={{ background: "var(--paper)", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
+      <section style={{ borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-24">
           <div style={{ maxWidth: 560 }}>
             <h2 className="h2">Müşteri aradığında her şey önünde.</h2>
             <p className="sub mt-3">Telefon numarasından bütün servis geçmişi, ekstra kayıt tutmadan.</p>
           </div>
-          <div className="mt-12 grid items-center gap-10 md:grid-cols-2" style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 12, padding: "clamp(20px, 4vw, 44px)" }}>
+          <div className="mt-12 grid items-center gap-10 md:grid-cols-2" style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 12, padding: "clamp(20px, 4vw, 44px)" }}>
             <div>
               <h3 className="font-display" style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.2, margin: 0 }}>“Geçen sene kombiye ne yapmıştınız?” sorusuna 5 saniyede cevap.</h3>
               <div style={{ marginTop: 20 }}>
@@ -525,7 +525,7 @@ export default function Home() {
       </section>
 
       {/* FİYAT */}
-      <section id="fiyat" style={{ scrollMarginTop: 72 }}>
+      <section id="fiyat" style={{ scrollMarginTop: 72, borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[1000px] px-4 py-20 md:py-24">
           <div style={{ maxWidth: 560 }}>
             <h2 className="h2">Ücretsiz dene, ekibin büyüdükçe ekle.</h2>
@@ -558,7 +558,7 @@ export default function Home() {
       </section>
 
       {/* WHATSAPP */}
-      <section style={{ background: "var(--paper)" }}>
+      <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-24">
           <div>
             <Kick>Müşterinin zaten kullandığı yerden</Kick>
@@ -598,7 +598,7 @@ export default function Home() {
       </section>
 
       {/* SSS */}
-      <section id="sss" style={{ scrollMarginTop: 72 }}>
+      <section id="sss" style={{ scrollMarginTop: 72, borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[820px] px-4 py-20 md:py-24">
           <h2 className="h2">Sık sorulan sorular</h2>
           <div className="mt-10" style={{ border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden", background: "var(--paper)" }}>
@@ -615,9 +615,9 @@ export default function Home() {
       </section>
 
       {/* SON CTA */}
-      <section style={{ borderTop: "1px solid var(--line)", background: "var(--paper)" }}>
+      <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[900px] px-4 py-20 md:py-24">
-          <div style={{ border: "1px solid var(--line)", borderRadius: 12, background: "var(--bg)", padding: "clamp(28px,5vw,52px)", display: "grid", gap: 16, alignItems: "center" }} className="md:grid-cols-[1fr_auto]">
+          <div style={{ border: "1px solid var(--line)", borderRadius: 12, background: "var(--paper)", padding: "clamp(28px,5vw,52px)", display: "grid", gap: 16, alignItems: "center" }} className="md:grid-cols-[1fr_auto]">
             <div>
               <Kick>2 dakikada dene</Kick>
               <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız kapat.</h2>
@@ -629,7 +629,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ background: "var(--dark)", color: "rgba(255,255,255,.66)" }}>
+      <footer style={{ background: "var(--dark)", color: "rgba(255,255,255,.76)" }}>
         <div className="mx-auto max-w-[1000px] px-4 py-16">
           <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
