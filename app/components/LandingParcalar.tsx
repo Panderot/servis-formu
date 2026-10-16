@@ -4,7 +4,7 @@ import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
 import Ikon from "./Ikon";
-import { DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, gecmis, hesapla, musteriler, tarihTR, telefonGoster, tl } from "../lib/servis";
+import { DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, gecmis, hesapla, musteriler, tarihTR, telefonGoster, tl, waMetin } from "../lib/servis";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
@@ -663,6 +663,145 @@ export function MusteriGecmisi() {
               <div className="mini" style={{ fontSize: 8.5 }}>Kayıtlı cihaz</div>
               <div style={{ fontSize: 12.5, fontWeight: 800 }}>{cihaz.marka} {cihaz.model}</div>
               <div className="num" style={{ fontSize: 10.5, color: "var(--muted)", fontWeight: 600 }}>SN {cihaz.seriNo}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- WhatsApp bölümü: hazır mesaj gönderilir, sohbet kayar, PDF aynı sohbete düşer ----------
+const WA_RAPOR = DEMO_RAPORLAR.find((r) => r.no === "SR-2026-0048")!;
+const WA_METIN = waMetin(WA_RAPOR, DEMO_FIRMA);
+// Stage switch times (ms after the start): 1 send pressed, 2 message sent, 3 chat scrolls,
+// 4 PDF arrives + delivered ticks, 5 done.
+const WA_ZAMAN = [700, 1000, 2200, 4000, 4600];
+const WA_OZELLIK = [
+  ["indir", "PDF olarak kaydet", "Telefonun yazdırma ekranından tek sayfa A4, Android ve iPhone'da.", 4],
+  ["mesaj", "Hazır mesaj", "Numara 05xx diye yazılsa da doğru biçime çevrilir. Mesajı göndermeden önce görürsün.", 2],
+] as const;
+
+function WaSaat({ cift }: { cift: boolean }) {
+  return (
+    <span style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 3, marginTop: 3, fontSize: 9, color: "#5f7284", fontWeight: 600 }}>
+      <span className="num">15:40</span>
+      <span style={{ display: "inline-flex" }}>
+        <Ikon ad="tik" boy={10} kalinlik={2.6} />
+        {cift && <Ikon ad="tik" boy={10} kalinlik={2.6} style={{ marginLeft: -6 }} />}
+      </span>
+    </span>
+  );
+}
+
+export function WhatsAppBolum() {
+  const SON = WA_ZAMAN.length;
+  // statik: final state, no demo (server render, reduced motion, or already on screen at load)
+  // bekliyor: off-screen, nothing sent yet; oynuyor: demo running; bitti: demo done
+  const [demo, setDemo] = useState<"statik" | "bekliyor" | "oynuyor" | "bitti">("statik");
+  const [asama, setAsama] = useState(SON);
+  const [fark, setFark] = useState(0); // how far the chat overflows its window (px)
+  const kok = useRef<HTMLDivElement>(null);
+  const pencere = useRef<HTMLDivElement>(null);
+  const icerik = useRef<HTMLDivElement>(null);
+
+  // The chat sits on the window's bottom edge; its top overflows. Measure by how much.
+  useEffect(() => {
+    const p = pencere.current;
+    const c = icerik.current;
+    if (!p || !c) return;
+    const olc = () => setFark(Math.max(0, c.offsetHeight - p.clientHeight));
+    olc();
+    const ro = new ResizeObserver(olc);
+    ro.observe(p);
+    ro.observe(c);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = kok.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let ilk = true;
+    const zaman: ReturnType<typeof setTimeout>[] = [];
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (ilk) {
+          ilk = false;
+          if (e.isIntersecting) io.disconnect();
+          else {
+            setAsama(0);
+            setDemo("bekliyor");
+          }
+          return;
+        }
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        setDemo("oynuyor");
+        WA_ZAMAN.forEach((ms, k) => zaman.push(setTimeout(() => setAsama(k + 1), ms)));
+        zaman.push(setTimeout(() => setDemo("bitti"), WA_ZAMAN[SON - 1]));
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      zaman.forEach(clearTimeout);
+    };
+  }, []);
+
+  const ac = (k: number) => (asama >= k ? " wa-on" : "");
+  // Before stage 3 the chat is pushed down so the start of the message shows; then it slides up.
+  const kaydir = asama < 3 ? fark : 0;
+
+  return (
+    <div ref={kok} data-wa={demo} data-wa-asama={asama} className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-28">
+      <div>
+        <span className="pill ok" style={{ fontSize: 11.5, padding: "4px 10px" }}>Müşterinin zaten kullandığı yerden</span>
+        <h2 className="h2 mt-4">Rapor WhatsApp&apos;tan gider, e-posta beklemez.</h2>
+        <p className="sub mt-4" style={{ maxWidth: 460 }}>Müşterinin numarasına rapor özeti hazır mesaj olarak açılır: rapor no, yapılan işlemler, değişen parça, KDV&apos;li toplam ve teknisyen. PDF&apos;i aynı sohbete eklersin.</p>
+        <div style={{ display: "grid", gap: 14, marginTop: 22 }}>
+          {WA_OZELLIK.map(([ik, t, d, k]) => (
+            <div key={t} className={`wa-ozellik${ac(k)}`} style={{ display: "flex", gap: 12 }}>
+              <span className="doc-ico wa-ikon" style={{ width: 34, height: 34 }}><Ikon ad={ik} boy={16} /></span>
+              <div><div style={{ fontWeight: 800, fontSize: 14 }}>{t}</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-7 flex flex-wrap gap-2.5">
+          <Link href="/app?yeni=1" className="btn">İlk raporu oluştur</Link>
+          <Link href="/app" className="btn btn-ghost">Örnek raporları gör</Link>
+        </div>
+      </div>
+      <div style={{ background: "var(--dark)", borderRadius: 22, padding: "36px 16px 0", display: "flex", justifyContent: "center", overflow: "hidden", height: 470 }}>
+        <div style={{ width: 290, background: "#fff", borderRadius: "40px 40px 0 0", padding: "6px 6px 0" }}>
+          <div style={{ background: "#efeae2", borderRadius: "34px 34px 0 0", height: "100%", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+            <div style={{ background: "#fff", padding: "16px 14px 10px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid var(--line)", flex: "none" }}>
+              <span style={{ width: 30, height: 30, borderRadius: 15, background: "var(--tile)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 12, color: "var(--muted)" }}>AK</span>
+              <div><div style={{ fontSize: 12.5, fontWeight: 800 }}>{WA_RAPOR.musteri.ad}</div><div className="num" style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600 }}>{telefonGoster(WA_RAPOR.musteri.telefon)}</div></div>
+            </div>
+            <div ref={pencere} style={{ position: "relative", flex: 1, overflow: "hidden" }}>
+              <div ref={icerik} className={demo === "oynuyor" ? "wa-akis wa-kayar" : "wa-akis"} style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 12, transform: `translateY(${kaydir}px)` }}>
+                <div className={`wa-balon${ac(2)}`} style={{ background: "#dcf3d0", borderRadius: "12px 4px 12px 12px", padding: "9px 10px 6px", fontSize: 10.5, lineHeight: 1.45, color: "#1c2735", boxShadow: "0 1px 1px rgba(0,0,0,.06)", marginLeft: 18 }}>
+                  <span style={{ whiteSpace: "pre-wrap" }}>{WA_METIN}</span>
+                  <WaSaat cift={asama >= 4} />
+                </div>
+                <div className={`wa-balon${ac(4)}`} style={{ background: "#dcf3d0", borderRadius: 10, padding: "8px 10px 6px", marginTop: 8, marginLeft: 18 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ width: 26, height: 30, borderRadius: 4, background: "#fff", display: "grid", placeItems: "center", color: "var(--bad)", fontSize: 8, fontWeight: 800, flex: "none" }}>PDF</span>
+                    <span style={{ minWidth: 0 }}>
+                      <span style={{ display: "block", fontSize: 10.5, fontWeight: 800 }}>{WA_RAPOR.no} {WA_RAPOR.musteri.ad}.pdf</span>
+                      <span style={{ display: "block", fontSize: 9, color: "#5f7284", fontWeight: 600 }}>1 sayfa · PDF</span>
+                    </span>
+                  </div>
+                  <WaSaat cift={asama >= 4} />
+                </div>
+              </div>
+            </div>
+            <div style={{ flex: "none", display: "flex", gap: 6, alignItems: "center", padding: "8px 8px 10px" }}>
+              <div style={{ flex: 1, minWidth: 0, background: "#fff", borderRadius: 18, padding: "8px 12px", fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: asama < 2 ? "#1c2735" : "#94a3b2" }}>
+                {asama < 2 ? WA_METIN.split("\n").slice(0, 2).join(" ") : "Mesaj"}
+              </div>
+              <span className={asama === 1 ? "wa-gonder wa-basili" : "wa-gonder"} aria-hidden="true" style={{ flex: "none", width: 32, height: 32, borderRadius: 16, background: "#16794c", color: "#fff", display: "grid", placeItems: "center" }}><Ikon ad="sag" boy={15} kalinlik={2.6} /></span>
             </div>
           </div>
         </div>

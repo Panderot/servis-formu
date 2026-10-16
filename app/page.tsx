@@ -1,11 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import Ikon, { Isaret } from "./components/Ikon";
-import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru, MusteriGecmisi } from "./components/LandingParcalar";
+import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru, MusteriGecmisi, WhatsAppBolum } from "./components/LandingParcalar";
 import GorununceOynat from "./components/GorununceOynat";
 import HeroMaket from "./components/HeroMaket";
 import {
-  DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, waMetin, telefonGoster, demoFoto, demoImza,
+  DEMO_RAPORLAR, SABLONLAR, telefonGoster, demoFoto, demoImza,
 } from "./lib/servis";
 
 // ---------- bölümlerde kullanılan örnek kayıt ve müşteri ----------
@@ -47,7 +47,6 @@ const SSS = [
 ];
 
 export default function Home() {
-  const wa = waMetin(ORNEK, DEMO_FIRMA);
   return (
     <main>
       {/* NAV: yüzen kart */}
@@ -363,42 +362,7 @@ export default function Home() {
 
       {/* WHATSAPP */}
       <section style={{ background: "#fff" }}>
-        <div className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-28">
-          <div>
-            <span className="pill ok" style={{ fontSize: 11.5, padding: "4px 10px" }}>Müşterinin zaten kullandığı yerden</span>
-            <h2 className="h2 mt-4">Rapor WhatsApp&apos;tan gider, e-posta beklemez.</h2>
-            <p className="sub mt-4" style={{ maxWidth: 460 }}>Müşterinin numarasına rapor özeti hazır mesaj olarak açılır: rapor no, yapılan işlemler, değişen parça, KDV&apos;li toplam ve teknisyen. PDF&apos;i aynı sohbete eklersin.</p>
-            <div style={{ display: "grid", gap: 14, marginTop: 22 }}>
-              {[["indir", "PDF olarak kaydet", "Telefonun yazdırma ekranından tek sayfa A4, Android ve iPhone'da."], ["mesaj", "Hazır mesaj", "Numara 05xx diye yazılsa da doğru biçime çevrilir. Mesajı göndermeden önce görürsün."]].map(([ik, t, d]) => (
-                <div key={t} style={{ display: "flex", gap: 12 }}>
-                  <span className="doc-ico" style={{ width: 34, height: 34 }}><Ikon ad={ik} boy={16} /></span>
-                  <div><div style={{ fontWeight: 800, fontSize: 14 }}>{t}</div><div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{d}</div></div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-7 flex flex-wrap gap-2.5">
-              <Link href="/app?yeni=1" className="btn">İlk raporu oluştur</Link>
-              <Link href="/app" className="btn btn-ghost">Örnek raporları gör</Link>
-            </div>
-          </div>
-          <div style={{ background: "var(--dark)", borderRadius: 22, padding: "36px 16px 0", display: "flex", justifyContent: "center", overflow: "hidden", height: 470 }}>
-            <div style={{ width: 290, background: "#fff", borderRadius: "40px 40px 0 0", padding: "6px 6px 0" }}>
-              <div style={{ background: "#efeae2", borderRadius: "34px 34px 0 0", height: "100%", overflow: "hidden" }}>
-                <div style={{ background: "#fff", padding: "16px 14px 10px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid var(--line)" }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 15, background: "var(--tile)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 12, color: "var(--muted)" }}>AK</span>
-                  <div><div style={{ fontSize: 12.5, fontWeight: 800 }}>{ORNEK.musteri.ad}</div><div className="num" style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600 }}>{telefonGoster(ORNEK.musteri.telefon)}</div></div>
-                </div>
-                <div style={{ padding: 12 }}>
-                  <div style={{ background: "#dcf3d0", borderRadius: "12px 4px 12px 12px", padding: "9px 10px", fontSize: 10.5, lineHeight: 1.45, whiteSpace: "pre-wrap", color: "#1c2735", boxShadow: "0 1px 1px rgba(0,0,0,.06)", marginLeft: 18 }}>{wa}</div>
-                  <div style={{ background: "#dcf3d0", borderRadius: 10, padding: "8px 10px", marginTop: 8, marginLeft: 18, display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ width: 26, height: 30, borderRadius: 4, background: "#fff", display: "grid", placeItems: "center", color: "var(--bad)", fontSize: 8, fontWeight: 800 }}>PDF</span>
-                    <span style={{ fontSize: 10.5, fontWeight: 800 }}>{ORNEK.no} {ORNEK.musteri.ad}.pdf</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <WhatsAppBolum />
       </section>
 
       {/* SSS */}

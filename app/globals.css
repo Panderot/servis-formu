@@ -331,6 +331,18 @@ textarea.field { resize: vertical; min-height: 76px; }
   .mg-tik, .mg-baslik, .mg-acik, .mg-tel, .mg-bulundu, .mg-kart, .mg-satir, .mg-yuz, .mg-kutu { transition: none; }
   [data-musteri] .mg-madde .mg-tik { animation: none; }
 }
+/* ---------- whatsapp: hazır mesaj gönderilir, sohbet kayar, PDF aynı sohbete düşer ---------- */
+.wa-akis.wa-kayar { transition: transform 1.6s cubic-bezier(.4,0,.2,1); }
+.wa-balon { transform-origin: right bottom; transition: opacity .35s, transform .45s cubic-bezier(.3,1.4,.5,1); }
+.wa-balon:not(.wa-on) { opacity: 0; transform: scale(.85) translateY(10px); }
+.wa-gonder { transition: transform .2s, box-shadow .2s; }
+.wa-gonder.wa-basili { transform: scale(.88); box-shadow: 0 0 0 5px rgba(22, 121, 76, .22); }
+.wa-ozellik > div, .wa-ikon { transition: opacity .3s, background .3s, color .3s; }
+.wa-ozellik:not(.wa-on) > div { opacity: .45; }
+.wa-ozellik.wa-on .wa-ikon { background: var(--accent-soft); color: var(--accent); }
+@media (prefers-reduced-motion: reduce) {
+  .wa-akis.wa-kayar, .wa-balon, .wa-gonder, .wa-ozellik > div, .wa-ikon { transition: none; }
+}
 details.sss > summary::-webkit-details-marker { display: none; }
 details.sss[open] .ok-ic { transform: rotate(180deg); }
 
