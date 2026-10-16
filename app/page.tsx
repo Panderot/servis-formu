@@ -367,7 +367,7 @@ export default function Home() {
 
       {/* SSS */}
       <section id="sss" style={{ scrollMarginTop: 80 }}>
-        <div className="mx-auto max-w-[760px] px-4 py-20 md:py-28">
+        <div className="mx-auto max-w-[760px] px-4 pt-20 pb-12 md:pt-28 md:pb-16">
           <h2 className="h2 text-center">Sık sorulan sorular</h2>
           <div className="mt-10" style={{ display: "grid", gap: 10 }}>
             {SSS.map(([s, c], i) => (
@@ -384,7 +384,7 @@ export default function Home() {
 
       {/* SON CTA */}
       <section style={{ borderTop: "1px solid var(--line)" }}>
-        <div className="mx-auto max-w-[800px] px-4 py-20 text-center md:py-24">
+        <div className="mx-auto max-w-[800px] px-4 pt-16 pb-20 text-center md:pt-20 md:pb-24">
           <span className="eyebrow">2 dakikada dene</span>
           <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız kapat.</h2>
           <p className="sub mt-3">Telefonundan aç, ilk raporu oluştur, müşteriye imzalat. Kurulum yok, kart yok.</p>
