@@ -122,85 +122,86 @@ export default function GirisFormu() {
   const dugme = { giris: "Giriş yap", kayit: "Hesap oluştur", unuttum: "Bağlantı gönder", yenile: "Şifreyi kaydet", gonderildi: "" }[mod];
 
   return (
-    <main className="grid lg:grid-cols-[1fr_1.1fr]" style={{ minHeight: "100dvh", background: "var(--bg)" }}>
-      <aside className="hidden lg:flex" style={{ background: "var(--dark)", color: "#fff", flexDirection: "column", justifyContent: "space-between", padding: "40px 52px" }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 19, letterSpacing: "-0.03em" }}><Isaret boy={26} />Fixnote</Link>
-        <div>
-          <h2 style={{ fontSize: 38, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08, margin: 0 }}>Rapor kapıda biter,<br /><span style={{ color: "#7cc4d6" }}>akşamın sana kalır.</span></h2>
-          <ul style={{ listStyle: "none", padding: 0, margin: "28px 0 0", display: "grid", gap: 14 }}>
+    <main className="gr-sayfa">
+      <aside className="gr-marka">
+        <Link href="/" className="gr-logo gr-logo-buyuk" style={{ alignSelf: "flex-start" }}><Isaret boy={28} />Fixnote</Link>
+        <div className="gr-marka-orta">
+          <h2 className="gr-manset">Rapor kapıda biter,<br /><span style={{ color: "#7cc4d6" }}>akşamın sana kalır.</span></h2>
+          <ul className="gr-degerler">
             {DEGERLER.map((d) => (
-              <li key={d} style={{ display: "flex", alignItems: "center", gap: 11, fontSize: 15, fontWeight: 700 }}>
-                <span style={{ flex: "none", width: 24, height: 24, borderRadius: 12, background: "rgba(124,196,214,.16)", color: "#7cc4d6", display: "grid", placeItems: "center" }}><Ikon ad="tik" boy={13} kalinlik={3} /></span>{d}
+              <li key={d}>
+                <span className="gr-tik" aria-hidden="true"><Ikon ad="tik" boy={14} kalinlik={3} /></span>{d}
               </li>
             ))}
           </ul>
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.55)" }}>{DENEME_GUN} gün ücretsiz · Kart istemez · Servis kayıtların cihazında kalır</div>
+        <div className="gr-meta">{DENEME_GUN} gün ücretsiz · Kart istemez · Servis kayıtların cihazında kalır</div>
       </aside>
 
-      <section style={{ display: "flex", flexDirection: "column", padding: "20px 16px 28px" }}>
-        <div className="mx-auto flex w-full max-w-[400px] items-center justify-between lg:max-w-none">
-          <Link href="/" className="lg:invisible" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 18, letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</Link>
-          <Link href="/" className="hover:text-[var(--ink)]" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 700, color: "var(--muted)" }}><Ikon ad="sol" boy={15} />Ana sayfa</Link>
+      <section className="gr-form-alan">
+        <div className="gr-ust">
+          <Link href="/" className="gr-logo"><Isaret boy={26} />Fixnote</Link>
+          <Link href="/" className="gr-ana"><Ikon ad="sol" boy={15} />Ana sayfa</Link>
         </div>
 
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingTop: 28, paddingBottom: 12 }}>
-          <div style={{ width: "100%", maxWidth: 400 }}>
+        <div className="gr-merkez">
+          <div className="gr-kart">
             {!hesapAyarli && (
-              <div role="status" style={{ background: "var(--warn-soft)", color: "var(--warn)", borderRadius: 12, padding: "10px 12px", fontSize: 13, fontWeight: 700, marginBottom: 18 }}>Giriş henüz yapılandırılmadı. Supabase adresi ve anahtarı eklenince bu sayfa çalışır.</div>
+              <div role="status" className="gr-not">Giriş henüz yapılandırılmadı. Supabase adresi ve anahtarı eklenince bu sayfa çalışır.</div>
             )}
 
             {(mod === "giris" || mod === "kayit") && (
-              <div role="tablist" aria-label="Giriş türü" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, padding: 4, background: "var(--tile)", borderRadius: 12, marginBottom: 22 }}>
+              <div role="tablist" aria-label="Giriş türü" className="gr-sekmeler">
+                <span className="gr-gosterge" data-sag={mod === "kayit"} aria-hidden="true" />
                 {([["giris", "Giriş yap"], ["kayit", "Hesap oluştur"]] as const).map(([m, t]) => (
-                  <button key={m} type="button" role="tab" aria-selected={mod === m} onClick={() => degistir(m)} style={{ border: "none", cursor: "pointer", borderRadius: 9, padding: "9px 10px", fontWeight: 800, fontSize: 13.5, background: mod === m ? "#fff" : "transparent", color: mod === m ? "var(--ink)" : "var(--muted)", boxShadow: mod === m ? "var(--shadow-sm)" : "none" }}>{t}</button>
+                  <button key={m} type="button" role="tab" aria-selected={mod === m} onClick={() => degistir(m)} className="gr-sekme">{t}</button>
                 ))}
               </div>
             )}
 
             {mod === "gonderildi" && (
-              <span style={{ width: 48, height: 48, borderRadius: 14, background: "var(--accent-soft)", color: "var(--accent)", display: "grid", placeItems: "center", marginBottom: 16 }}><Ikon ad="mesaj" boy={22} /></span>
+              <span className="gr-ikon" aria-hidden="true"><Ikon ad="mesaj" boy={24} /></span>
             )}
-            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.035em", lineHeight: 1.1, margin: 0 }}>{baslik}</h1>
-            <p style={{ fontSize: 14.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.55, margin: "8px 0 0" }}>{aciklama}</p>
+            <h1 className="gr-baslik">{baslik}</h1>
+            <p className="gr-aciklama">{aciklama}</p>
 
             {mod === "gonderildi" ? (
-              <button type="button" className="btn btn-ghost" style={{ width: "100%", marginTop: 22 }} onClick={() => degistir("giris")}>Girişe dön</button>
+              <button type="button" className="btn btn-ghost gr-dugme gr-google" onClick={() => degistir("giris")}>Girişe dön</button>
             ) : (
               <>
                 {(mod === "giris" || mod === "kayit") && (
                   <>
-                    <button type="button" className="btn btn-ghost" disabled={kapali} onClick={google} style={{ width: "100%", marginTop: 22, padding: "12px 16px" }}>Google ile devam et</button>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "18px 0 2px", fontSize: 12, fontWeight: 700, color: "var(--faint)" }}>
-                      <span style={{ flex: 1, height: 1, background: "var(--line)" }} />ya da e-posta ile<span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+                    <button type="button" className="btn btn-ghost gr-dugme gr-google" disabled={kapali} onClick={google}>Google ile devam et</button>
+                    <div className="gr-ayrac">
+                      <span />ya da e-posta ile<span />
                     </div>
                   </>
                 )}
-                <form onSubmit={gonder} style={{ display: "grid", gap: 14, marginTop: mod === "giris" || mod === "kayit" ? 14 : 22 }}>
+                <form onSubmit={gonder} className={mod === "giris" || mod === "kayit" ? "gr-form" : "gr-form gr-form-tek"}>
                   {mod !== "yenile" && (
                     <div>
-                      <label className="lbl" htmlFor="g-eposta">E-posta</label>
-                      <input id="g-eposta" className="field" type="email" autoComplete="email" required value={eposta} onChange={(e) => setEposta(e.target.value)} placeholder="ornek@firma.com" />
+                      <label className="gr-lbl" htmlFor="g-eposta">E-posta</label>
+                      <input id="g-eposta" className="field gr-girdi" type="email" autoComplete="email" required value={eposta} onChange={(e) => setEposta(e.target.value)} placeholder="ornek@firma.com" />
                     </div>
                   )}
                   {mod !== "unuttum" && (
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                        <label className="lbl" htmlFor="g-sifre">{mod === "yenile" ? "Yeni şifre" : "Şifre"}</label>
-                        {mod === "giris" && <button type="button" onClick={() => degistir("unuttum")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "var(--accent)" }}>Şifremi unuttum</button>}
+                      <div className="gr-lbl-satir">
+                        <label className="gr-lbl" htmlFor="g-sifre">{mod === "yenile" ? "Yeni şifre" : "Şifre"}</label>
+                        {mod === "giris" && <button type="button" onClick={() => degistir("unuttum")} className="gr-baglanti">Şifremi unuttum</button>}
                       </div>
-                      <div style={{ position: "relative" }}>
-                        <input id="g-sifre" className="field" type={goster ? "text" : "password"} autoComplete={mod === "giris" ? "current-password" : "new-password"} required minLength={mod === "giris" ? undefined : 8} value={sifre} onChange={(e) => setSifre(e.target.value)} placeholder={mod === "giris" ? "Şifren" : "En az 8 karakter"} style={{ paddingRight: 72 }} />
-                        <button type="button" onClick={() => setGoster(!goster)} aria-label={goster ? "Şifreyi gizle" : "Şifreyi göster"} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "var(--muted)", padding: "4px 6px" }}>{goster ? "Gizle" : "Göster"}</button>
+                      <div className="gr-sifre-kutu">
+                        <input id="g-sifre" className="field gr-girdi" type={goster ? "text" : "password"} autoComplete={mod === "giris" ? "current-password" : "new-password"} required minLength={mod === "giris" ? undefined : 8} value={sifre} onChange={(e) => setSifre(e.target.value)} placeholder={mod === "giris" ? "Şifren" : "En az 8 karakter"} />
+                        <button type="button" onClick={() => setGoster(!goster)} aria-label={goster ? "Şifreyi gizle" : "Şifreyi göster"} className="gr-goster">{goster ? "Gizle" : "Göster"}</button>
                       </div>
                     </div>
                   )}
-                  {hata && <div role="alert" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderRadius: 10, padding: "10px 12px", fontSize: 13.5, fontWeight: 700 }}>{hata}</div>}
-                  <button type="submit" className="btn" disabled={kapali} style={{ width: "100%", padding: "13px 16px", opacity: kapali ? 0.6 : 1 }}>{bekle ? "Bekle..." : dugme}</button>
+                  {hata && <div role="alert" className="gr-hata">{hata}</div>}
+                  <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? "Bekle..." : dugme}</button>
                 </form>
-                {mod === "kayit" && <p style={{ fontSize: 12.5, color: "var(--faint)", fontWeight: 600, lineHeight: 1.5, margin: "14px 0 0" }}>Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların yalnızca kendi cihazında saklanır.</p>}
+                {mod === "kayit" && <p className="gr-kayit-not">Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların yalnızca kendi cihazında saklanır.</p>}
                 {(mod === "unuttum" || mod === "yenile") && (
-                  <button type="button" onClick={() => degistir("giris")} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 13.5, fontWeight: 700, color: "var(--accent)", marginTop: 16 }}>Girişe dön</button>
+                  <button type="button" onClick={() => degistir("giris")} className="gr-baglanti gr-geri">Girişe dön</button>
                 )}
               </>
             )}
