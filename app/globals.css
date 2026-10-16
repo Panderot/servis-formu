@@ -307,6 +307,30 @@ textarea.field { resize: vertical; min-height: 76px; }
   .se-imlec, .se-satir.se-gel { animation: none; }
   .se-satir, .se-anahtar, .se-anahtar::after, .se-ekle, .se-sablon, .se-tost { transition: none; }
 }
+/* ---------- müşteri geçmişi: numara yazılır, müşteri bulunur, kart ve geçmiş açılır ---------- */
+.mg-tik { color: var(--accent); transition: color .3s; }
+.mg-baslik { transition: color .3s; }
+.mg-acik { color: var(--muted); transition: color .3s; }
+.mg-madde:not(.mg-on) .mg-tik { color: var(--line-2); }
+.mg-madde:not(.mg-on) .mg-baslik, .mg-madde:not(.mg-on) .mg-acik { color: var(--faint); }
+[data-musteri="oynuyor"] .mg-madde.mg-on .mg-tik { animation: mg-pop .4s cubic-bezier(.3,1.6,.5,1); }
+.mg-tel { transition: border-color .3s, box-shadow .3s; }
+.mg-tel.mg-on { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-soft); }
+.mg-bulundu { transition: opacity .3s, transform .4s cubic-bezier(.3,1.6,.5,1); }
+.mg-tel:not(.mg-on) .mg-bulundu { opacity: 0; transform: scale(.7); }
+.mg-kart { transition: opacity .4s, transform .5s cubic-bezier(.2,.7,.2,1); }
+.mg-kart:not(.mg-on) { opacity: 0; transform: translateY(12px); }
+.mg-satir { transition: opacity .35s, transform .4s cubic-bezier(.2,.7,.2,1); }
+.mg-satir:not(.mg-on) { opacity: 0; transform: translateX(-8px); }
+.mg-yuz { transition: opacity .35s, transform .45s cubic-bezier(.3,1.5,.5,1); }
+.mg-yuz:not(.mg-on) { opacity: 0; transform: scale(.85) translateY(8px); }
+.mg-kutu { transition: border-color .3s, background .3s; }
+.mg-kutu.mg-vurgu { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
+@keyframes mg-pop { 50% { transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) {
+  .mg-tik, .mg-baslik, .mg-acik, .mg-tel, .mg-bulundu, .mg-kart, .mg-satir, .mg-yuz, .mg-kutu { transition: none; }
+  [data-musteri] .mg-madde .mg-tik { animation: none; }
+}
 details.sss > summary::-webkit-details-marker { display: none; }
 details.sss[open] .ok-ic { transform: rotate(180deg); }
 

@@ -1,17 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import Ikon, { Isaret } from "./components/Ikon";
-import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru } from "./components/LandingParcalar";
+import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru, MusteriGecmisi } from "./components/LandingParcalar";
 import GorununceOynat from "./components/GorununceOynat";
 import HeroMaket from "./components/HeroMaket";
 import {
-  DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, tl, tarihTR, musteriler, waMetin, telefonGoster, demoFoto, demoImza,
+  DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, waMetin, telefonGoster, demoFoto, demoImza,
 } from "./lib/servis";
 
 // ---------- bölümlerde kullanılan örnek kayıt ve müşteri ----------
 const ORNEK = DEMO_RAPORLAR.find((r) => r.no === "SR-2026-0048")!;
-const AYSE = musteriler(DEMO_RAPORLAR).find((m) => m.ad === "Ayşe Kaplan")!;
-
 // ================= SORUN: kağıt yığını =================
 function KagitYigini() {
   return (
@@ -326,46 +324,7 @@ export default function Home() {
             <h2 className="h2">Müşteri aradığında her şey önünde.</h2>
             <p className="sub mt-3">Telefon numarasından bütün servis geçmişi, ekstra kayıt tutmadan.</p>
           </div>
-          <div className="mt-12 grid items-center gap-10 md:grid-cols-2" style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 24, padding: "clamp(20px, 4vw, 44px)" }}>
-            <div>
-              <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, margin: 0 }}>“Geçen sene kombiye ne yapmıştınız?” sorusuna 5 saniyede cevap.</h3>
-              <div style={{ marginTop: 20 }}>
-                {[
-                  ["Telefondan bütün geçmiş", "Hangi cihaz, ne zaman, ne değişti, ne kadar ödendi."],
-                  ["Kayıtlı cihaz tek dokunuşla", "Marka, model ve seri no yeni forma kendiliğinden gelir."],
-                  ["Sonraki bakım raporda", "Tarih müşterinin elindeki sayfada, senin panelinde."],
-                  ["Bekleyen tahsilat görünür", "Ödemesi kalan raporlar ayrı rozetle işaretli."],
-                ].map(([t, d], i) => (
-                  <div key={t} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
-                    <Ikon ad="tik" boy={17} kalinlik={2.4} style={{ color: "var(--accent)", marginTop: 1 }} />
-                    <div><div style={{ fontWeight: 800, fontSize: 14 }}>{t}</div><div style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{d}</div></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative mx-auto w-full" style={{ maxWidth: 400, minHeight: 330 }}>
-              <span className="pill ok suz2" style={{ position: "absolute", left: "18%", top: 0, display: "inline-flex", gap: 5, alignItems: "center", padding: "4px 10px", fontSize: 11, boxShadow: "var(--shadow-sm)" }}><Ikon ad="tik" boy={11} kalinlik={3} />Kayıtlı müşteri bulundu</span>
-              <div className="card" style={{ position: "absolute", left: 0, right: 30, top: 34, borderRadius: 14, padding: 16, boxShadow: "var(--shadow-md)" }}>
-                <div className="mini">Müşteri kartı</div>
-                <div style={{ fontWeight: 800, fontSize: 17, marginTop: 4 }}>{AYSE.ad}</div>
-                <div className="num" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{telefonGoster(AYSE.telefon)} · Bornova</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 12 }}>
-                  {[["Servis", String(AYSE.sayi)], ["Toplam", tl(AYSE.toplam).replace(",00", "")], ["Bekleyen", tl(AYSE.bekleyen).replace(",00", "")]].map(([k, v]) => (
-                    <div key={k} style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 9, padding: "7px 9px" }}><div className="mini" style={{ fontSize: 8.5 }}>{k}</div><div className="num" style={{ fontWeight: 800, fontSize: 13, whiteSpace: "nowrap" }}>{v}</div></div>
-                  ))}
-                </div>
-              </div>
-              <div className="card suz" style={{ position: "absolute", right: 0, top: 196, borderRadius: 12, padding: "9px 12px", boxShadow: "var(--shadow-md)", maxWidth: 250 }}>
-                <div className="mini" style={{ fontSize: 8.5 }}>Kayıtlı cihaz</div>
-                <div style={{ fontSize: 12.5, fontWeight: 800 }}>{AYSE.cihazlar[0].marka} {AYSE.cihazlar[0].model}</div>
-                <div className="num" style={{ fontSize: 10.5, color: "var(--muted)", fontWeight: 600 }}>SN {AYSE.cihazlar[0].seriNo}</div>
-              </div>
-              <div className="card suz2" style={{ position: "absolute", left: 14, top: 262, borderRadius: 12, padding: "9px 12px", boxShadow: "var(--shadow-md)", display: "flex", gap: 9, alignItems: "center" }}>
-                <span className="doc-ico" style={{ width: 28, height: 28, background: "var(--accent-soft)", color: "var(--accent)" }}><Ikon ad="takvim" boy={14} /></span>
-                <div><div className="mini" style={{ fontSize: 8.5 }}>Sonraki bakım</div><div className="num" style={{ fontSize: 12.5, fontWeight: 800 }}>{tarihTR(ORNEK.sonrakiBakim)} · kombi</div></div>
-              </div>
-            </div>
-          </div>
+          <MusteriGecmisi />
         </div>
       </section>
 

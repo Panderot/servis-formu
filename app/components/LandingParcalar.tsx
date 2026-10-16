@@ -4,7 +4,7 @@ import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
 import Ikon from "./Ikon";
-import { DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, tl } from "../lib/servis";
+import { DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, gecmis, hesapla, musteriler, tarihTR, telefonGoster, tl } from "../lib/servis";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
@@ -511,6 +511,160 @@ export function SablonEditoru() {
         <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, padding: "10px 6px 2px" }}>Bir şablona dokun, maddelerini gör.</div>
         <div className={tost ? "se-tost se-tost-on" : "se-tost"} role="status">
           <Ikon ad="tik" boy={13} kalinlik={3} />Şablon eklendi
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Müşteri geçmişi: numara yazılır, kayıtlı müşteri bulunur, kart ve geçmiş açılır ----------
+const MG_MUSTERI = musteriler(DEMO_RAPORLAR).find((m) => m.ad === "Ayşe Kaplan")!;
+const MG_GECMIS = gecmis(DEMO_RAPORLAR, MG_MUSTERI.anahtar).slice(0, 2);
+const MG_TEL = telefonGoster(MG_MUSTERI.telefon);
+const MG_MADDELER = [
+  ["Telefondan bütün geçmiş", "Hangi cihaz, ne zaman, ne değişti, ne kadar ödendi."],
+  ["Kayıtlı cihaz tek dokunuşla", "Marka, model ve seri no yeni forma kendiliğinden gelir."],
+  ["Sonraki bakım raporda", "Tarih müşterinin elindeki sayfada, senin panelinde."],
+  ["Bekleyen tahsilat görünür", "Ödemesi kalan raporlar ayrı rozetle işaretli."],
+];
+// Stage switch times (ms after the start). Stage: 1 found, 2 card, 3 first row, 4 second row,
+// 5 device, 6 next service, 7 "Bekleyen" highlight, 8 done.
+const MG_ZAMAN = [1100, 1450, 1900, 2150, 2800, 3450, 4100, 5000];
+const mgTutar = (n: number) => tl(Math.round(n)).replace(",00", "");
+
+function MgDurum({ odeme }: { odeme: string }) {
+  if (odeme === "bekliyor") return <span className="pill warn">Ödeme bekliyor</span>;
+  if (odeme === "garanti") return <span className="pill info">Garanti</span>;
+  return <span className="pill ok">Ödendi</span>;
+}
+
+export function MusteriGecmisi() {
+  const SON = MG_ZAMAN.length;
+  // statik: final state, no demo (server render, reduced motion, or already on screen at load)
+  // bekliyor: off-screen, empty; oynuyor: demo running; bitti: demo done
+  const [demo, setDemo] = useState<"statik" | "bekliyor" | "oynuyor" | "bitti">("statik");
+  const [harf, setHarf] = useState(MG_TEL.length);
+  const [asama, setAsama] = useState(SON);
+  const [sayac, setSayac] = useState(1);
+  const kok = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = kok.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let ilk = true;
+    let raf = 0;
+    const zaman: ReturnType<typeof setTimeout>[] = [];
+    const oynat = () => {
+      setDemo("oynuyor");
+      for (let i = 1; i <= MG_TEL.length; i++) zaman.push(setTimeout(() => setHarf(i), 300 + (i - 1) * 55));
+      MG_ZAMAN.forEach((ms, k) => zaman.push(setTimeout(() => setAsama(k + 1), ms)));
+      zaman.push(setTimeout(() => {
+        const t0 = performance.now();
+        const f = (t: number) => {
+          const p = Math.min(1, (t - t0) / 900);
+          setSayac(1 - Math.pow(1 - p, 3));
+          if (p < 1) raf = requestAnimationFrame(f);
+        };
+        raf = requestAnimationFrame(f);
+      }, MG_ZAMAN[1]));
+      zaman.push(setTimeout(() => setDemo("bitti"), MG_ZAMAN[SON - 1]));
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (ilk) {
+          ilk = false;
+          if (e.isIntersecting) io.disconnect();
+          else {
+            setHarf(0);
+            setAsama(0);
+            setSayac(0);
+            setDemo("bekliyor");
+          }
+          return;
+        }
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        oynat();
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      zaman.forEach(clearTimeout);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const yaziyor = demo === "oynuyor" && asama === 0;
+  const ac = (k: number) => (asama >= k ? " mg-on" : "");
+  const isaret = [2, 5, 6, 7]; // stage that ticks each list item
+  const cihaz = MG_MUSTERI.cihazlar[0];
+  const sonBakim = MG_GECMIS[0].sonrakiBakim;
+
+  return (
+    <div ref={kok} data-musteri={demo} data-musteri-asama={asama} className="mt-12 grid items-center gap-10 md:grid-cols-2" style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 24, padding: "clamp(20px, 4vw, 44px)" }}>
+      <div>
+        <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, margin: 0 }}>“Geçen sene kombiye ne yapmıştınız?” sorusuna 5 saniyede cevap.</h3>
+        <div style={{ marginTop: 20 }}>
+          {MG_MADDELER.map(([t, d], i) => (
+            <div key={t} className={`mg-madde${ac(isaret[i])}`} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+              <Ikon ad="tik" boy={17} kalinlik={2.4} className="mg-tik" style={{ marginTop: 1 }} />
+              <div><div className="mg-baslik" style={{ fontWeight: 800, fontSize: 14 }}>{t}</div><div className="mg-acik" style={{ fontSize: 12.5, fontWeight: 600 }}>{d}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mx-auto w-full" style={{ maxWidth: 400 }}>
+        <div className={`mg-tel${ac(1)}`} style={{ marginRight: 30, background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "8px 10px", display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", minHeight: 40 }}>
+          <Ikon ad="telefon" boy={14} style={{ color: "var(--muted)" }} />
+          <span className="num" style={{ fontSize: 13, fontWeight: 800 }}>
+            {MG_TEL.slice(0, harf)}
+            {yaziyor && <span className="se-imlec" aria-hidden="true" />}
+            <span className="se-gizli" aria-hidden="true">{MG_TEL.slice(harf)}</span>
+          </span>
+          <span className="pill ok mg-bulundu" style={{ marginLeft: "auto", display: "inline-flex", gap: 5, alignItems: "center", padding: "4px 10px", fontSize: 11 }}><Ikon ad="tik" boy={11} kalinlik={3} />Kayıtlı müşteri bulundu</span>
+        </div>
+        <div className={`card mg-kart${ac(2)}`} style={{ marginTop: 12, marginRight: 30, borderRadius: 14, padding: "16px 16px 22px", boxShadow: "var(--shadow-md)" }}>
+          <div className="mini">Müşteri kartı</div>
+          <div style={{ fontWeight: 800, fontSize: 17, marginTop: 4 }}>{MG_MUSTERI.ad}</div>
+          <div className="num" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{MG_TEL} · Bornova</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, marginTop: 12 }}>
+            {[["Servis", String(Math.round(MG_MUSTERI.sayi * sayac))], ["Toplam", mgTutar(MG_MUSTERI.toplam * sayac)], ["Bekleyen", mgTutar(MG_MUSTERI.bekleyen)]].map(([k, v], i) => (
+              <div key={k} className={i === 2 && asama === 7 ? "mg-kutu mg-vurgu" : "mg-kutu"} style={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 9, padding: "7px 9px" }}><div className="mini" style={{ fontSize: 8.5 }}>{k}</div><div className="num" style={{ fontWeight: 800, fontSize: 13, whiteSpace: "nowrap" }}>{v}</div></div>
+            ))}
+          </div>
+          <div style={{ borderTop: "1px solid var(--line)", marginTop: 12, paddingTop: 8 }}>
+            <div className="mini" style={{ fontSize: 8.5 }}>Servis geçmişi</div>
+            {MG_GECMIS.map((r, i) => (
+              <div key={r.no} className={`mg-satir${ac(3 + i)}`} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800 }}><span className="num">{tarihTR(r.tarih)}</span> · {r.hizmet}</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{r.cihaz.marka} · {r.parcalar.length ? r.parcalar.map((p) => p.ad).join(", ") : "parça değişmedi"}</div>
+                </div>
+                <div style={{ textAlign: "right", flex: "none" }}>
+                  <div className="num" style={{ fontSize: 12, fontWeight: 800 }}>{mgTutar(hesapla(r).toplam)}</div>
+                  <MgDurum odeme={r.odeme} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* The two small cards overlap only the card's empty bottom padding (14 of 22 px). */}
+        <div style={{ display: "flex", flexWrap: "wrap-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginTop: -14, position: "relative" }}>
+          <div className="suz2" style={{ marginLeft: 14, marginTop: 22 }}>
+            <div className={`card mg-yuz${ac(6)}`} style={{ borderRadius: 12, padding: "9px 12px", boxShadow: "var(--shadow-md)", display: "flex", gap: 9, alignItems: "center" }}>
+              <span className="doc-ico" style={{ width: 28, height: 28, background: "var(--accent-soft)", color: "var(--accent)" }}><Ikon ad="takvim" boy={14} /></span>
+              <div><div className="mini" style={{ fontSize: 8.5 }}>Sonraki bakım</div><div className="num" style={{ fontSize: 12.5, fontWeight: 800 }}>{tarihTR(sonBakim)} · {cihaz.tur.toLocaleLowerCase("tr-TR")}</div></div>
+            </div>
+          </div>
+          <div className="suz" style={{ marginLeft: "auto", maxWidth: 250 }}>
+            <div className={`card mg-yuz${ac(5)}`} style={{ borderRadius: 12, padding: "9px 12px", boxShadow: "var(--shadow-md)" }}>
+              <div className="mini" style={{ fontSize: 8.5 }}>Kayıtlı cihaz</div>
+              <div style={{ fontSize: 12.5, fontWeight: 800 }}>{cihaz.marka} {cihaz.model}</div>
+              <div className="num" style={{ fontSize: 10.5, color: "var(--muted)", fontWeight: 600 }}>SN {cihaz.seriNo}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
