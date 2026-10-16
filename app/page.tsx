@@ -414,7 +414,7 @@ export default function Home() {
             ))}
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:justify-between" style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 18, fontSize: 12, fontWeight: 600 }}>
-            <span>© 2026 Fixnote</span>
+            <span>© 2026 Fixnote · <a href="/gizlilik" className="hover:text-white">Gizlilik</a> · <a href="/kosullar" className="hover:text-white">Kullanım koşulları</a></span>
             <span>Bu bir e-fatura değil, iş teslim raporudur.</span>
           </div>
         </div>

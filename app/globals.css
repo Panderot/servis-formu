@@ -442,3 +442,28 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
   .gr-gosterge, .gr-sekme, .gr-ana, .gr-goster, .gr-girdi.field, .gr-dugme { transition: none; }
   .gr-dugme.btn:active { transform: none; }
 }
+
+/* Legal pages (/gizlilik, /kosullar) */
+.ys-sayfa { min-height: 100dvh; background: var(--bg); padding: 12px 16px 48px; }
+@media (min-width: 640px) { .ys-sayfa { padding: 20px 28px 64px; } }
+.ys-ust { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 760px; margin: 0 auto; }
+.ys-logo { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; font-weight: 800; font-size: 17px; letter-spacing: -0.03em; color: var(--ink); border-radius: 10px; }
+.ys-ana { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 15px 0 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 13px; font-weight: 600; color: var(--muted); transition: color .15s, border-color .15s; }
+.ys-ana:hover { color: var(--ink); border-color: var(--line-2); }
+.ys-metin { max-width: 760px; margin: 20px auto 0; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px rgba(16, 39, 58, .04), var(--shadow-sm); padding: 28px 20px 32px; color: var(--ink-2); }
+@media (min-width: 640px) { .ys-metin { padding: 44px 48px 48px; } }
+.ys-metin h1 { font-size: clamp(26px, 3vw, 32px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; color: var(--ink); margin: 0; }
+.ys-tarih { font-size: 13px; font-weight: 500; color: var(--muted); margin: 8px 0 0; }
+.ys-giris { font-size: 15.5px; line-height: 1.7; margin: 20px 0 0; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.ys-metin section { margin-top: 28px; }
+.ys-metin h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.015em; color: var(--ink); margin: 0 0 10px; }
+.ys-metin p { font-size: 15px; line-height: 1.7; margin: 0 0 10px; }
+.ys-metin ul { list-style: disc; margin: 0 0 10px; padding-left: 20px; display: grid; gap: 7px; font-size: 15px; line-height: 1.65; }
+.ys-metin li::marker { color: var(--accent); }
+.ys-metin a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.ys-alt { max-width: 760px; margin: 20px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.ys-alt a { display: inline-flex; align-items: center; min-height: 44px; }
+.ys-alt a:hover { color: var(--ink); }
+.ys-sayfa a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+@media print { .ys-ust, .ys-alt { display: none; } .ys-sayfa { background: #fff; padding: 0; } .ys-metin { border: none; box-shadow: none; padding: 0; } }
+.gr-yasal { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }

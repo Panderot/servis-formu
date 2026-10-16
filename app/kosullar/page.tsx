@@ -1,0 +1,68 @@
+import type { Metadata } from "next";
+import YasalSayfa, { type Bolum } from "../components/YasalSayfa";
+import { ABONELIK_EPOSTA, DENEME_GUN } from "../components/supabase";
+
+export const metadata: Metadata = {
+  title: "Kullanım koşulları · Fixnote",
+  description: "Fixnote'u kullanırken geçerli olan koşullar: hesap, deneme, abonelik, kayıtlar ve sorumluluklar.",
+};
+
+const E = ABONELIK_EPOSTA;
+
+const BOLUMLER: Bolum[] = [
+  ["Hizmet", [
+    "Fixnote, saha servis ekiplerinin servis raporunu telefondan doldurmasını, müşteriye ekranda imzalatmasını, A4 rapor ve PDF almasını ve raporu WhatsApp ile göndermesini sağlayan bir web uygulamasıdır.",
+    "Fixnote bir iş teslim raporu üretir. E-fatura ya da mali belge değildir; faturanı bugünkü yönteminle kesmeye devam edersin.",
+  ]],
+  ["Hesap", [[
+    "Hesap açarken gerçek ve sana ait bir e-posta adresi kullanırsın.",
+    "Şifreni kimseyle paylaşmazsın. Hesabında yapılan işlemlerden sen sorumlusun.",
+    `Hesabının izinsiz kullanıldığını düşünürsen hemen ${E} adresine yaz.`,
+  ]]],
+  ["Ücretsiz deneme", [
+    `Yeni hesap ${DENEME_GUN} gün ücretsiz deneme ile açılır ve kart istenmez. Deneme bitince uygulama kilitlenir. Kayıtların cihazında kalır; abonelik açılınca kaldığın yerden devam edersin.`,
+  ]],
+  ["Abonelik ve ücretler", [[
+    "Güncel fiyatlar ana sayfadaki Fiyat bölümünde yazar. Fiyatlara KDV dahil değildir.",
+    "Abonelik teknisyen başına, aylık ya da yıllık olarak açılır.",
+    `Abonelik için ${E} adresine yazarsın. Ödeme ve fatura bilgileri sana bu yazışmada iletilir.`,
+    "Abonelik süren bitince yenilemezsen uygulama yeniden kilitlenir; kayıtların cihazında kalır.",
+    "Fiyatları değiştirirsek, değişiklik ödemesini yapmış olduğun dönemi etkilemez.",
+  ]]],
+  ["Kayıtların ve yedek", [
+    "Servis kayıtların yalnızca cihazında saklanır. Tarayıcı verilerini silmek, cihazı değiştirmek ya da kaybetmek kayıtların kaybolmasına yol açabilir; bu kayıtlar sunucumuzda olmadığı için onları geri getiremeyiz.",
+    "Ayarlar'dan düzenli yedek almak senin sorumluluğundadır.",
+  ]],
+  ["Raporların içeriği ve müşteri bilgileri", [
+    "Raporlara yazdığın bilgilerin doğruluğundan ve müşterilerinin kişisel verilerini KVKK'ya uygun işlemekten sen sorumlusun. Müşteri onayı bölümünü yalnızca müşterinin kendisi imzalar.",
+  ]],
+  ["Kabul edilmeyen kullanım", [
+    "Fixnote'u yasa dışı amaçlarla, yanıltıcı ya da sahte rapor hazırlamak için, başkası adına imza atmak için, hizmeti bozmaya ya da başkalarının hesaplarına erişmeye çalışmak için kullanamazsın. Bu durumlarda hesabını askıya alabilir ya da kapatabiliriz.",
+  ]],
+  ["Hizmetin sürekliliği", [
+    "Fixnote'u kesintisiz ve hatasız çalıştırmak için çalışırız, ancak bunu garanti edemeyiz. Bakım, güncelleme ya da altyapı sağlayıcılarından kaynaklanan kesintiler olabilir. Hizmeti geliştirirken özellikleri değiştirebiliriz.",
+  ]],
+  ["Sorumluluğun sınırı", [
+    "Fixnote olduğu gibi sunulur. Yürürlükteki hukukun izin verdiği ölçüde; cihazındaki kayıtların kaybolmasından, raporlara girilen bilgilerden ve dolaylı zararlardan (kâr kaybı gibi) sorumlu değiliz. Her durumda sorumluluğumuz, son 12 ayda Fixnote için ödediğin tutarla sınırlıdır.",
+  ]],
+  ["Hesabın kapatılması", [
+    `Hesabını istediğin zaman kapatabilirsin; bunun için ${E} adresine yaz. Hesap kapanınca sunucudaki hesap bilgilerin Gizlilik politikasına göre silinir, cihazındaki kayıtlar sende kalır.`,
+  ]],
+  ["Değişiklikler", [
+    "Bu koşulları güncellersek bu sayfadaki tarihi değiştiririz ve önemli değişiklikleri ayrıca duyururuz. Güncellemeden sonra Fixnote'u kullanmaya devam etmen, yeni koşulları kabul ettiğin anlamına gelir.",
+  ]],
+  ["İletişim", [
+    `Bu koşullarla ilgili her soru için: ${E}`,
+  ]],
+];
+
+export default function Kosullar() {
+  return (
+    <YasalSayfa
+      baslik="Kullanım koşulları"
+      tarih="16 Ekim 2026"
+      giris="Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikası sayfasındadır."
+      bolumler={BOLUMLER}
+    />
+  );
+}

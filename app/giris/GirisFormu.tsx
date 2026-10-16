@@ -199,7 +199,7 @@ export default function GirisFormu() {
                   {hata && <div role="alert" className="gr-hata">{hata}</div>}
                   <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? "Bekle..." : dugme}</button>
                 </form>
-                {mod === "kayit" && <p className="gr-kayit-not">Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların yalnızca kendi cihazında saklanır.</p>}
+                {mod === "kayit" && <p className="gr-kayit-not">Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların yalnızca kendi cihazında saklanır. Hesap oluşturarak <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Kullanım koşulları</a>nı ve <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Gizlilik politikası</a>nı kabul edersin.</p>}
                 {(mod === "unuttum" || mod === "yenile") && (
                   <button type="button" onClick={() => degistir("giris")} className="gr-baglanti gr-geri">Girişe dön</button>
                 )}
