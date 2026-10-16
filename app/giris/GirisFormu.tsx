@@ -8,6 +8,13 @@ type Mod = "giris" | "kayit" | "unuttum" | "yenile" | "gonderildi";
 
 const DEGERLER = ["Formu telefonda doldur, müşteriye ekranda imzalat", "Firma başlıklı A4 rapor anında hazır", "PDF'i WhatsApp'tan müşteriye gönder"];
 
+// Supabase sends one reset e-mail per address per minute; its error message carries the wait in seconds.
+const BEKLEME = 60;
+const beklemeSaniye = (m: string) => {
+  const x = /after (\d+) seconds?/i.exec(m);
+  return x ? Number(x[1]) : 0;
+};
+
 export default function GirisFormu() {
   const [mod, setMod] = useState<Mod>("giris");
   const [eposta, setEposta] = useState("");
@@ -17,6 +24,8 @@ export default function GirisFormu() {
   const [bekle, setBekle] = useState(false);
   const [gonderilen, setGonderilen] = useState<"kayit" | "sifre">("kayit");
   const [sonra, setSonra] = useState("/app");
+  const [kalan, setKalan] = useState(0); // seconds until a new reset link can be requested
+  const [tekrar, setTekrar] = useState(false); // a new link was sent from the "check your e-mail" screen
 
   // Read ?sonra= and ?yenile=1 on the client; an existing session goes straight to the app.
   useEffect(() => {
@@ -27,17 +36,63 @@ export default function GirisFormu() {
     if (yenile) setMod("yenile");
     else if (q.get("kayit") === "1") setMod("kayit"); // trial buttons open the sign-up tab
     const sb = supabase();
-    if (!sb || yenile) return;
+    if (!sb) return;
+    if (yenile) {
+      // The reset link brings a one-time session in the URL hash. No session means the link is
+      // invalid, already used or expired: switch to "request a new link". Tokens leave the address bar.
+      sb.auth.getSession().then(({ data }) => {
+        if (window.location.hash) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        if (!data.session) {
+          setMod("unuttum");
+          setHata("Bu sıfırlama bağlantısı geçersiz ya da süresi dolmuş. E-posta adresini yaz, yeni bağlantı gönderelim.");
+        }
+      });
+      return;
+    }
     sb.auth.getSession().then(({ data }) => {
       if (data.session) window.location.replace(hedef);
     });
   }, []);
 
+  useEffect(() => {
+    if (kalan <= 0) return;
+    const t = window.setTimeout(() => setKalan((k) => k - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [kalan]);
+
   const degistir = (m: Mod) => {
     setMod(m);
     setHata("");
     setSifre("");
+    setTekrar(false);
   };
+
+  // Sends the reset e-mail; starts the one-minute countdown (or the wait Supabase asks for).
+  async function baglantiIste() {
+    const sb = supabase();
+    if (!sb) return;
+    const { error } = await sb.auth.resetPasswordForEmail(eposta.trim(), { redirectTo: `${window.location.origin}/giris?yenile=1` });
+    if (error) {
+      setKalan(beklemeSaniye(error.message));
+      throw error;
+    }
+    setKalan(BEKLEME);
+  }
+
+  async function tekrarGonder() {
+    if (bekle || kalan > 0) return;
+    setHata("");
+    setTekrar(false);
+    setBekle(true);
+    try {
+      await baglantiIste();
+      setTekrar(true);
+    } catch (err) {
+      setHata(hataMetni(err instanceof Error ? err.message : String(err)));
+    } finally {
+      setBekle(false);
+    }
+  }
 
   async function gonder(e: React.FormEvent) {
     e.preventDefault();
@@ -73,9 +128,9 @@ export default function GirisFormu() {
         return;
       }
       if (mod === "unuttum") {
-        const { error } = await sb.auth.resetPasswordForEmail(eposta.trim(), { redirectTo: `${window.location.origin}/giris?yenile=1` });
-        if (error) throw error;
+        await baglantiIste();
         setGonderilen("sifre");
+        setTekrar(false);
         setMod("gonderildi");
         return;
       }
@@ -117,7 +172,7 @@ export default function GirisFormu() {
     yenile: "Hesabın için yeni bir şifre yaz.",
     gonderildi: gonderilen === "kayit"
       ? `${eposta.trim()} adresine doğrulama bağlantısı gönderdik. Bağlantıya tıklayınca hesabın açılır ve ${DENEME_GUN} günlük deneme başlar.`
-      : `${eposta.trim()} adresine şifre sıfırlama bağlantısı gönderdik.`,
+      : `${eposta.trim()} adresine kayıtlı bir hesap varsa, şifre sıfırlama bağlantısı birkaç dakika içinde gelir. Gelen kutunda göremezsen spam klasörüne de bak.`,
   }[mod];
   const dugme = { giris: "Giriş yap", kayit: "Hesap oluştur", unuttum: "Bağlantı gönder", yenile: "Şifreyi kaydet", gonderildi: "" }[mod];
 
@@ -166,7 +221,20 @@ export default function GirisFormu() {
             <p className="gr-aciklama">{aciklama}</p>
 
             {mod === "gonderildi" ? (
-              <button type="button" className="btn btn-ghost gr-dugme gr-google" onClick={() => degistir("giris")}>Girişe dön</button>
+              <>
+                <button type="button" className="btn btn-ghost gr-dugme gr-google" onClick={() => degistir("giris")}>Girişe dön</button>
+                {gonderilen === "sifre" && (
+                  <>
+                    {hata && <div role="alert" className="gr-hata gr-hata-alt">{hata}</div>}
+                    <div className="gr-tekrar">
+                      <span role="status">{tekrar ? "Yeni bağlantı gönderildi." : "E-posta gelmedi mi?"}</span>
+                      <button type="button" className="gr-baglanti" disabled={kapali || kalan > 0} onClick={tekrarGonder}>
+                        {bekle ? "Gönderiliyor..." : kalan > 0 ? `Tekrar gönder (${kalan} sn)` : "Tekrar gönder"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
             ) : (
               <>
                 {(mod === "giris" || mod === "kayit") && (

@@ -467,3 +467,7 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .ys-sayfa a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 @media print { .ys-ust, .ys-alt { display: none; } .ys-sayfa { background: #fff; padding: 0; } .ys-metin { border: none; box-shadow: none; padding: 0; } }
 .gr-yasal { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.gr-hata-alt { margin-top: 16px; }
+.gr-tekrar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 4px; margin-top: 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.gr-tekrar .gr-baglanti { font-size: 13px; }
+.gr-baglanti:disabled { color: var(--muted); cursor: default; text-decoration: none; }

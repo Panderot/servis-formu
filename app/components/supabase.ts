@@ -49,7 +49,11 @@ export function hataMetni(m: string): string {
   if (s.includes("invalid login credentials")) return "E-posta ya da şifre hatalı.";
   if (s.includes("already registered") || s.includes("already been registered") || s.includes("already exists")) return "Bu e-posta ile zaten bir hesap var. Giriş yapmayı dene.";
   if (s.includes("email not confirmed")) return "E-posta adresin henüz doğrulanmadı. Gelen kutundaki bağlantıya tıkla.";
+  const sn = /after (\d+) seconds?/.exec(s);
+  if (sn) return `Güvenlik için yeni bağlantıyı ${sn[1]} saniye sonra isteyebilirsin.`;
+  if (s.includes("error sending") || s.includes("not authorized")) return `E-posta şu an gönderilemedi. Biraz sonra tekrar dene; sorun sürerse ${ABONELIK_EPOSTA} adresine yaz.`;
   if (s.includes("same password") || s.includes("different from the old")) return "Yeni şifre eskisinden farklı olmalı.";
+  if (s.includes("weak") || s.includes("easy to guess") || s.includes("pwned")) return "Bu şifre kolay tahmin ediliyor. Daha güçlü bir şifre seç.";
   if (s.includes("password")) return "Şifre en az 8 karakter olmalı.";
   if (s.includes("rate limit") || s.includes("too many")) return "Çok fazla deneme yapıldı. Birkaç dakika sonra tekrar dene.";
   if (s.includes("email")) return "Geçerli bir e-posta adresi yaz.";
