@@ -838,80 +838,78 @@ export function IsDongu() {
   );
 }
 
-// ---------- Fiyat (teknisyen sayacı + aylık/yıllık) ----------
+// ---------- Fiyat: tek paket, tek kart (solda fiyat ve teknisyen sayacı, sağda dahil olanlar) ----------
 const FIYAT = 299;
+const DAHIL = [
+  "Sınırsız servis raporu: yoğun ayda da aynı fiyat",
+  "5 hazır kontrol listesi ve istediğin kadar kendi şablonun",
+  "Logolu, kurumsal A4 rapor; tek dokunuşla PDF",
+  "Müşterinin WhatsApp'ına hazır rapor mesajı",
+  "İtirazı bitiren kanıt: önce / sonra fotoğraf ve imza",
+  "Numarayla müşteri geçmişi, kayıtlı cihazlar, arşiv arama",
+  "Tahsil bekleyenler ve yaklaşan bakımlar tek ekranda",
+  "Tek dosyalık yedek: telefon değişse de kayıtların seninle",
+];
 export function Fiyat() {
   const [yillik, setYillik] = useState(false);
   const [n, setN] = useState(2);
   const aylik = yillik ? (FIYAT * 10) / 12 : FIYAT;
   const toplam = aylik * n;
-  const DAHIL = [
-    "Sınırsız servis raporu: yoğun ayda da aynı fiyat",
-    "5 hazır kontrol listesi ve istediğin kadar kendi şablonun",
-    "Logolu, kurumsal A4 rapor; tek dokunuşla PDF",
-    "Müşterinin WhatsApp'ına hazır rapor mesajı",
-    "İtirazı bitiren kanıt: önce / sonra fotoğraf ve imza",
-    "Numarayla müşteri geçmişi, kayıtlı cihazlar, arşiv arama",
-    "Tahsil bekleyenler ve yaklaşan bakımlar tek ekranda",
-    "Tek dosyalık yedek: telefon değişse de kayıtların seninle",
-  ];
+  const soluk = "rgba(255,255,255,.62)";
+  const cizgi = "rgba(255,255,255,.14)";
   return (
     <div>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="card flex flex-wrap items-center gap-x-3 gap-y-2" style={{ borderRadius: 999, padding: "7px 7px 7px 18px", boxShadow: "none" }}>
-          <b style={{ fontSize: 14 }}>Deneme</b>
-          <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>14 gün · tüm özellikler · kart istemez</span>
-          <Link href="/app?yeni=1" className="btn btn-dark" style={{ borderRadius: 999, padding: "9px 16px", fontSize: 13 }}>Denemeye başla</Link>
-        </div>
-        <div className="card flex items-center gap-1 self-start md:self-auto" style={{ borderRadius: 999, padding: 5, boxShadow: "none" }} role="group" aria-label="Ödeme dönemi">
+      <div className="flex justify-center">
+        <div className="card flex items-center gap-1" style={{ borderRadius: 999, padding: 5, boxShadow: "none" }} role="group" aria-label="Ödeme dönemi">
           {[["Aylık", false], ["Yıllık", true]].map(([t, v]) => (
-            <button key={String(t)} onClick={() => setYillik(v as boolean)} aria-pressed={yillik === v} style={{ border: "none", cursor: "pointer", borderRadius: 999, padding: "8px 16px", fontWeight: 700, fontSize: 13, background: yillik === v ? "var(--ink)" : "transparent", color: yillik === v ? "#fff" : "var(--muted)" }}>{t as string}</button>
+            <button key={String(t)} onClick={() => setYillik(v as boolean)} aria-pressed={yillik === v} style={{ border: "none", cursor: "pointer", borderRadius: 999, padding: "8px 18px", fontWeight: 700, fontSize: 13, background: yillik === v ? "var(--ink)" : "transparent", color: yillik === v ? "#fff" : "var(--muted)" }}>{t as string}</button>
           ))}
           <span className="pill ok" style={{ marginRight: 6 }}>2 ay hediye</span>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1.1fr]">
-        <div className="card" style={{ borderRadius: 20, padding: 26, boxShadow: "var(--shadow-md)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <b style={{ fontSize: 17 }}>Teknisyen</b>
-            <span className="pill acc">En çok seçilen</span>
+      <div className="card mt-6 grid overflow-hidden md:grid-cols-[1fr_1.15fr]" style={{ borderRadius: 24, padding: 0, boxShadow: "var(--shadow-md)" }}>
+        <div style={{ background: "var(--ink)", color: "#fff", padding: "clamp(24px, 4vw, 34px)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <b style={{ fontSize: 17 }}>Teknisyen paketi</b>
+            <span style={{ fontSize: 11.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999, background: "rgba(255,255,255,.1)", color: "#fff" }}>14 gün ücretsiz</span>
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 14 }}>
-            <span className="num" style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-0.04em" }}>{tl(aylik, false).replace(",00", "")} TL</span>
-            <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>/ ay, teknisyen başı</span>
+          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 10px", marginTop: 18 }}>
+            <span className="num" style={{ fontSize: "clamp(40px, 11vw, 52px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{tl(aylik, false).replace(",00", "")} TL</span>
+            <span style={{ fontSize: 13, color: soluk, fontWeight: 600 }}>/ ay, teknisyen başı</span>
           </div>
-          <div style={{ fontSize: 13, color: "var(--faint)", fontWeight: 600 }}>KDV hariç{yillik ? `, yıllık ${tl(FIYAT * 10)} peşin` : ""}</div>
+          <div style={{ fontSize: 13, color: soluk, fontWeight: 600, marginTop: 8 }}>
+            {yillik ? (<><s className="num">{FIYAT} TL</s> · yıllık {tl(FIYAT * 10)} peşin · KDV hariç</>) : "Aylık ödeme · KDV hariç"}
+          </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 22 }}>
-            <span className="mini" style={{ color: "var(--muted)" }}>Teknisyen</span>
-            <div style={{ display: "inline-flex", alignItems: "center", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden" }}>
-              <button aria-label="Azalt" onClick={() => setN(Math.max(1, n - 1))} style={{ width: 36, height: 34, border: "none", background: "#fff", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>−</button>
-              <span className="num" style={{ width: 38, textAlign: "center", fontWeight: 800 }}>{n}</span>
-              <button aria-label="Artır" onClick={() => setN(Math.min(50, n + 1))} style={{ width: 36, height: 34, border: "none", background: "#fff", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>+</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 26 }}>
+            <span style={{ fontSize: 13.5, fontWeight: 700 }}>Teknisyen sayısı</span>
+            <div style={{ display: "inline-flex", alignItems: "center", border: `1px solid ${cizgi}`, borderRadius: 10, overflow: "hidden" }}>
+              <button aria-label="Azalt" onClick={() => setN(Math.max(1, n - 1))} style={{ width: 38, height: 36, border: "none", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>−</button>
+              <span className="num" style={{ width: 40, textAlign: "center", fontWeight: 800 }}>{n}</span>
+              <button aria-label="Artır" onClick={() => setN(Math.min(50, n + 1))} style={{ width: 38, height: 36, border: "none", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 18, fontWeight: 700 }}>+</button>
             </div>
           </div>
-          <div style={{ marginTop: 16, background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13.5, fontWeight: 600 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "var(--muted)" }}>{n} teknisyen, aylık</span><span className="num">{tl(toplam)}</span></div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}><span style={{ color: "var(--muted)" }}>KDV dahil (%20)</span><b className="num">{tl(toplam * 1.2)}</b></div>
+          <div style={{ marginTop: 14, borderTop: `1px solid ${cizgi}`, paddingTop: 14, fontSize: 13.5, fontWeight: 600 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: soluk }}>{n} teknisyen, aylık</span><span className="num">{tl(toplam)}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}><span style={{ color: soluk }}>KDV dahil (%20)</span><b className="num" style={{ fontSize: 15 }}>{tl(toplam * 1.2)}</b></div>
           </div>
-          <Link href="/app?yeni=1" className="btn" style={{ width: "100%", marginTop: 18, padding: "14px 20px" }}>İlk raporu oluştur</Link>
-          <div style={{ fontSize: 12, color: "var(--faint)", textAlign: "center", marginTop: 10, fontWeight: 600 }}>Rapor başına ücret yok, sözleşme yok.</div>
+          <Link href="/app?yeni=1" className="btn" style={{ width: "100%", marginTop: 24, padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>14 gün ücretsiz dene</Link>
+          <div style={{ fontSize: 12, color: soluk, textAlign: "center", marginTop: 12, fontWeight: 600 }}>Kart istemez · Sözleşme yok · Rapor başına ücret yok</div>
         </div>
 
-        <div className="card" style={{ borderRadius: 20, padding: 26 }}>
+        <div style={{ padding: "clamp(24px, 4vw, 34px)" }}>
           <div className="mini" style={{ color: "var(--muted)" }}>Pakete dahil, ek ücret yok</div>
-          <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 0", display: "grid", gap: 11 }}>
+          <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 0", display: "grid", gap: 12 }}>
             {DAHIL.map((x) => (
-              <li key={x} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, fontWeight: 600 }}>
-                <Ikon ad="tik" boy={17} kalinlik={2.4} style={{ color: "var(--accent)", marginTop: 1 }} />{x}
+              <li key={x} style={{ display: "flex", gap: 11, alignItems: "flex-start", fontSize: 14, fontWeight: 600 }}>
+                <span style={{ flex: "none", width: 20, height: 20, borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent)", display: "grid", placeItems: "center", marginTop: 0 }}><Ikon ad="tik" boy={12} kalinlik={3} /></span>{x}
               </li>
             ))}
           </ul>
-          <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)", display: "grid", gap: 9 }}>
-            {["Merkezi bulut arşivi: istenirse kurulumda eklenir", "E-fatura: Fixnote iş teslim raporu üretir, fatura yerine geçmez"].map((x) => (
-              <div key={x} style={{ display: "flex", gap: 10, fontSize: 13.5, color: "var(--faint)", fontWeight: 600 }}><Ikon ad="carpi" boy={16} style={{ marginTop: 1 }} />{x}</div>
-            ))}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)", display: "grid", gap: 7, fontSize: 12.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.5 }}>
+            <div><b style={{ color: "var(--ink)" }}>E-fatura değildir.</b> Fixnote iş teslim raporu üretir; faturanı bugünkü yönteminle kesersin.</div>
+            <div><b style={{ color: "var(--ink)" }}>Bulut arşivi isteğe bağlı.</b> Kayıtlar telefonunda durur; merkezi arşiv istenirse kurulumda eklenir.</div>
           </div>
         </div>
       </div>
