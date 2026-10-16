@@ -4,7 +4,7 @@ import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
 import Ikon from "./Ikon";
-import { DEMO_FIRMA, DEMO_RAPORLAR, tl } from "../lib/servis";
+import { DEMO_FIRMA, DEMO_RAPORLAR, SABLONLAR, tl } from "../lib/servis";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
@@ -342,6 +342,175 @@ export function OrnekRapor() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Şablon editörü: maddeler yazılarak dolar, hazır şablonlara dokununca maddeleri görünür ----------
+const OZEL_SABLON = {
+  id: "ozel",
+  ad: "Asansör periyodik bakım",
+  cihazTuru: "Asansör",
+  maddeler: ["Fren sistemi kontrol edildi", "Kapı kilitleri ve emniyet devresi test edildi", "Halat ve makaralar yağlandı", "Kabin aydınlatması ve alarm butonu denendi"],
+};
+type SablonAdim = { t: "ad" | "tur" | "ekle" | "harf" | "ac" | "kaydet"; ms: number };
+// One step per typed character; "ms" is the wait before the step.
+const SABLON_ADIMLAR: SablonAdim[] = [
+  ...Array.from(OZEL_SABLON.ad, (_, k): SablonAdim => ({ t: "ad", ms: k === 0 ? 300 : 32 })),
+  ...Array.from(OZEL_SABLON.cihazTuru, (): SablonAdim => ({ t: "tur", ms: 40 })),
+  ...OZEL_SABLON.maddeler.flatMap((m): SablonAdim[] => [{ t: "ekle", ms: 180 }, ...Array.from(m, (): SablonAdim => ({ t: "harf", ms: 24 })), { t: "ac", ms: 220 }]),
+  { t: "kaydet", ms: 350 },
+];
+
+function sablonDurumu(n: number) {
+  let ad = 0, tur = 0, satir = 0, acik = 0, kayit = false;
+  const harf = [0, 0, 0, 0];
+  for (let k = 0; k < n; k++) {
+    const t = SABLON_ADIMLAR[k].t;
+    if (t === "ad") ad++;
+    else if (t === "tur") tur++;
+    else if (t === "ekle") satir++;
+    else if (t === "harf") harf[satir - 1]++;
+    else if (t === "ac") acik++;
+    else kayit = true;
+  }
+  return { ad, tur, satir, harf, acik, kayit };
+}
+
+// Typed part + the untyped rest kept invisible, so the row never changes height while typing.
+function Yazilan({ metin, adet, imlec }: { metin: string; adet: number; imlec: boolean }) {
+  return (
+    <>
+      {metin.slice(0, adet)}
+      {imlec && <span className="se-imlec" aria-hidden="true" />}
+      <span className="se-gizli" aria-hidden="true">{metin.slice(adet)}</span>
+    </>
+  );
+}
+
+export function SablonEditoru() {
+  const SON = SABLON_ADIMLAR.length;
+  // statik: final state, no demo (server render, reduced motion, or already visible on load)
+  // bekliyor: off-screen, empty; oynuyor: typing demo; bitti: demo done or the user picked a template
+  const [demo, setDemo] = useState<"statik" | "bekliyor" | "oynuyor" | "bitti">("statik");
+  const [n, setN] = useState(SON);
+  const [secili, setSecili] = useState("ozel");
+  const [tost, setTost] = useState(false);
+  const kok = useRef<HTMLDivElement>(null);
+  const zaman = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const temizle = () => {
+    zaman.current.forEach(clearTimeout);
+    zaman.current = [];
+  };
+
+  useEffect(() => {
+    const el = kok.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let ilk = true;
+    const oynat = () => {
+      setDemo("oynuyor");
+      let t = 0;
+      SABLON_ADIMLAR.forEach((a, k) => {
+        t += a.ms;
+        zaman.current.push(setTimeout(() => setN(k + 1), t));
+      });
+      zaman.current.push(setTimeout(() => { setDemo("bitti"); setTost(true); }, t));
+      zaman.current.push(setTimeout(() => setTost(false), t + 1800));
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (ilk) {
+          ilk = false;
+          if (e.isIntersecting) io.disconnect();
+          else {
+            setN(0);
+            setDemo("bekliyor");
+          }
+          return;
+        }
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        oynat();
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      temizle();
+    };
+  }, []);
+
+  // The user picks a template: the demo stops at once and shows its final state.
+  const sec = (id: string) => {
+    temizle();
+    setN(SON);
+    setTost(false);
+    setDemo((d) => (d === "statik" ? d : "bitti"));
+    setSecili(id);
+  };
+
+  const d = sablonDurumu(n);
+  const hazir = SABLONLAR.find((s) => s.id === secili);
+  const oynuyor = demo === "oynuyor" || demo === "bekliyor";
+  const basili = demo === "oynuyor" && SABLON_ADIMLAR[n]?.t === "ekle";
+  const alanImlec = oynuyor && d.satir === 0 ? (d.tur > 0 || SABLON_ADIMLAR[n]?.t === "tur" ? "tur" : "ad") : null;
+  const aktif = hazir ? -1 : d.satir - 1;
+
+  const ad = hazir ? hazir.ad : OZEL_SABLON.ad;
+  const tur = hazir ? hazir.cihazTuru : OZEL_SABLON.cihazTuru;
+  const maddeler = hazir ? hazir.maddeler.slice(0, 4) : OZEL_SABLON.maddeler;
+
+  return (
+    <div ref={kok} data-sablon={demo} data-secili={secili} className="mt-12 grid gap-4 md:grid-cols-[1fr_300px]">
+      <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 20, padding: 14, display: "grid", gap: 10 }}>
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {([["belge", "Şablon adı", ad, d.ad, "ad"], ["anahtar", "Cihaz türü", tur, d.tur, "tur"]] as const).map(([ik, k, v, adet, alan]) => (
+            <div key={k} style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", display: "flex", gap: 10, alignItems: "center" }}>
+              <span className="doc-ico" style={{ width: 28, height: 28 }}><Ikon ad={ik} boy={14} /></span>
+              <div style={{ minWidth: 0 }}><div className="mini">{k}</div><div style={{ fontWeight: 800, fontSize: 13.5 }}>{hazir ? v : <Yazilan metin={v} adet={adet} imlec={alanImlec === alan} />}</div></div>
+            </div>
+          ))}
+        </div>
+        <div key={secili} style={{ display: "grid", gap: 10 }}>
+          {maddeler.map((m, i) => {
+            const gorunur = hazir ? true : i < d.satir;
+            const acik = hazir ? true : i < d.acik;
+            const akt = i === aktif;
+            return (
+              <div key={m} className={`se-satir${gorunur ? "" : " se-bos"}${hazir ? " se-gel" : ""}`} style={{ "--i": i, background: "#fff", border: akt ? "1.5px solid var(--accent)" : "1px solid var(--line)", borderRadius: 12, padding: akt ? "10.5px 11.5px" : "11px 12px", display: "flex", alignItems: "center", gap: 10, boxShadow: akt ? "0 0 0 4px var(--accent-soft)" : "none" } as React.CSSProperties}>
+                <span className="num" style={{ fontSize: 11, color: "var(--faint)", fontWeight: 800, width: 16 }}>{i + 1}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, flex: 1 }}>{hazir ? m : <Yazilan metin={m} adet={d.harf[i]} imlec={akt} />}</span>
+                <span className={acik ? "se-anahtar se-acik" : "se-anahtar"} aria-hidden="true" />
+              </div>
+            );
+          })}
+        </div>
+        <div className={basili ? "se-ekle se-bas" : "se-ekle"} style={{ border: "1.5px dashed var(--line-2)", borderRadius: 12, padding: "11px 12px", fontSize: 13, fontWeight: 700, color: "var(--faint)", display: "flex", gap: 8, alignItems: "center" }}>
+          <Ikon ad="arti" boy={14} />{hazir ? `${hazir.maddeler.length - 4} madde daha` : "Madde ekle"}
+        </div>
+      </div>
+      <div className="card" style={{ borderRadius: 20, padding: 12, position: "relative" }}>
+        <div className="mini" style={{ padding: "4px 6px 8px" }}>Hazır şablonlar</div>
+        {SABLONLAR.map((s) => {
+          const on = secili === s.id;
+          return (
+            <button key={s.id} type="button" className="se-sablon" aria-pressed={on} onClick={() => sec(s.id)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, border: `1px solid ${on ? "var(--accent)" : "var(--line)"}`, background: on ? "var(--accent-soft)" : "#fff", color: on ? "var(--accent-ink)" : "var(--ink)", borderRadius: 10, padding: "8px 10px", marginBottom: 6, fontSize: 13, fontWeight: 700, fontFamily: "inherit", textAlign: "left", cursor: "pointer" }}>
+              <span style={{ display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="liste" boy={14} style={{ color: on ? "var(--accent)" : "var(--faint)" }} />{s.ad}</span>
+              <span className="num" style={{ fontSize: 11, color: on ? "var(--accent)" : "var(--faint)" }}>{s.maddeler.length} madde</span>
+            </button>
+          );
+        })}
+        <button type="button" className={d.kayit ? "se-sablon se-ozel" : "se-sablon se-ozel se-sakli"} aria-pressed={secili === "ozel"} onClick={() => sec("ozel")} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: "var(--ink)", color: "#fff", border: "1px solid var(--ink)", borderRadius: 10, padding: "9px 10px", fontSize: 13, fontWeight: 800, fontFamily: "inherit", textAlign: "left", cursor: "pointer", boxShadow: secili === "ozel" ? "0 0 0 3px var(--accent-soft)" : "none" }}>
+          <span style={{ display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={14} kalinlik={2.6} />{OZEL_SABLON.ad}</span>
+          <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>senin</span>
+        </button>
+        <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, padding: "10px 6px 2px" }}>Bir şablona dokun, maddelerini gör.</div>
+        <div className={tost ? "se-tost se-tost-on" : "se-tost"} role="status">
+          <Ikon ad="tik" boy={13} kalinlik={3} />Şablon eklendi
         </div>
       </div>
     </div>

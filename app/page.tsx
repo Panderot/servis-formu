@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import Ikon, { Isaret } from "./components/Ikon";
-import { SureHesap, OrnekRapor, IsDongu, Fiyat } from "./components/LandingParcalar";
+import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru } from "./components/LandingParcalar";
 import GorununceOynat from "./components/GorununceOynat";
 import HeroMaket from "./components/HeroMaket";
 import {
@@ -308,42 +308,10 @@ export default function Home() {
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-28">
           <div className="text-center">
             <span className="eyebrow">Şablon editörü</span>
-            <h2 className="h2 mt-4">Kendi kontrol listeni kur.</h2>
-            <p className="sub mx-auto mt-3" style={{ maxWidth: 540 }}>Beş hazır şablonla başlarsın. Asansör, su arıtma, kamera kurulumu: kendi işin için her satıra bir madde yaz, formda hazır gelsin.</p>
+            <h2 className="h2 mt-4">İşin listede yoksa,<br />listeyi sen yaz.</h2>
+            <p className="sub mx-auto mt-3" style={{ maxWidth: 540 }}>Beş hazır şablonla başlarsın. Asansör, su arıtma, kamera kurulumu: her satıra bir madde yaz; sonraki formda liste ve cihaz türü hazır gelir.</p>
           </div>
-          <div className="mt-12 grid gap-4 md:grid-cols-[1fr_300px]">
-            <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 20, padding: 14, display: "grid", gap: 10 }}>
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {[["belge", "Şablon adı", "Asansör periyodik bakım"], ["anahtar", "Cihaz türü", "Asansör"]].map(([ik, k, v]) => (
-                  <div key={k} style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, padding: "10px 12px", display: "flex", gap: 10, alignItems: "center" }}>
-                    <span className="doc-ico" style={{ width: 28, height: 28 }}><Ikon ad={ik} boy={14} /></span>
-                    <div><div className="mini">{k}</div><div style={{ fontWeight: 800, fontSize: 13.5 }}>{v}</div></div>
-                  </div>
-                ))}
-              </div>
-              {["Fren sistemi kontrol edildi", "Kapı kilitleri ve emniyet devresi test edildi", "Halat ve makaralar yağlandı", "Kabin aydınlatması ve alarm butonu denendi"].map((m, i) => (
-                <div key={m} style={{ background: "#fff", border: i === 3 ? "1.5px solid var(--accent)" : "1px solid var(--line)", borderRadius: 12, padding: "11px 12px", display: "flex", alignItems: "center", gap: 10, boxShadow: i === 3 ? "0 0 0 4px var(--accent-soft)" : "none" }}>
-                  <span className="num" style={{ fontSize: 11, color: "var(--faint)", fontWeight: 800, width: 16 }}>{i + 1}</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 700, flex: 1 }}>{m}{i === 3 && <span style={{ display: "inline-block", width: 1.5, height: 15, background: "var(--accent)", marginLeft: 2, verticalAlign: "middle" }} />}</span>
-                  <span style={{ flex: "none", width: 30, height: 17, borderRadius: 9, background: "var(--accent)", position: "relative" }}><span style={{ position: "absolute", top: 2, left: 15, width: 13, height: 13, borderRadius: 7, background: "#fff" }} /></span>
-                </div>
-              ))}
-              <div style={{ border: "1.5px dashed var(--line-2)", borderRadius: 12, padding: "11px 12px", fontSize: 13, fontWeight: 700, color: "var(--faint)", display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="arti" boy={14} />Madde ekle</div>
-            </div>
-            <div className="card" style={{ borderRadius: 20, padding: 12 }}>
-              <div className="mini" style={{ padding: "4px 6px 8px" }}>Hazır şablonlar</div>
-              {SABLONLAR.map((s) => (
-                <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, border: "1px solid var(--line)", borderRadius: 10, padding: "8px 10px", marginBottom: 6, fontSize: 13, fontWeight: 700 }}>
-                  <span style={{ display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="liste" boy={14} style={{ color: "var(--faint)" }} />{s.ad}</span>
-                  <span className="num" style={{ fontSize: 11, color: "var(--faint)" }}>{s.maddeler.length} madde</span>
-                </div>
-              ))}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, background: "var(--ink)", color: "#fff", borderRadius: 10, padding: "9px 10px", fontSize: 13, fontWeight: 800 }}>
-                <span style={{ display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={14} kalinlik={2.6} />Asansör periyodik bakım</span>
-                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>senin</span>
-              </div>
-            </div>
-          </div>
+          <SablonEditoru />
           <div className="mt-10 flex flex-wrap justify-center gap-2.5">
             <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
             <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Uygulamayı aç</Link>
