@@ -15,7 +15,6 @@ const YOL: Record<string, string> = {
   kalem: "M4 20l1-5L15.5 4.5a2.1 2.1 0 0 1 3 3L8 18z M13.5 6.5l3 3",
   imza: "M3 17c3-1 4-9 6-9s0 9 2 9 3-5 4.5-5 1 3 2.5 3 2-1 3-1 M3 21h18",
   mesaj: "M4 5h16v11H9l-5 4z M8 9.5h8 M8 12.5h5",
-  eposta: "M3 6h18v12H3z M3 7l9 6 9-6",
   telefon: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z",
   ara: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4",
   indir: "M12 4v11 M7 10l5 5 5-5 M5 20h14",

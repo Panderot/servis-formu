@@ -59,7 +59,6 @@ export default function Home() {
             <a href="#sablon" className="hover:text-[var(--ink)]">Şablonlar</a>
             <a href="#fiyat" className="hover:text-[var(--ink)]">Fiyat</a>
             <a href="#sss" className="hover:text-[var(--ink)]">SSS</a>
-            <a href="#iletisim" className="hover:text-[var(--ink)]">İletişim</a>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/app" className="hidden sm:inline" style={{ fontSize: 13.5, fontWeight: 700 }}>Uygulamayı aç</Link>
@@ -383,28 +382,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* İLETİŞİM */}
-      <section id="iletisim" style={{ background: "#fff", borderTop: "1px solid var(--line)", scrollMarginTop: 80 }}>
-        <div className="mx-auto max-w-[760px] px-4 py-16 md:py-20">
-          <h2 className="h2 text-center">İletişim</h2>
-          <p className="sub mt-3 text-center">Sorun, öneri ya da ekip kurulumu için yaz veya ara.</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {[
-              ["eposta", "E-posta", "info@motiqai.com", "mailto:info@motiqai.com"],
-              ["telefon", "Telefon", "+44 7476 196133", "tel:+447476196133"],
-            ].map(([ikon, baslik, deger, href]) => (
-              <a key={ikon} href={href} className="card" style={{ display: "flex", alignItems: "center", gap: 14, borderRadius: 14, padding: "16px 18px", boxShadow: "none" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 12, background: "var(--accent-soft)", color: "var(--accent)", display: "grid", placeItems: "center", flex: "none" }}><Ikon ad={ikon} boy={19} /></span>
-                <span style={{ minWidth: 0 }}>
-                  <span className="mini" style={{ display: "block", color: "var(--muted)" }}>{baslik}</span>
-                  <span style={{ display: "block", fontWeight: 800, fontSize: 15, overflowWrap: "anywhere" }}>{deger}</span>
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* SON CTA */}
       <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[800px] px-4 pt-16 pb-20 text-center md:pt-20 md:pb-24">
@@ -426,7 +403,7 @@ export default function Home() {
             {[
               ["Ürün", [["Nasıl çalışır", "#nasil"], ["Rapor", "#rapor"], ["Şablonlar", "#sablon"], ["Fiyat", "#fiyat"]]],
               ["Kimler için", [["Kombi ve klima", "#sablon"], ["Beyaz eşya", "#sablon"], ["İlaçlama", "#sablon"], ["Elektrik", "#sablon"]]],
-              ["Daha fazla", [["SSS", "#sss"], ["İletişim", "#iletisim"], ["Uygulamayı aç", "/app"], ["Yeni form", "/app?yeni=1"]]],
+              ["Daha fazla", [["SSS", "#sss"], ["Uygulamayı aç", "/app"], ["Yeni form", "/app?yeni=1"]]],
             ].map(([b, l]) => (
               <div key={b as string}>
                 <div className="mini" style={{ color: "rgba(255,255,255,.45)" }}>{b as string}</div>
