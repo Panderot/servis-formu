@@ -37,13 +37,13 @@ function Bildirim({ ik, kim, ne, t, d = 0, style }: { ik: string; kim: string; n
 
 // ================= SAYFA =================
 const SSS = [
-  ["Uygulama indirmek gerekiyor mu?", "Hayır. Telefonun tarayıcısında açılır. İstersen ana ekrana ekleyip uygulama gibi kullanırsın. Sayfa bir kez açıldıktan sonra form, çekmeyen bodrum katta da doldurulur; kayıt telefona yazılır."],
-  ["PDF nasıl oluşuyor?", "\"PDF olarak kaydet\" düğmesi raporu A4 olarak yazdırma ekranına gönderir; hedef olarak \"PDF olarak kaydet\" seçersin. Android ve iPhone'da da çalışır."],
-  ["WhatsApp'a PDF ekleniyor mu?", "WhatsApp düğmesi müşterinin numarasına rapor özetini (rapor no, yapılan işlemler, toplam, teknisyen) hazır mesaj olarak açar. Kaydettiğin PDF'i aynı sohbete ek olarak eklersin."],
-  ["Hangi işler için uygun?", "Müşterinin evine ya da işyerine gidip iş teslim eden herkes için: kombi ve klima servisleri, beyaz eşya tamircileri, ilaçlama firmaları, elektrikçi ve tesisatçılar, asansör bakımı, kamera ve alarm kurulumu."],
-  ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adı ve her satıra bir işlem yazarsın; yeni formda hizmet türü olarak çıkar ve maddeler hazır işaretli gelir."],
-  ["Bu bir e-fatura mı?", "Hayır. Fixnote iş teslim raporudur: ne yapıldı, ne değişti, müşteri onayladı mı. Faturayı mevcut yönteminle kesmeye devam edersin."],
-  ["Kayıtlar nerede duruyor?", "Telefonunun tarayıcısında. Sunucuya veri gitmez. Ayarlar'dan tek dosyalık yedek indirip başka cihaza yükleyebilirsin."],
+  ["Uygulama indirmem gerekiyor mu?", "Hayır. Fixnote telefonunun tarayıcısında açılır; mağazadan indirme, kurulum ya da hesap gerekmez. İstersen ana ekrana kısayol ekler, tek dokunuşla açarsın. Form açıkken internet kesilse de doldurmaya devam edersin; kayıt telefona yazılır."],
+  ["PDF nasıl oluşuyor?", "Rapor ekranındaki \"PDF olarak kaydet\" düğmesi raporu A4 düzeninde telefonun yazdırma ekranına gönderir. Orada \"PDF olarak kaydet\"i seçmen yeterli; Android'de ve iPhone'da aynı şekilde çalışır."],
+  ["PDF WhatsApp'tan nasıl gönderiliyor?", "WhatsApp düğmesi, müşterinin numarasına rapor özetini hazır mesaj olarak açar: rapor no, yapılan işlemler, değişen parça, KDV'li toplam ve teknisyen. Kaydettiğin PDF'i aynı sohbete ekleyip gönderirsin. Numara 05xx diye yazılmış olsa da doğru biçime çevrilir."],
+  ["Hangi işler için uygun?", "Müşterinin evinde ya da işyerinde iş yapıp teslim eden her servis için: kombi ve klima, beyaz eşya, ilaçlama, elektrik ve tesisat, asansör bakımı, kamera ve alarm kurulumu. Hazır şablonu olmayan işler için kendi kontrol listeni eklersin."],
+  ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adını, cihaz türünü ve her satıra bir işlemi yazarsın. Şablon yeni formda hizmet türü olarak çıkar; maddeler işaretli gelir, yapılmayanı kapatırsın."],
+  ["Bu bir e-fatura mı?", "Hayır. Fixnote bir iş teslim raporudur: ne yapıldı, hangi parça değişti, müşteri onayladı mı. Faturayı bugün kullandığın yöntemle kesmeye devam edersin."],
+  ["Kayıtlarım nerede saklanıyor?", "Yalnızca kendi telefonunun tarayıcısında; hiçbir veri sunucuya gönderilmez. Ayarlar'dan tek dosyalık yedek indirirsin; telefon değişirse ya da kaybolursa son yedeğini yeni cihaza yüklersin. Düzenli yedek almanı öneririz."],
 ];
 
 export default function Home() {
