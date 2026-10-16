@@ -25,6 +25,7 @@ export default function GirisFormu() {
     setSonra(hedef);
     const yenile = q.get("yenile") === "1";
     if (yenile) setMod("yenile");
+    else if (q.get("kayit") === "1") setMod("kayit"); // trial buttons open the sign-up tab
     const sb = supabase();
     if (!sb || yenile) return;
     sb.auth.getSession().then(({ data }) => {
