@@ -11,7 +11,7 @@ Kullanıcı "Kuruluma başla" dediğinde sırayla sor, cevaba göre değişiklik
 5) **Hedef sektör** (vars. kombi/klima/beyaz eşya/ilaçlama/elektrik). Sektöre özel şablon istenirse `app/lib/servis.ts` içindeki `SABLONLAR` dizisine ekle (id, ad, cihazTuru, maddeler). Landing'deki şablon editörü bölümü (`#sablon`), koyu banttaki dönen iş adları (`ISLER`, `app/components/LandingParcalar.tsx`) ve footer'daki "Kimler için" sütununu buna göre güncelle.
 6) **Örnek firma** (isteğe bağlı): `DEMO_FIRMA` alanlarını üyenin kendi firmasıyla doldur ki ilk açılışta rapor başlığı doğru görünsün. Örnek raporlar (`DEMO_RAPORLAR`) uydurma müşterilerdir; canlıya almadan önce silinmesini isteyebilir (Ayarlar > Tüm raporları sil zaten var).
 
-Kurallar: em dash yok; "yapay zeka" şapkasız; para birimi "TL" (₺ değil); tek aksan renk, gradient yok. Uygulama tamamen client-side ve anahtarsız kalır; sunucu/veritabanı ekleme isteği gelirse önce kullanıcıya maliyetini ve gerekliliğini sor.
+Kurallar: em dash yok; "yapay zeka" şapkasız; para birimi "TL" (₺ değil); tek aksan renk, gradient yok. Uygulama client-side çalışır; servis kayıtları tarayıcıda (localStorage `sf_*`) kalır. Sunucu tarafında sadece Supabase hesabı vardır: giriş (e-posta + şifre, Google) ve 3 günlük deneme (`app/components/supabase.ts`, `HesapKapisi.tsx`, `/giris`, tablo `public.abonelikler`, kurulum SQL'i `supabase/kurulum.sql`, ortam değişkenleri `.env.example`). Kayıtları sunucuya taşıma ya da başka sunucu/veritabanı isteği gelirse önce kullanıcıya maliyetini ve gerekliliğini sor.
 
 Motor dosyaları (markalamada DEĞİŞTİRİLMEZ, sadece şablon eklenir):
 - `app/lib/servis.ts`: rapor modeli, KDV/toplam hesabı, rapor no (`SR-2026-0001`), WhatsApp metni, arama, müşteri geçmişi.

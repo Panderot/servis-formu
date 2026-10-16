@@ -872,7 +872,7 @@ export function Fiyat() {
         <div style={{ background: "var(--ink)", color: "#fff", padding: "clamp(24px, 4vw, 34px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <b style={{ fontSize: 17 }}>Teknisyen paketi</b>
-            <span style={{ fontSize: 11.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999, background: "rgba(255,255,255,.1)", color: "#fff" }}>14 gün ücretsiz</span>
+            <span style={{ fontSize: 11.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999, background: "rgba(255,255,255,.1)", color: "#fff" }}>3 gün ücretsiz</span>
           </div>
           <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 10px", marginTop: 18 }}>
             <span className="num" style={{ fontSize: "clamp(40px, 11vw, 52px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{tl(aylik, false).replace(",00", "")} TL</span>
@@ -894,7 +894,7 @@ export function Fiyat() {
             <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: soluk }}>{n} teknisyen, aylık</span><span className="num">{tl(toplam)}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}><span style={{ color: soluk }}>KDV dahil (%20)</span><b className="num" style={{ fontSize: 15 }}>{tl(toplam * 1.2)}</b></div>
           </div>
-          <Link href="/app?yeni=1" className="btn" style={{ width: "100%", marginTop: 24, padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>14 gün ücretsiz dene</Link>
+          <Link href="/app?yeni=1" className="btn" style={{ width: "100%", marginTop: 24, padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>3 gün ücretsiz dene</Link>
           <div style={{ fontSize: 12, color: soluk, textAlign: "center", marginTop: 12, fontWeight: 600 }}>Kart istemez · Sözleşme yok · Rapor başına ücret yok</div>
         </div>
 

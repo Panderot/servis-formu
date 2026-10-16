@@ -15,7 +15,7 @@ Teknisyen sahada telefondan formu doldurur, kontrol listesini işaretler, önce/
 npm install
 npm run dev   # http://localhost:3000
 ```
-Anahtar gerekmez. Her şey tarayıcıda çalışır, kayıtlar localStorage'da durur. İlk açılışta örnek firma ve 8 örnek rapor yüklenir (Ayarlar'dan silinir).
+Servis kayıtları tarayıcıda (localStorage) durur. Giriş ve 3 günlük deneme Supabase ile çalışır: `.env.example` dosyasını `.env.local` olarak kopyalayıp Supabase adresini ve anahtarını yaz, `supabase/kurulum.sql` dosyasını Supabase SQL Editor'da bir kez çalıştır. Anahtar yoksa /app "Giriş henüz yapılandırılmadı" ekranını gösterir. İlk açılışta örnek firma ve 8 örnek rapor yüklenir (Ayarlar'dan silinir).
 
 ## Akış
 1. **Müşteri**: ad, telefon, adres. Kayıtlı müşteri ad yazarken önerilir, telefondan önceki servis sayısı görünür.

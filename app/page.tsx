@@ -37,13 +37,13 @@ function Bildirim({ ik, kim, ne, t, d = 0, style }: { ik: string; kim: string; n
 
 // ================= SAYFA =================
 const SSS = [
-  ["Uygulama indirmem gerekiyor mu?", "Hayır. Fixnote telefonunun tarayıcısında açılır; mağazadan indirme, kurulum ya da hesap gerekmez. İstersen ana ekrana kısayol ekler, tek dokunuşla açarsın. Form açıkken internet kesilse de doldurmaya devam edersin; kayıt telefona yazılır."],
+  ["Uygulama indirmem gerekiyor mu?", "Hayır. Fixnote telefonunun tarayıcısında açılır; mağazadan indirme ya da kurulum gerekmez. E-posta adresinle ya da Google hesabınla giriş yaparsın. İstersen ana ekrana kısayol ekler, tek dokunuşla açarsın. Form açıkken internet kesilse de doldurmaya devam edersin; kayıt telefona yazılır."],
   ["PDF nasıl oluşuyor?", "Rapor ekranındaki \"PDF olarak kaydet\" düğmesi raporu A4 düzeninde telefonun yazdırma ekranına gönderir. Orada \"PDF olarak kaydet\"i seçmen yeterli; Android'de ve iPhone'da aynı şekilde çalışır."],
   ["PDF WhatsApp'tan nasıl gönderiliyor?", "WhatsApp düğmesi, müşterinin numarasına rapor özetini hazır mesaj olarak açar: rapor no, yapılan işlemler, değişen parça, KDV'li toplam ve teknisyen. Kaydettiğin PDF'i aynı sohbete ekleyip gönderirsin. Numara 05xx diye yazılmış olsa da doğru biçime çevrilir."],
   ["Hangi işler için uygun?", "Müşterinin evinde ya da işyerinde iş yapıp teslim eden her servis için: kombi ve klima, beyaz eşya, ilaçlama, elektrik ve tesisat, asansör bakımı, kamera ve alarm kurulumu. Hazır şablonu olmayan işler için kendi kontrol listeni eklersin."],
   ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adını, cihaz türünü ve her satıra bir işlemi yazarsın. Şablon yeni formda hizmet türü olarak çıkar; maddeler işaretli gelir, yapılmayanı kapatırsın."],
   ["Bu bir e-fatura mı?", "Hayır. Fixnote bir iş teslim raporudur: ne yapıldı, hangi parça değişti, müşteri onayladı mı. Faturayı bugün kullandığın yöntemle kesmeye devam edersin."],
-  ["Kayıtlarım nerede saklanıyor?", "Yalnızca kendi telefonunun tarayıcısında; hiçbir veri sunucuya gönderilmez. Ayarlar'dan tek dosyalık yedek indirirsin; telefon değişirse ya da kaybolursa son yedeğini yeni cihaza yüklersin. Düzenli yedek almanı öneririz."],
+  ["Kayıtlarım nerede saklanıyor?", "Servis kayıtların yalnızca kendi telefonunun tarayıcısında durur; sunucuya gönderilmez. Sunucuda sadece giriş için e-posta adresin ve deneme ya da abonelik bilgin tutulur. Ayarlar'dan tek dosyalık yedek indirirsin; telefon değişirse ya da kaybolursa son yedeğini yeni cihaza yüklersin. Düzenli yedek almanı öneririz."],
 ];
 
 export default function Home() {
@@ -332,7 +332,7 @@ export default function Home() {
         <div className="mx-auto max-w-[1000px] px-4 py-20 md:py-28">
           <div className="text-center">
             <h2 className="h2">Ücretsiz dene, ekibin büyüdükçe ekle.</h2>
-            <p className="sub mt-3">14 gün bütün özellikler açık. Sonra teknisyen başına sabit ücret.</p>
+            <p className="sub mt-3">3 gün bütün özellikler açık. Sonra teknisyen başına sabit ücret.</p>
           </div>
           <div className="mt-12"><Fiyat /></div>
         </div>
@@ -385,7 +385,7 @@ export default function Home() {
       {/* SON CTA */}
       <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[800px] px-4 pt-16 pb-20 text-center md:pt-20 md:pb-24">
-          <span className="eyebrow">14 gün ücretsiz dene</span>
+          <span className="eyebrow">3 gün ücretsiz dene</span>
           <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız teslim et.</h2>
           <p className="sub mt-3">Telefonunun tarayıcısında aç, ilk raporunu hemen oluştur. Kurulum gerekmez, kredi kartı istenmez.</p>
           <Link href="/app?yeni=1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>İlk raporu oluştur</Link>
