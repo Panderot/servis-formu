@@ -255,24 +255,34 @@ export function telefonGoster(tel: string) {
 export function waMetin(r: Rapor, f: Firma) {
   const h = hesapla(r);
   const yapilan = r.maddeler.filter((m) => m.ok).map((m) => m.ad);
-  const cihaz = [r.cihaz.tur, r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ");
+  const markaModel = [r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ");
+  const cihaz = [r.cihaz.tur, markaModel].filter(Boolean).join(", ");
+  const ad = r.musteri.ad.trim();
+  // WhatsApp shows text between asterisks in bold.
   const satirlar = [
-    `Sayın ${r.musteri.ad},`,
-    `${f.ad || "Servisimiz"} servis raporunuz hazır.`,
+    ad ? `Sayın ${ad},` : "Merhaba,",
+    `${tarihTR(r.tarih)} tarihli servis işleminiz tamamlandı. Rapor özetiniz aşağıdadır.`,
     "",
-    `Rapor no: ${r.no} (${tarihTR(r.tarih)})`,
-    `Hizmet: ${r.hizmet}${cihaz ? `, ${cihaz}` : ""}`,
+    `*Rapor no:* ${r.no}`,
   ];
-  if (r.sikayet) satirlar.push(`Şikayet: ${r.sikayet}`);
-  if (yapilan.length) satirlar.push(`Yapılan işlemler (${yapilan.length}): ${yapilan.slice(0, 4).join("; ")}${yapilan.length > 4 ? "; ..." : ""}`);
-  if (r.parcalar.length) satirlar.push(`Değişen parça: ${r.parcalar.map((p) => `${p.ad}${p.adet > 1 ? ` x${p.adet}` : ""}`).join(", ")}`);
-  if (r.odeme === "garanti") satirlar.push("Ücret: Garanti kapsamında, ücret alınmadı.");
-  else satirlar.push(`Toplam: ${tl(h.toplam)} (KDV dahil), ${ODEME[r.odeme]}`);
-  if (r.sonrakiBakim) satirlar.push(`Sonraki bakım: ${tarihTR(r.sonrakiBakim)}`);
-  satirlar.push(`Teknisyen: ${r.teknisyen}`);
+  if (r.hizmet) satirlar.push(`*Hizmet:* ${r.hizmet}`);
+  if (cihaz) satirlar.push(`*Cihaz:* ${cihaz}`);
+  if (r.sikayet) satirlar.push(`*Bildirilen sorun:* ${r.sikayet}`);
+  if (yapilan.length) {
+    satirlar.push("*Yapılan işlemler:*");
+    yapilan.slice(0, 4).forEach((m) => satirlar.push(`• ${m}`));
+    if (yapilan.length > 4) satirlar.push(`• ve ${yapilan.length - 4} işlem daha (tamamı raporda)`);
+  }
+  if (r.parcalar.length) satirlar.push(`*Değişen parçalar:* ${r.parcalar.map((p) => `${p.ad}${p.adet > 1 ? ` x${p.adet}` : ""}`).join(", ")}`);
+  if (r.odeme === "garanti") satirlar.push("*Ücret:* Garanti kapsamında, ücret alınmadı.");
+  else satirlar.push(`*Toplam:* ${tl(h.toplam)} (KDV dahil), ${ODEME[r.odeme]}`);
+  if (r.sonrakiBakim) satirlar.push(`*Sonraki bakım:* ${tarihTR(r.sonrakiBakim)}`);
+  if (r.teknisyen) satirlar.push(`*Teknisyen:* ${r.teknisyen}`);
   satirlar.push("");
-  satirlar.push("İmzalı PDF raporunuz ayrıca iletilecektir. Bizi tercih ettiğiniz için teşekkür ederiz.");
-  if (f.telefon) satirlar.push(`${f.ad} · ${f.telefon}`);
+  satirlar.push("İmzalı servis raporunuz PDF olarak bu mesajın ardından iletilecektir. Bizi tercih ettiğiniz için teşekkür ederiz.");
+  if (f.ad || f.telefon) satirlar.push("");
+  if (f.ad) satirlar.push(`*${f.ad}*`);
+  if (f.telefon) satirlar.push(f.telefon);
   return satirlar.join("\n");
 }
 

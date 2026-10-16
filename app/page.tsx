@@ -71,7 +71,7 @@ export default function Home() {
       <section style={{ paddingTop: 64 }}>
         <div className="mx-auto max-w-[1120px] px-4 text-center">
           <span className="eyebrow" style={{ textTransform: "none", letterSpacing: 0, fontSize: 12, fontWeight: 700, padding: "6px 14px", color: "var(--ink)" }}>
-            <Ikon ad="anahtar" boy={14} style={{ color: "var(--accent)" }} />Kombi, klima, beyaz eşya ve ilaçlama servisleri için
+            <Ikon ad="anahtar" boy={14} style={{ color: "var(--accent)" }} />Saha servis ekipleri için dijital servis raporu
           </span>
           <h1 className="h1" style={{ marginTop: 22 }}>
             <span className="hero-word" style={{ animationDelay: "0ms" }}>Rapor</span>{" "}
@@ -83,7 +83,7 @@ export default function Home() {
             <span className="hero-word hero-mark" style={{ animationDelay: "400ms", color: "var(--accent)" }}>kalır.</span>
           </h1>
           <p className="sub mx-auto hero-rise" style={{ maxWidth: 640, marginTop: 20, fontSize: 16 }}>
-            Teknisyen telefondan formu doldurur, müşteriye parmağıyla imzalatır. Temiz bir A4 rapor bir dakikada hazır: PDF olarak kaydet, WhatsApp&apos;tan gönder.
+            Formu telefonda doldur, müşteriye ekranda imzalat. Firma başlıklı A4 rapor anında hazır; PDF olarak kaydet, WhatsApp&apos;tan gönder.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2.5 hero-rise">
             <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
@@ -186,7 +186,7 @@ export default function Home() {
           <div className="text-center">
             <span className="eyebrow">Üç adımda rapor</span>
             <h2 className="h2 mt-4">Doldur, imzalat, gönder. Gerisi Fixnote&apos;ta.</h2>
-            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Formu iş sürerken doldurursun; firma başlıklı A4 raporu Fixnote hazırlar. İş, araca binmeden kapanır.</p>
+            <p className="sub mx-auto mt-3" style={{ maxWidth: 560 }}>Formu işin başında doldurursun, firma başlıklı A4 raporu Fixnote hazırlar. İmza, rapor ve teslim müşterinin kapısında tamamlanır.</p>
           </div>
           <GorununceOynat className="mt-14">
             <div className="nc-cizgi hidden md:block" aria-hidden="true"><i /></div>
@@ -306,7 +306,7 @@ export default function Home() {
           <div className="text-center">
             <span className="eyebrow">Şablon editörü</span>
             <h2 className="h2 mt-4">İşin listede yoksa,<br />listeyi sen yaz.</h2>
-            <p className="sub mx-auto mt-3" style={{ maxWidth: 540 }}>Beş hazır şablonla başlarsın. Asansör, su arıtma, kamera kurulumu: her satıra bir madde yaz; sonraki formda liste ve cihaz türü hazır gelir.</p>
+            <p className="sub mx-auto mt-3" style={{ maxWidth: 540 }}>Kombi, klima, beyaz eşya, ilaçlama ve elektrik için hazır listelerle başlarsın. Asansör, su arıtma ya da kamera kurulumu için listeni bir kez yazarsın; sonraki her formda maddeler ve cihaz türü hazır gelir.</p>
           </div>
           <SablonEditoru />
           <div className="mt-10 flex flex-wrap justify-center gap-2.5">
@@ -320,8 +320,8 @@ export default function Home() {
       <section style={{ background: "#fff", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[1120px] px-4 py-20 md:py-24">
           <div className="text-center">
-            <h2 className="h2">Müşteri aradığında her şey önünde.</h2>
-            <p className="sub mt-3">Telefon numarasından bütün servis geçmişi, ekstra kayıt tutmadan.</p>
+            <h2 className="h2">Müşteri aradığında bütün geçmişi önünde.</h2>
+            <p className="sub mt-3">Telefon numarasını yazman yeterli: önceki servisler, kayıtlı cihazlar ve bekleyen ödemeler tek kartta.</p>
           </div>
           <MusteriGecmisi />
         </div>
@@ -385,9 +385,9 @@ export default function Home() {
       {/* SON CTA */}
       <section style={{ borderTop: "1px solid var(--line)" }}>
         <div className="mx-auto max-w-[800px] px-4 pt-16 pb-20 text-center md:pt-20 md:pb-24">
-          <span className="eyebrow">2 dakikada dene</span>
-          <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız kapat.</h2>
-          <p className="sub mt-3">Telefonundan aç, ilk raporu oluştur, müşteriye imzalat. Kurulum yok, kart yok.</p>
+          <span className="eyebrow">14 gün ücretsiz dene</span>
+          <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız teslim et.</h2>
+          <p className="sub mt-3">Telefonunun tarayıcısında aç, ilk raporunu hemen oluştur. Kurulum gerekmez, kredi kartı istenmez.</p>
           <Link href="/app?yeni=1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>İlk raporu oluştur</Link>
         </div>
       </section>
@@ -398,7 +398,7 @@ export default function Home() {
           <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
-              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>Teknisyenin sahada servis raporunu doldurup imzalatması ve WhatsApp&apos;tan göndermesi için. Kayıtlar senin cihazında durur.</p>
+              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>Saha servis ekipleri için dijital servis raporu: doldur, imzalat, WhatsApp&apos;tan gönder. Kayıtlar yalnızca senin cihazında saklanır.</p>
             </div>
             {[
               ["Ürün", [["Nasıl çalışır", "#nasil"], ["Rapor", "#rapor"], ["Şablonlar", "#sablon"], ["Fiyat", "#fiyat"]]],

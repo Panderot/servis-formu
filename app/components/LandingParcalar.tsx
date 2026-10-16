@@ -353,7 +353,7 @@ const OZEL_SABLON = {
   id: "ozel",
   ad: "Asansör periyodik bakım",
   cihazTuru: "Asansör",
-  maddeler: ["Fren sistemi kontrol edildi", "Kapı kilitleri ve emniyet devresi test edildi", "Halat ve makaralar yağlandı", "Kabin aydınlatması ve alarm butonu denendi"],
+  maddeler: ["Fren sistemi kontrol edildi", "Kapı kilitleri ve emniyet devresi test edildi", "Halat ve makaralar kontrol edilip yağlandı", "Kabin aydınlatması ve acil alarm butonu test edildi"],
 };
 type SablonAdim = { t: "ad" | "tur" | "ekle" | "harf" | "ac" | "kaydet"; ms: number };
 // One step per typed character; "ms" is the wait before the step.
@@ -508,7 +508,7 @@ export function SablonEditoru() {
           <span style={{ display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={14} kalinlik={2.6} />{OZEL_SABLON.ad}</span>
           <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.6)" }}>senin</span>
         </button>
-        <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, padding: "10px 6px 2px" }}>Bir şablona dokun, maddelerini gör.</div>
+        <div style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, padding: "10px 6px 2px" }}>Maddelerini görmek için bir şablon seç.</div>
         <div className={tost ? "se-tost se-tost-on" : "se-tost"} role="status">
           <Ikon ad="tik" boy={13} kalinlik={3} />Şablon eklendi
         </div>
@@ -522,10 +522,10 @@ const MG_MUSTERI = musteriler(DEMO_RAPORLAR).find((m) => m.ad === "Ayşe Kaplan"
 const MG_GECMIS = gecmis(DEMO_RAPORLAR, MG_MUSTERI.anahtar).slice(0, 2);
 const MG_TEL = telefonGoster(MG_MUSTERI.telefon);
 const MG_MADDELER = [
-  ["Telefondan bütün geçmiş", "Hangi cihaz, ne zaman, ne değişti, ne kadar ödendi."],
-  ["Kayıtlı cihaz tek dokunuşla", "Marka, model ve seri no yeni forma kendiliğinden gelir."],
-  ["Sonraki bakım raporda", "Tarih müşterinin elindeki sayfada, senin panelinde."],
-  ["Bekleyen tahsilat görünür", "Ödemesi kalan raporlar ayrı rozetle işaretli."],
+  ["Numarayla tüm servis geçmişi", "Hangi cihaza ne zaman bakıldı, hangi parça değişti, ne kadar ödendi."],
+  ["Kayıtlı cihaz tek dokunuşla forma", "Marka, model ve seri numarası yeni forma otomatik gelir."],
+  ["Sonraki bakım tarihi kayıtta", "Tarih raporda yazar, panelinde yaklaşan bakımlar listesine düşer."],
+  ["Bekleyen tahsilat gözden kaçmaz", "Ödemesi alınmamış raporlar ayrı rozetle işaretlenir."],
 ];
 // Stage switch times (ms after the start). Stage: 1 found, 2 card, 3 first row, 4 second row,
 // 5 device, 6 next service, 7 "Bekleyen" highlight, 8 done.
@@ -605,7 +605,7 @@ export function MusteriGecmisi() {
   return (
     <div ref={kok} data-musteri={demo} data-musteri-asama={asama} className="mt-12 grid items-center gap-10 md:grid-cols-2" style={{ background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 24, padding: "clamp(20px, 4vw, 44px)" }}>
       <div>
-        <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, margin: 0 }}>“Geçen sene kombiye ne yapmıştınız?” sorusuna 5 saniyede cevap.</h3>
+        <h3 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15, margin: 0 }}>“Geçen yıl kombiye ne yapmıştınız?” sorusunu arşiv karıştırmadan yanıtla.</h3>
         <div style={{ marginTop: 20 }}>
           {MG_MADDELER.map(([t, d], i) => (
             <div key={t} className={`mg-madde${ac(isaret[i])}`} style={{ display: "flex", gap: 12, padding: "12px 0", borderTop: i ? "1px solid var(--line)" : "none" }}>
@@ -678,9 +678,20 @@ const WA_METIN = waMetin(WA_RAPOR, DEMO_FIRMA);
 // 4 PDF arrives + delivered ticks, 5 done.
 const WA_ZAMAN = [700, 1000, 2200, 4000, 4600];
 const WA_OZELLIK = [
-  ["indir", "PDF olarak kaydet", "Telefonun yazdırma ekranından tek sayfa A4, Android ve iPhone'da.", 4],
-  ["mesaj", "Hazır mesaj", "Numara 05xx diye yazılsa da doğru biçime çevrilir. Mesajı göndermeden önce görürsün.", 2],
+  ["indir", "PDF olarak kaydet", "Telefonun yazdırma ekranından A4 PDF; Android ve iPhone'da aynı adımlar.", 4],
+  ["mesaj", "Hazır mesaj", "Numara 05xx biçiminde yazılsa da doğru formata çevrilir; mesajı göndermeden önce kontrol edersin.", 2],
 ] as const;
+
+// Renders WhatsApp's *bold* markup the way the app shows it.
+function WaYazi({ metin }: { metin: string }) {
+  return (
+    <>
+      {metin.split(/(\*[^*\n]+\*)/).map((p, i) =>
+        p.length > 2 && p.startsWith("*") && p.endsWith("*") ? <b key={i} style={{ fontWeight: 800 }}>{p.slice(1, -1)}</b> : p,
+      )}
+    </>
+  );
+}
 
 function WaSaat({ cift }: { cift: boolean }) {
   return (
@@ -756,9 +767,9 @@ export function WhatsAppBolum() {
   return (
     <div ref={kok} data-wa={demo} data-wa-asama={asama} className="mx-auto grid max-w-[1120px] items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-28">
       <div>
-        <span className="pill ok" style={{ fontSize: 11.5, padding: "4px 10px" }}>Müşterinin zaten kullandığı yerden</span>
-        <h2 className="h2 mt-4">Rapor WhatsApp&apos;tan gider, e-posta beklemez.</h2>
-        <p className="sub mt-4" style={{ maxWidth: 460 }}>Müşterinin numarasına rapor özeti hazır mesaj olarak açılır: rapor no, yapılan işlemler, değişen parça, KDV&apos;li toplam ve teknisyen. PDF&apos;i aynı sohbete eklersin.</p>
+        <span className="pill ok" style={{ fontSize: 11.5, padding: "4px 10px" }}>Müşterinin her gün kullandığı kanaldan</span>
+        <h2 className="h2 mt-4">Rapor müşteriye WhatsApp&apos;tan ulaşır.</h2>
+        <p className="sub mt-4" style={{ maxWidth: 460 }}>Tek dokunuşla müşterinin WhatsApp sohbeti hazır bir mesajla açılır: rapor numarası, yapılan işlemler, değişen parçalar, KDV dahil toplam ve teknisyen. İmzalı PDF&apos;i aynı sohbete eklersin.</p>
         <div style={{ display: "grid", gap: 14, marginTop: 22 }}>
           {WA_OZELLIK.map(([ik, t, d, k]) => (
             <div key={t} className={`wa-ozellik${ac(k)}`} style={{ display: "flex", gap: 12 }}>
@@ -782,7 +793,7 @@ export function WhatsAppBolum() {
             <div ref={pencere} style={{ position: "relative", flex: 1, overflow: "hidden" }}>
               <div ref={icerik} className={demo === "oynuyor" ? "wa-akis wa-kayar" : "wa-akis"} style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 12, transform: `translateY(${kaydir}px)` }}>
                 <div className={`wa-balon${ac(2)}`} style={{ background: "#dcf3d0", borderRadius: "12px 4px 12px 12px", padding: "9px 10px 6px", fontSize: 10.5, lineHeight: 1.45, color: "#1c2735", boxShadow: "0 1px 1px rgba(0,0,0,.06)", marginLeft: 18 }}>
-                  <span style={{ whiteSpace: "pre-wrap" }}>{WA_METIN}</span>
+                  <span style={{ whiteSpace: "pre-wrap" }}><WaYazi metin={WA_METIN} /></span>
                   <WaSaat cift={asama >= 4} />
                 </div>
                 <div className={`wa-balon${ac(4)}`} style={{ background: "#dcf3d0", borderRadius: 10, padding: "8px 10px 6px", marginTop: 8, marginLeft: 18 }}>
@@ -799,7 +810,7 @@ export function WhatsAppBolum() {
             </div>
             <div style={{ flex: "none", display: "flex", gap: 6, alignItems: "center", padding: "8px 8px 10px" }}>
               <div style={{ flex: 1, minWidth: 0, background: "#fff", borderRadius: 18, padding: "8px 12px", fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: asama < 2 ? "#1c2735" : "#94a3b2" }}>
-                {asama < 2 ? WA_METIN.split("\n").slice(0, 2).join(" ") : "Mesaj"}
+                {asama < 2 ? WA_METIN.split("\n").slice(0, 2).join(" ").replace(/\*/g, "") : "Mesaj"}
               </div>
               <span className={asama === 1 ? "wa-gonder wa-basili" : "wa-gonder"} aria-hidden="true" style={{ flex: "none", width: 32, height: 32, borderRadius: 16, background: "#16794c", color: "#fff", display: "grid", placeItems: "center" }}><Ikon ad="sag" boy={15} kalinlik={2.6} /></span>
             </div>
@@ -835,14 +846,14 @@ export function Fiyat() {
   const aylik = yillik ? (FIYAT * 10) / 12 : FIYAT;
   const toplam = aylik * n;
   const DAHIL = [
-    "Sınırsız servis raporu",
-    "5 hazır kontrol listesi + kendi şablonların",
-    "Firma logolu A4 rapor, tek tuşla PDF",
-    "WhatsApp'a hazır rapor özeti",
-    "Önce / sonra fotoğraf, parmakla imza",
-    "Müşteri geçmişi, kayıtlı cihazlar, arşiv arama",
-    "Bekleyen tahsilat ve sonraki bakım takibi",
-    "JSON yedek indir / yükle",
+    "Sınırsız servis raporu: yoğun ayda da aynı fiyat",
+    "5 hazır kontrol listesi ve istediğin kadar kendi şablonun",
+    "Logolu, kurumsal A4 rapor; tek dokunuşla PDF",
+    "Müşterinin WhatsApp'ına hazır rapor mesajı",
+    "İtirazı bitiren kanıt: önce / sonra fotoğraf ve imza",
+    "Numarayla müşteri geçmişi, kayıtlı cihazlar, arşiv arama",
+    "Tahsil bekleyenler ve yaklaşan bakımlar tek ekranda",
+    "Tek dosyalık yedek: telefon değişse de kayıtların seninle",
   ];
   return (
     <div>
@@ -889,7 +900,7 @@ export function Fiyat() {
         </div>
 
         <div className="card" style={{ borderRadius: 20, padding: 26 }}>
-          <div className="mini" style={{ color: "var(--muted)" }}>Dahil olanlar</div>
+          <div className="mini" style={{ color: "var(--muted)" }}>Pakete dahil, ek ücret yok</div>
           <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 0", display: "grid", gap: 11 }}>
             {DAHIL.map((x) => (
               <li key={x} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, fontWeight: 600 }}>
@@ -898,7 +909,7 @@ export function Fiyat() {
             ))}
           </ul>
           <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)", display: "grid", gap: 9 }}>
-            {["Merkezi bulut arşivi (kurulumda eklenir)", "E-fatura (bu bir iş teslim raporudur)"].map((x) => (
+            {["Merkezi bulut arşivi: istenirse kurulumda eklenir", "E-fatura: Fixnote iş teslim raporu üretir, fatura yerine geçmez"].map((x) => (
               <div key={x} style={{ display: "flex", gap: 10, fontSize: 13.5, color: "var(--faint)", fontWeight: 600 }}><Ikon ad="carpi" boy={16} style={{ marginTop: 1 }} />{x}</div>
             ))}
           </div>
