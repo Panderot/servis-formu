@@ -78,9 +78,9 @@ export default function Home() {
             <span className="hero-word" style={{ animationDelay: "70ms" }}>kapıda</span>{" "}
             <span className="hero-word" style={{ animationDelay: "140ms" }}>biter,</span>
             <br />
-            <span className="hero-word hero-mark" style={{ animationDelay: "260ms", color: "var(--accent)" }}>akşamın</span>{" "}
-            <span className="hero-word hero-mark" style={{ animationDelay: "330ms", color: "var(--accent)" }}>sana</span>{" "}
-            <span className="hero-word hero-mark" style={{ animationDelay: "400ms", color: "var(--accent)" }}>kalır.</span>
+            <span className="hero-word" style={{ animationDelay: "260ms", color: "var(--accent)" }}>akşamın</span>{" "}
+            <span className="hero-word" style={{ animationDelay: "330ms", color: "var(--accent)" }}>sana</span>{" "}
+            <span className="hero-word" style={{ animationDelay: "400ms", color: "var(--accent)" }}>kalır.</span>
           </h1>
           <p className="sub mx-auto hero-rise" style={{ maxWidth: 640, marginTop: 20, fontSize: 16 }}>
             Formu telefonda doldur, müşteriye ekranda imzalat. Firma başlıklı A4 rapor anında hazır; PDF olarak kaydet, WhatsApp&apos;tan gönder.
