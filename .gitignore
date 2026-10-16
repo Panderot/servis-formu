@@ -9,3 +9,4 @@ next-env.d.ts
 !.env.example
 fixnote-tasarim-goal-prompt.txt
 sil.sh
+.env*
