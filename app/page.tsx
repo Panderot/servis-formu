@@ -394,7 +394,7 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer style={{ background: "var(--dark)", color: "rgba(255,255,255,.66)", overflow: "hidden" }}>
-        <div className="mx-auto max-w-[900px] px-4 pt-16">
+        <div className="mx-auto max-w-[900px] px-4 pt-16 pb-10 md:pb-12">
           <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
@@ -418,7 +418,6 @@ export default function Home() {
             <span>Bu bir e-fatura değil, iş teslim raporudur.</span>
           </div>
         </div>
-        <div aria-hidden="true" style={{ textAlign: "center", fontWeight: 800, fontSize: "clamp(56px, 12vw, 170px)", letterSpacing: "-0.06em", lineHeight: 0.8, color: "#243246", marginTop: 30, marginBottom: -18, whiteSpace: "nowrap" }}>Fixnote</div>
       </footer>
     </main>
   );

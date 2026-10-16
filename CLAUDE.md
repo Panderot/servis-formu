@@ -2,7 +2,7 @@
 
 Kullanıcı "Kuruluma başla" dediğinde sırayla sor, cevaba göre değişiklikleri sen yap:
 
-1) **Marka adı** (vars. Fixnote). Değişecek yerler: `app/page.tsx` (yüzen nav, hero maketleri, footer ve dev soluk marka yazısı, metinler), `app/components/LandingParcalar.tsx` (fiyat kartı), `app/app/page.tsx` (yan menü ve mobil üst bar), `app/layout.tsx` (title/description).
+1) **Marka adı** (vars. Fixnote). Değişecek yerler: `app/page.tsx` (yüzen nav, hero maketleri, footer, metinler), `app/components/LandingParcalar.tsx` (fiyat kartı), `app/app/page.tsx` (yan menü ve mobil üst bar), `app/layout.tsx` (title/description).
 2) **Logo** (aşağıdaki "Logo ekleme" bölümü, marka adından hemen sonra).
 3) **Aksan renk** (vars. petrol mavisi `#0d5b73`, tek aksan) → `app/globals.css` içinde `--accent`, koyu tonu `--accent-ink` (`#08455a`), yıkama tonu `--accent-soft` (`#e3f0f3`), `--accent-mark` #c9e2ea (başlık vurgu çizgisi). Butonlarda yazı beyazdır; çok açık bir renk seçilirse `.btn` içindeki `color: #fff` değerini `var(--ink)` yap. A4 raporda renk sabit yazılıdır: `app/components/RaporSayfa.tsx` içinde `#0d5b73`, `#e3f0f3`, `#08455a` değerlerini aynı renge çevir. Landing'deki mini çubuk grafikte açık ton `#a9cfdb` ve koyu bantlardaki tik rengi `#7cc4d6` de aksanın açık tonlarıdır.
    Diğer renkler (`app/globals.css`): zemin `--bg #f3f5f7`, mürekkep `--ink #1c2735`, ikincil `--muted #5f7284`, çizgi `--line #e6ebf0`, koyu bant/footer `--dark #1c2735`. Gradyan kullanma.

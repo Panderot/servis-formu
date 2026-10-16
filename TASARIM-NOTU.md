@@ -21,7 +21,7 @@ Referans: `yeni-kitler/ref/servisformu/valideo-0..4.jpg` + `tasarim-icerik.json`
 | SSS | Ortalanmış, beyaz yuvarlak kartlar, ilki açık, turuncu ok | İtiraz kırma | Aynı, 7 soru |
 | makaleler | Blog kartları | SEO | **ALINMADI** (blog yok) |
 | son CTA | Gri zemin, hap rozet "Démo de 15 minutes", başlık, turuncu buton | Kapanış | "2 dakikada dene" rozeti, "Bir sonraki servisi kağıtsız kapat." |
-| footer | Lacivert, logo + açıklama, 3 sütun, dev soluk marka yazısı | Kapanış | Aynı; dev "Servis Formu" yazısı düz, bir ton açık lacivert (gradyan yok) |
+| footer | Lacivert, logo + açıklama, 3 sütun, dev soluk marka yazısı | Kapanış | Lacivert, logo + açıklama, 3 sütun. Dev soluk marka yazısı referansın imzası olduğu için kaldırıldı. |
 
 ## 2. Tipografi (ölçülen → kullanılan)
 Referansın tek yüzü **Manrope** (400-800). Google Fonts'ta var; aynısı `next/font/google` ile, `subsets: ["latin","latin-ext"]` (ş ğ ı İ ç ö ü kontrol edildi). İkinci bir yüz yok; rakamlar `tabular-nums`.
