@@ -62,7 +62,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/app" className="hidden sm:inline" style={{ fontSize: 13.5, fontWeight: 700 }}>Uygulamayı aç</Link>
-            <Link href="/app?yeni=1" className="btn" style={{ padding: "9px 14px", fontSize: 13, borderRadius: 11 }}>İlk raporu oluştur</Link>
+            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ padding: "9px 14px", fontSize: 13, borderRadius: 11 }}>İlk raporu oluştur</a>
           </div>
         </nav>
       </div>
@@ -86,8 +86,8 @@ export default function Home() {
             Formu telefonda doldur, müşteriye ekranda imzalat. Firma başlıklı A4 rapor anında hazır; PDF olarak kaydet, WhatsApp&apos;tan gönder.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2.5 hero-rise">
-            <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
-            <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</Link>
+            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</a>
+            <a href="#rapor" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</a>
           </div>
         </div>
         <HeroMaket />
@@ -173,7 +173,7 @@ export default function Home() {
             </ul>
             <div style={{ marginTop: 18, fontSize: 13.5, fontWeight: 600, color: "var(--muted)" }}>
               Kurulum yok, kart yok.{" "}
-              <Link href="/app?yeni=1" style={{ color: "var(--accent)", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>İlk raporu 2 dakikada oluştur<Ikon ad="ok" boy={14} /></Link>
+              <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" style={{ color: "var(--accent)", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>İlk raporu 2 dakikada oluştur<Ikon ad="ok" boy={14} /></a>
             </div>
           </GorununceOynat>
           <SureHesap />
@@ -274,8 +274,8 @@ export default function Home() {
             </div>
           </GorununceOynat>
           <div className="mt-12 flex flex-wrap justify-center gap-2.5">
-            <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
-            <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</Link>
+            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</a>
+            <a href="#rapor" className="btn btn-ghost" style={{ minWidth: 190 }}>Örnek raporları gör</a>
           </div>
         </div>
       </section>
@@ -310,7 +310,7 @@ export default function Home() {
           </div>
           <SablonEditoru />
           <div className="mt-10 flex flex-wrap justify-center gap-2.5">
-            <Link href="/app?yeni=1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</Link>
+            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>İlk raporu oluştur</a>
             <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>Uygulamayı aç</Link>
           </div>
         </div>
@@ -388,7 +388,7 @@ export default function Home() {
           <span className="eyebrow">3 gün ücretsiz dene</span>
           <h2 className="h2 mt-4">Bir sonraki servisi<br />kağıtsız teslim et.</h2>
           <p className="sub mt-3">Telefonunun tarayıcısında aç, ilk raporunu hemen oluştur. Kurulum gerekmez, kredi kartı istenmez.</p>
-          <Link href="/app?yeni=1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>İlk raporu oluştur</Link>
+          <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>İlk raporu oluştur</a>
         </div>
       </section>
 

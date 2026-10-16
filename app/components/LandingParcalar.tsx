@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
 import Ikon from "./Ikon";
@@ -779,8 +778,8 @@ export function WhatsAppBolum() {
           ))}
         </div>
         <div className="mt-7 flex flex-wrap gap-2.5">
-          <Link href="/app?yeni=1" className="btn">İlk raporu oluştur</Link>
-          <Link href="/app" className="btn btn-ghost">Örnek raporları gör</Link>
+          <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn">İlk raporu oluştur</a>
+          <a href="#rapor" className="btn btn-ghost">Örnek raporları gör</a>
         </div>
       </div>
       <div style={{ background: "var(--dark)", borderRadius: 22, padding: "36px 16px 0", display: "flex", justifyContent: "center", overflow: "hidden", height: 470 }}>
