@@ -91,6 +91,18 @@ textarea.field { resize: vertical; min-height: 76px; }
 }
 .chip:hover { border-color: var(--line-2); background: var(--panel); }
 .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+/* telefon ve tablet: parmakla basılan çipler en az 40 px yüksek */
+@media (max-width: 1023px) {
+  .chip { min-height: 40px; }
+}
+/* telefonda rapor detayındaki ikincil işlemler: ikon üstte, yazı altta, 4 eşit düğme */
+@media (max-width: 639px) {
+  .eylem { flex-direction: column; justify-content: center; gap: 4px; padding: 8px 4px; min-height: 56px; font-size: 12px; text-align: center; line-height: 1.2; }
+}
+/* çok dar telefonlar (360 px altı): 2 x 2 düzen, ikon yazının solunda */
+@media (max-width: 359px) {
+  .eylem { flex-direction: row; gap: 6px; min-height: 44px; font-size: 13px; }
+}
 
 /* kontrol listesi: satır + anahtar düğme */
 .check {

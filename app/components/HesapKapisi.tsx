@@ -122,18 +122,19 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
   return (
     <>
       <div className="no-print" data-hesap={durum.tur} style={{ background: "var(--ink)", color: "rgba(255,255,255,.72)", fontSize: 12.5, fontWeight: 600 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "7px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "7px 16px" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, minWidth: 0 }}>
-            <Ikon ad="saat" boy={14} style={{ color: "#7cc4d6", flex: "none" }} />
+            {/* very narrow phones (under 380 px) get a shorter text and no clock icon so the bar stays on one line */}
+            <Ikon ad="saat" boy={14} className="hidden min-[380px]:block" style={{ color: "#7cc4d6", flex: "none" }} />
             {durum.tur === "deneme" ? (
-              <span>Ücretsiz deneme: <b style={{ color: "#fff" }}>{durum.kalanGun} gün kaldı</b></span>
+              <span><span className="hidden min-[380px]:inline">Ücretsiz deneme: </span><span className="min-[380px]:hidden">Deneme: </span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{durum.kalanGun} gün kaldı</b></span>
             ) : (
-              <span>Aboneliğin aktif · {tarih(durum.bitis)} tarihine kadar</span>
+              <span><span className="hidden min-[380px]:inline">Aboneliğin aktif · {tarih(durum.bitis)} tarihine kadar</span><span className="min-[380px]:hidden">Abonelik aktif · bitiş {tarih(durum.bitis)}</span></span>
             )}
           </span>
-          {durum.tur === "deneme" && <a href={MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3 }}>Aboneliğe geç</a>}
+          {durum.tur === "deneme" && <a href={MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>Aboneliğe geç</a>}
           <span className="hidden sm:inline" style={{ marginLeft: "auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{durum.eposta}</span>
-          <button onClick={cikis} className="ml-auto sm:ml-0 hover:text-white" style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", padding: 0, flex: "none" }}>Çıkış</button>
+          <button onClick={cikis} className="ml-auto sm:-ml-2 hover:text-white" style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", flex: "none", padding: "11px 8px", marginTop: -11, marginBottom: -11, marginRight: -8 }}>Çıkış</button>
         </div>
       </div>
       {children}

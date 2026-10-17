@@ -74,9 +74,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   useEffect(() => {
     if (!hazir || yeniAcildi.current) return;
     yeniAcildi.current = true;
-    if (new URLSearchParams(window.location.search).get("yeni") === "1") {
+    const q = new URLSearchParams(window.location.search);
+    if (q.get("yeni") === "1") {
       setTaslak(bosRapor(firma, raporlar));
       setGor("form");
+      // drop ?yeni=1 so a refresh or the browser's address suggestion does not reopen the form
+      q.delete("yeni");
+      const kalan = q.toString();
+      window.history.replaceState(window.history.state, "", window.location.pathname + (kalan ? `?${kalan}` : "") + window.location.hash);
     }
   }, [hazir, firma, raporlar]);
 
@@ -157,7 +162,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           <div data-demo-serit className="no-print" style={{ background: "var(--ink)", color: "rgba(255,255,255,.75)", fontSize: 12.5, fontWeight: 600 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 16px" }}>
               <span style={{ minWidth: 0 }}><b style={{ color: "#fff" }}>Demo:</b> örnek kayıtlarla dene. Değişiklikler sadece bu tarayıcıda kalır.</span>
-              <a href={KAYIT_LINKI} style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, marginLeft: "auto" }}>Ücretsiz hesap aç</a>
+              <a href={KAYIT_LINKI} style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", display: "inline-block", padding: "11px 6px", marginTop: -11, marginBottom: -11, marginRight: -6, marginLeft: "auto" }}>Ücretsiz hesap aç</a>
             </div>
           </div>
         )}
@@ -205,7 +210,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           <div style={{ minWidth: 0 }}>
             {/* Mobil üst bar */}
             <header className="flex lg:hidden no-print" style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,255,255,.92)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)", padding: "10px 16px", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <Link href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8 }}>
+              <Link href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "8px 0", margin: "-8px 0" }}>
                 <Isaret boy={22} />Fixnote
               </Link>
               {demoVar ? <span className="pill acc">Demo mod</span> : d && (d.hata || d.cevrimdisi || d.bekleyen) ? (
@@ -224,11 +229,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
         {/* Mobil alt sekme */}
         {gor !== "form" && (
-          <nav className="grid lg:hidden" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, background: "var(--paper)", borderTop: "1px solid var(--line)", gridTemplateColumns: "1fr 1fr 1.25fr 1fr", alignItems: "center", padding: "6px 8px calc(6px + env(safe-area-inset-bottom))", boxShadow: "0 -8px 24px rgba(16,39,58,.06)" }}>
+          <nav className="grid lg:hidden" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, background: "var(--paper)", borderTop: "1px solid var(--line)", gridTemplateColumns: "1fr 1fr 1.4fr 1fr", alignItems: "center", padding: "6px 8px calc(6px + env(safe-area-inset-bottom))", boxShadow: "0 -8px 24px rgba(16,39,58,.06)" }}>
             {([["raporlar", "Raporlar", "belge"], ["musteriler", "Müşteriler", "kisiler"]] as const).map(([g, t, ik]) => (
               <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
             ))}
-            <button className="btn" style={{ padding: "11px 8px", fontSize: 13.5 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni form</button>
+            <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni form</button>
             <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />Ayarlar</button>
           </nav>
         )}
@@ -298,7 +303,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" style={{ marginTop: 16 }}>
             <div className="card col-span-2 lg:col-span-1" style={{ padding: "12px 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span className="mini">Bu ay rapor</span><span className="pill ok" style={{ fontSize: 9.5 }}>%{oz.imzali} imzalı</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 17 }}><span className="mini">Bu ay rapor</span>{oz.adet > 0 && <span className="pill ok" style={{ fontSize: 9.5 }}>%{oz.imzali} imzalı</span>}</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginTop: 4 }}>
                 <span className="num" style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.1 }}>{oz.adet}</span>
                 <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
@@ -313,12 +318,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             </div>
             {[
               ["Bu ay tutar", tl(oz.ciro), <span key="k" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>KDV dahil</span>],
-              ["Tahsil bekleyen", tl(oz.bekleyen), bekleyenN ? <span key="b" className="pill warn">{bekleyenN} rapor</span> : <span key="b" className="pill ok">Hepsi tahsil</span>],
+              ["Tahsil bekleyen", tl(oz.bekleyen), bekleyenN ? <span key="b" className="pill warn">{bekleyenN} rapor</span> : raporlar.length ? <span key="b" className="pill ok">Hepsi tahsil</span> : null],
               ["Müşteri", String(mList.length), <span key="m" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{raporlar.length} raporda</span>],
             ].map(([k, v, alt]) => (
               <div key={k as string} className={`card ${k === "Müşteri" ? "hidden lg:block" : ""}`} style={{ padding: "12px 14px" }}>
                 <span className="mini">{k as string}</span>
-                <div className="num" style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6, whiteSpace: "nowrap" }}>{v as string}</div>
+                <div className="num" style={{ fontSize: "clamp(16px, 5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6, whiteSpace: "nowrap" }}>{v as string}</div>
                 <div style={{ marginTop: 2 }}>{alt}</div>
               </div>
             ))}
@@ -326,7 +331,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           {yaklasan.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><b style={{ fontSize: 14 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>tıkla, aynı müşteriye form aç</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "2px 10px" }}><b style={{ fontSize: 14 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>tıkla, aynı müşteriye form aç</span></div>
               <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
                 {yaklasan.map((x, i) => {
                   const f = gunFark(x.sonrakiBakim);
@@ -357,9 +362,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   <input className="field" style={{ paddingLeft: 36 }} placeholder="Müşteri, telefon, rapor no, seri no" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Raporlarda ara" />
                 </div>
                 <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
-                  <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 10px", fontSize: 12.5 }} onClick={() => setFiltre("")}>Tümü</button>
+                  <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>Tümü</button>
                   {sablonlar.map((s) => (
-                    <button key={s.id} className={`chip ${filtre === s.id ? "on" : ""}`} style={{ padding: "5px 10px", fontSize: 12.5, whiteSpace: "nowrap" }} onClick={() => setFiltre(s.id)}>{s.ad}</button>
+                    <button key={s.id} className={`chip ${filtre === s.id ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flex: "none" }} onClick={() => setFiltre(s.id)}>{s.ad}</button>
                   ))}
                 </div>
               </div>
@@ -367,7 +372,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 <div style={{ padding: 28, textAlign: "center", color: "var(--muted)", fontWeight: 600 }}>
                   {raporlar.length ? "Aramaya uyan rapor yok." : "Henüz rapor yok. İlk servis formunu oluştur."}
                   <div><button className="btn" style={{ marginTop: 14 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni servis formu</button></div>
-                  {bulut && !raporlar.length && <div style={{ marginTop: 10, fontSize: 13 }}>Önce nasıl göründüğüne bakmak istersen: <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap" }}>Örnek kayıtlarla dene</a></div>}
+                  {bulut && !raporlar.length && <div style={{ marginTop: 14, fontSize: 13 }}>Önce nasıl göründüğüne bakmak istersen: <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>Örnek kayıtlarla dene</a></div>}
                 </div>
               )}
               <div>
@@ -379,7 +384,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                         <span className="doc-ico" style={r && r.id === x.id ? { background: "var(--accent-soft)", color: "var(--accent)" } : undefined}><Ikon ad="belge" boy={15} /></span>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: ".01em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.no} · {x.musteri.ad.toLocaleUpperCase("tr-TR")}</span>
+                            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: ".01em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.musteri.ad.trim() ? x.musteri.ad.toLocaleUpperCase("tr-TR") : x.no}</span>
                             <span className="num" style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 700, whiteSpace: "nowrap" }}>{tarihTR(x.tarih)}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 3, fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>
@@ -390,6 +395,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                             <OdemePill o={x.odeme} />
                             {x.imza ? <span className="pill mute">İmzalı</span> : <span className="pill bad">İmzasız</span>}
                             {x.fotolar.length > 0 && <span className="pill mute">{x.fotolar.length} foto</span>}
+                            {x.musteri.ad.trim() && <span className="num" style={{ marginLeft: "auto", fontSize: 11, color: "var(--faint)", fontWeight: 700, whiteSpace: "nowrap" }}>{x.no}</span>}
                           </div>
                         </div>
                       </div>
@@ -417,15 +423,15 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                       </div>
                     </div>
                     <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-                      <button className="btn btn-dark" style={{ padding: "11px 12px" }} onClick={() => pdf(r)}><Ikon ad="indir" boy={15} />PDF olarak kaydet</button>
-                      <button className="btn btn-wa" style={{ padding: "11px 12px" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} />WhatsApp&apos;la gönder</button>
+                      <button className="btn btn-dark" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => pdf(r)}><Ikon ad="indir" boy={15} /><span className="sm:hidden">PDF kaydet</span><span className="hidden sm:inline">PDF olarak kaydet</span></button>
+                      <button className="btn btn-wa" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} /><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">WhatsApp&apos;la gönder</span></button>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-                    <button className="chip" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />Düzenle</button>
-                    <button className="chip" onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} />Bu müşteriye yeni form</button>
-                    <button className="chip" onClick={() => { setMusteriSec(waNumara(r.musteri.telefon) || r.musteri.ad.toLocaleLowerCase("tr-TR")); setGor("musteriler"); }}><Ikon ad="saat" boy={14} />Müşteri geçmişi</button>
-                    <button className="chip" style={{ color: "var(--bad)" }} onClick={() => sil(r)}>Sil</button>
+                  <div className="grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap" style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+                    <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />Düzenle</button>
+                    <button className="chip eylem" aria-label="Bu müşteriye yeni form" onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">Yeni form</span><span className="hidden sm:inline">Bu müşteriye yeni form</span></button>
+                    <button className="chip eylem" aria-label="Müşteri geçmişi" onClick={() => { setMusteriSec(waNumara(r.musteri.telefon) || r.musteri.ad.toLocaleLowerCase("tr-TR")); setGor("musteriler"); }}><Ikon ad="saat" boy={14} /><span className="sm:hidden">Geçmiş</span><span className="hidden sm:inline">Müşteri geçmişi</span></button>
+                    <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />Sil</button>
                   </div>
                 </div>
                 <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 16, padding: 12 }}>
@@ -464,16 +470,16 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
 
           {/* Adım göstergesi */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${ADIMLAR.length}, 1fr)`, gap: 4, marginTop: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${ADIMLAR.length}, 1fr)`, gap: 4, marginTop: 4 }}>
             {ADIMLAR.map((a, i) => (
-              <button key={a} onClick={() => setAdim(i)} aria-label={`${i + 1}. adım: ${a}`} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left" }}>
+              <button key={a} onClick={() => setAdim(i)} aria-label={`${i + 1}. adım: ${a}`} style={{ background: "none", border: "none", padding: "10px 0 8px", cursor: "pointer", textAlign: "left", minWidth: 0 }}>
                 <div style={{ height: 4, borderRadius: 3, background: i <= adim ? "var(--accent)" : "var(--line-2)", opacity: i < adim ? 0.45 : 1 }} />
                 <div style={{ fontSize: 11, fontWeight: 800, marginTop: 6, color: i === adim ? "var(--ink)" : "var(--faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a}</div>
               </button>
             ))}
           </div>
 
-          <div className="card" style={{ padding: 16, marginTop: 14 }}>
+          <div className="card" style={{ padding: 16, marginTop: 6 }}>
             <div className="mini" style={{ color: "var(--accent)" }}>Adım {adim + 1} / {ADIMLAR.length}</div>
             <h2 style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.03em", margin: "2px 0 16px" }}> {["Müşteri bilgisi", "Cihaz ve şikayet", "Yapılan işlemler", "Parça, işçilik, KDV", "Önce / sonra fotoğrafları", "Müşteri imzası"][adim]}</h2>
 
@@ -553,7 +559,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   </div>
                 ))}
                 <button className="chip" style={{ justifySelf: "start" }} onClick={() => set({ parcalar: [...t.parcalar, { id: uid(), ad: "", adet: 1, fiyat: 0 }] })}>+ Parça ekle</button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   <div><label className="lbl" htmlFor="isc">İşçilik (TL, KDV hariç)</label><input id="isc" className="field" type="number" inputMode="decimal" min={0} value={t.iscilik || ""} onChange={(e) => set({ iscilik: parseFloat(e.target.value) || 0 })} /></div>
                   <div>
                     <div className="lbl">KDV oranı</div>
@@ -644,9 +650,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           <label className="lbl" htmlFor="tes">Tespit ve yapılan iş</label>
           <textarea id="tes" className="field" placeholder="Arızanın nedeni ve çözüm" value={t.tespit} onChange={(e) => set({ tespit: e.target.value })} />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <div><label className="lbl" htmlFor="sb">Sonraki bakım</label><input id="sb" className="field" type="date" value={t.sonrakiBakim} onChange={(e) => set({ sonrakiBakim: e.target.value })} /></div>
-          <div><label className="lbl" htmlFor="nt">Not (isteğe bağlı)</label><input id="nt" className="field" value={t.not} onChange={(e) => set({ not: e.target.value })} /></div>
+          <div><label className="lbl" htmlFor="nt">Not</label><input id="nt" className="field" placeholder="İsteğe bağlı" value={t.not} onChange={(e) => set({ not: e.target.value })} /></div>
         </div>
       </div>
     );
@@ -709,23 +715,24 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <div className="tag">Müşteri kartı</div>
             <h1 className="font-display" style={{ fontSize: 26, fontWeight: 800, margin: "6px 0 4px" }}>{m.ad}</h1>
             <div style={{ color: "var(--muted)", fontSize: 14 }}>{telefonGoster(m.telefon)}  |  {m.adres}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 14 }}>
+            {/* phones: one row per figure (label left, amount right) so large totals never overflow; wider screens: 3 tiles */}
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3 sm:gap-2" style={{ marginTop: 14 }}>
               {[["Servis", String(m.sayi)], ["Toplam", tl(m.toplam)], ["Bekleyen", tl(m.bekleyen)]].map(([k, v]) => (
-                <div key={k} style={{ background: "var(--bg)", borderRadius: 8, padding: "10px 12px" }}>
+                <div key={k} className="flex items-center justify-between gap-3 sm:block" style={{ background: "var(--bg)", borderRadius: 8, padding: "10px 12px", minWidth: 0 }}>
                   <div className="font-mono" style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".08em" }}>{k}</div>
-                  <div className="font-display" style={{ fontWeight: 800, fontSize: 17, marginTop: 2, whiteSpace: "nowrap" }}>{v}</div>
+                  <div className="font-display sm:mt-0.5" style={{ fontWeight: 800, fontSize: 17, whiteSpace: "nowrap" }}>{v}</div>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
-              <button className="btn" onClick={() => yeniMusteriden(m)}>+ Bu müşteriye yeni form</button>
-              <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}>Ara</a>
-              <a className="btn btn-wa" href={`https://wa.me/${waNumara(m.telefon)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" style={{ marginTop: 14 }}>
+              <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>+ Bu müşteriye yeni form</button>
+              <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}><Ikon ad="telefon" boy={15} />Ara</a>
+              <a className="btn btn-wa" href={`https://wa.me/${waNumara(m.telefon)}`} target="_blank" rel="noopener noreferrer"><Ikon ad="mesaj" boy={15} />WhatsApp</a>
             </div>
             {m.cihazlar.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <div className="lbl">Kayıtlı cihazlar</div>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{m.cihazlar.map((c, i) => <span key={i} className="pill mute" style={{ fontSize: 13, padding: "5px 10px" }}>{[c.tur, c.marka, c.model].filter(Boolean).join(" ")}{c.seriNo ? `  |  SN ${c.seriNo}` : ""}</span>)}</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{m.cihazlar.map((c, i) => <span key={i} className="pill mute" style={{ fontSize: 13, padding: "5px 10px", whiteSpace: "normal", maxWidth: "100%", overflowWrap: "anywhere", lineHeight: 1.4 }}>{[c.tur, c.marka, c.model].filter(Boolean).join(" ")}{c.seriNo ? `  |  SN ${c.seriNo}` : ""}</span>)}</div>
               </div>
             )}
           </div>

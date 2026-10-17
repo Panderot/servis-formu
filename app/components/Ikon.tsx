@@ -23,6 +23,7 @@ const YOL: Record<string, string> = {
   liste: "M9 6h11 M9 12h11 M9 18h11 M4 6h.01 M4 12h.01 M4 18h.01",
   geri: "M9 14l-5-5 5-5 M4 9h11a5 5 0 0 1 0 10h-3",
   yildiz: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
+  cop: "M4 7h16 M9 7V4h6v3 M6 7l1 14h10l1-14 M10 11v6 M14 11v6",
 };
 
 export default function Ikon({ ad, boy = 18, kalinlik = 1.9, className, style }: { ad: keyof typeof YOL | string; boy?: number; kalinlik?: number; className?: string; style?: React.CSSProperties }) {
