@@ -837,14 +837,12 @@ export function IsDongu() {
   );
 }
 
-// ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Fiyat dolarla belirlenir, ekranda TL. ----------
-// KUR: 1 ABD doları kaç TL (ayda bir güncellenir). TL tutarlar 5 TL'ye yuvarlanır.
-const KUR = 49.5;
-const PAKET = { usta: 10, firma: 25 }; // $ / ay, KDV hariç; yıllıkta 10 ay ödenir (2 ay hediye)
+// ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Sitede sadece ABD doları görünür. ----------
+// $, KDV hariç. ay: aylık ödeme; yil: yıllık peşin (aylığın %20 altı, 12'ye tam bölünür).
+const PAKET = { usta: { ay: 10, yil: 96 }, firma: { ay: 25, yil: 240 } };
 const KAYIT = "/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1";
-const tlYuvarla = (usd: number) => Math.round((usd * KUR) / 5) * 5;
-const tlYaz = (n: number) => tl(n).replace(",00", "");
-const dolar = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(2).replace(".", ",")} $`;
+const sent = (usd: number) => Math.round(usd * 100); // amounts are compared and shown in whole cents
+const dolar = (c: number) => `$${c % 100 === 0 ? c / 100 : (c / 100).toFixed(2).replace(".", ",")}`;
 const DAHIL = [
   "Sınırsız servis raporu: yoğun ayda da aynı fiyat",
   "5 hazır kontrol listesi ve istediğin kadar kendi şablonun",
@@ -865,18 +863,18 @@ function Madde({ children, koyu }: { children: React.ReactNode; koyu?: boolean }
   );
 }
 
-function FiyatSatiri({ usd, yillik, koyu }: { usd: number; yillik: boolean; koyu?: boolean }) {
+function FiyatSatiri({ p, yillik, koyu }: { p: { ay: number; yil: number }; yillik: boolean; koyu?: boolean }) {
   const soluk = koyu ? "rgba(255,255,255,.62)" : "var(--muted)";
-  const aylik = yillik ? tlYuvarla((usd * 10) / 12) : tlYuvarla(usd);
+  const aylik = sent(yillik ? p.yil / 12 : p.ay);
   return (
     <div data-fiyat-tutar>
       <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 8px" }}>
-        <span className="num" style={{ fontSize: "clamp(38px, 10vw, 48px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{tlYaz(aylik)}</span>
+        <span className="num" style={{ fontSize: "clamp(38px, 10vw, 48px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{dolar(aylik)}</span>
         <span style={{ fontSize: 14, color: soluk, fontWeight: 700 }}>/ ay</span>
-        {yillik && <s className="num" style={{ fontSize: 14, color: soluk, fontWeight: 600 }}>{tlYaz(tlYuvarla(usd))}</s>}
+        {yillik && <s className="num" style={{ fontSize: 14, color: soluk, fontWeight: 600 }}>{dolar(sent(p.ay))}</s>}
       </div>
       <div style={{ fontSize: 12.5, color: soluk, fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
-        {yillik ? <>Yıllık {tlYaz(tlYuvarla(usd * 10))} peşin ({dolar(usd * 10)}) · KDV hariç</> : <>Aylık {dolar(usd)} · KDV hariç</>}
+        {yillik ? <>Yıllık {dolar(sent(p.yil))} peşin · KDV hariç</> : <>Aylık ödeme · KDV hariç</>}
       </div>
     </div>
   );
@@ -885,9 +883,9 @@ function FiyatSatiri({ usd, yillik, koyu }: { usd: number; yillik: boolean; koyu
 export function Fiyat() {
   const [yillik, setYillik] = useState(true);
   const [ekip, setEkip] = useState(4);
-  const firmaAylik = yillik ? (PAKET.firma * 10) / 12 : PAKET.firma;
-  const kisiBasi = tlYuvarla(firmaAylik / ekip);
-  const ustaAylik = tlYuvarla(yillik ? (PAKET.usta * 10) / 12 : PAKET.usta);
+  const firmaAylik = yillik ? PAKET.firma.yil / 12 : PAKET.firma.ay;
+  const kisiBasi = sent(firmaAylik / ekip);
+  const ustaAylik = sent(yillik ? PAKET.usta.yil / 12 : PAKET.usta.ay);
   const soluk = "rgba(255,255,255,.62)";
   const cizgi = "rgba(255,255,255,.14)";
   const sayacDugme: React.CSSProperties = { width: 44, height: 44, border: "none", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 19, fontWeight: 700 };
@@ -898,7 +896,7 @@ export function Fiyat() {
           {[["Aylık", false], ["Yıllık", true]].map(([t, v]) => (
             <button key={String(t)} onClick={() => setYillik(v as boolean)} aria-pressed={yillik === v} style={{ border: "none", cursor: "pointer", borderRadius: 999, padding: "10px 20px", fontWeight: 700, fontSize: 13.5, background: yillik === v ? "var(--ink)" : "transparent", color: yillik === v ? "#fff" : "var(--muted)" }}>{t as string}</button>
           ))}
-          <span className="pill ok" style={{ marginRight: 6 }}>2 ay hediye</span>
+          <span className="pill ok" style={{ marginRight: 6 }}>%20 indirim</span>
         </div>
       </div>
 
@@ -910,9 +908,10 @@ export function Fiyat() {
             <span className="pill mute">1 teknisyen</span>
           </div>
           <p style={{ fontSize: 14, color: "var(--muted)", fontWeight: 600, margin: "6px 0 18px", lineHeight: 1.5 }}>Sahaya tek başına çıkan usta için. Raporun cebinde, akşamın sana kalır.</p>
-          <FiyatSatiri usd={PAKET.usta} yillik={yillik} />
+          <FiyatSatiri p={PAKET.usta} yillik={yillik} />
           <ul style={{ listStyle: "none", padding: 0, margin: "22px 0 0", display: "grid", gap: 11 }}>
             <Madde>1 teknisyen</Madde>
+            <Madde>Sınırsız servis raporu, rapor başına ücret yok</Madde>
             <Madde>1 telefon ya da tablet, ofiste 1 bilgisayar</Madde>
             <Madde>Raporların, müşterilerin ve fotoğrafların bulutta</Madde>
             <Madde>Ekip kurunca tek mesajla Firma'ya geçersin</Madde>
@@ -930,7 +929,7 @@ export function Fiyat() {
             <span style={{ fontSize: 11.5, fontWeight: 800, padding: "4px 10px", borderRadius: 999, background: "#7cc4d6", color: "var(--ink)", whiteSpace: "nowrap" }}>Sınırsız teknisyen</span>
           </div>
           <p style={{ fontSize: 14, color: soluk, fontWeight: 600, margin: "6px 0 18px", lineHeight: 1.5 }}>Ekibi olan servis firması için. Ekip kaç kişi olursa olsun tek fiyat.</p>
-          <FiyatSatiri usd={PAKET.firma} yillik={yillik} koyu />
+          <FiyatSatiri p={PAKET.firma} yillik={yillik} koyu />
 
           <div data-fiyat-ekip style={{ marginTop: 20, border: `1px solid ${cizgi}`, borderRadius: 14, padding: "12px 14px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
@@ -943,17 +942,19 @@ export function Fiyat() {
             </div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${cizgi}` }}>
               <span style={{ fontSize: 13, color: soluk, fontWeight: 600 }}>Kişi başı</span>
-              <span><b data-kisi-basi className="num" style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{tlYaz(kisiBasi)}</b><span style={{ fontSize: 12.5, color: soluk, fontWeight: 600 }}> / ay</span></span>
+              <span><b data-kisi-basi className="num" style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{dolar(kisiBasi)}</b><span style={{ fontSize: 12.5, color: soluk, fontWeight: 600 }}> / ay</span></span>
             </div>
             <div data-fiyat-kiyas style={{ fontSize: 12.5, color: "#7cc4d6", fontWeight: 700, marginTop: 4, textAlign: "right" }}>
-              {kisiBasi < ustaAylik ? `Usta paketinden kişi başı ${tlYaz(ustaAylik - kisiBasi)} ucuz` : "3. teknisyenden itibaren Usta'dan ucuz"}
+              {kisiBasi < ustaAylik ? `Usta paketinden kişi başı ${dolar(ustaAylik - kisiBasi)} ucuz` : "3. teknisyenden itibaren Usta'dan ucuz"}
             </div>
           </div>
 
           <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", display: "grid", gap: 11 }}>
             <Madde koyu>Sınırsız teknisyen ve cihaz</Madde>
+            <Madde koyu>Sınırsız servis raporu, rapor başına ücret yok</Madde>
             <Madde koyu>Ekibe yeni biri katılınca ek ücret yok</Madde>
             <Madde koyu>Bütün ekibin raporları ofiste tek ekranda</Madde>
+            <Madde koyu>Aşağıdaki her şey dahil</Madde>
           </ul>
           <div style={{ marginTop: "auto", paddingTop: 24 }}>
             <a href={KAYIT} className="btn" style={{ width: "100%", padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>3 gün ücretsiz dene</a>
@@ -961,7 +962,11 @@ export function Fiyat() {
         </div>
       </div>
 
-      <div style={{ fontSize: 12.5, color: "var(--muted)", textAlign: "center", marginTop: 14, fontWeight: 700 }}>Kart istemez · Sözleşme yok · İstediğin ay bırakırsın</div>
+      <div data-fiyat-guven style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "4px 16px", fontSize: 12.5, color: "var(--muted)", marginTop: 14, fontWeight: 700 }}>
+        {["Kart istemez", "Sözleşme yok", "Rapor başına ücret yok", "İstediğin ay bırakırsın"].map((x) => (
+          <span key={x} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}><Ikon ad="tik" boy={12} kalinlik={3} style={{ color: "var(--accent)" }} />{x}</span>
+        ))}
+      </div>
 
       <div className="card mt-8" style={{ borderRadius: 24, padding: "clamp(22px, 4vw, 30px)", boxShadow: "none" }}>
         <div className="mini" style={{ color: "var(--muted)" }}>İki pakette de dahil, ek ücret yok</div>
@@ -972,7 +977,7 @@ export function Fiyat() {
           <div><b style={{ color: "var(--ink)" }}>E-fatura değildir.</b> Fixnote iş teslim raporu üretir; faturanı bugünkü yönteminle kesersin.</div>
           <div><b style={{ color: "var(--ink)" }}>İnternet yokken de kaydeder.</b> Rapor telefonda bekler, bağlantı gelince hesabına gönderilir.</div>
           <div><b style={{ color: "var(--ink)" }}>Paket değiştirmek kolay.</b> Ekibin büyüyünce Firma'ya geçersin; hesabın ve kayıtların aynen kalır.</div>
-          <div><b style={{ color: "var(--ink)" }}>Fiyat dolarla belirlenir.</b> Ödeme TL olarak, ödeme günündeki kurla yapılır. TL tutarlar 1 $ = {tl(KUR, false)} TL ile hesaplandı.</div>
+          <div><b style={{ color: "var(--ink)" }}>Kurulum ücreti yok.</b> Hesabını açarsın, ilk raporu aynı gün yazarsın.</div>
         </div>
       </div>
     </div>

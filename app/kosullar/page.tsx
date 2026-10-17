@@ -25,8 +25,8 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["Abonelik ve ücretler", [[
     "Güncel fiyatlar ana sayfadaki Fiyat bölümünde yazar. Fiyatlara KDV dahil değildir.",
-    "İki paket vardır: Usta (bir teknisyen) ve Firma (sınırsız teknisyen). İkisi de aylık ya da yıllık açılır; yıllık ödemede 12 ay için 10 ayın ücreti ödenir.",
-    "Fiyatlar ABD doları üzerinden belirlenir. Ödeme ve fatura Türk lirasıdır; ödeme günündeki Türkiye Cumhuriyet Merkez Bankası döviz satış kuru uygulanır. Yıllık ödemede tutar ödeme günü sabitlenir.",
+    "İki paket vardır: Usta (bir teknisyen) ve Firma (sınırsız teknisyen). İkisi de aylık ya da yıllık açılır; yıllık peşin ödemede aylık fiyata göre %20 indirim uygulanır.",
+    "Fiyatlar ABD doları cinsindendir.",
     `Abonelik için ${E} adresine yazarsın. Ödeme ve fatura bilgileri sana bu yazışmada iletilir.`,
     "Abonelik süren bitince yenilemezsen uygulama yeniden kilitlenir; kayıtların hesabında kalır.",
     "Fiyatları değiştirirsek, değişiklik ödemesini yapmış olduğun dönemi etkilemez.",
