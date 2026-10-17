@@ -37,13 +37,13 @@ function Bildirim({ ik, kim, ne, t, d = 0, style }: { ik: string; kim: string; n
 
 // ================= SAYFA =================
 const SSS = [
-  ["Uygulama indirmem gerekiyor mu?", "Hayır. Fixnote telefonunun tarayıcısında açılır; mağazadan indirme ya da kurulum gerekmez. E-posta adresinle ya da Google hesabınla giriş yaparsın. İstersen ana ekrana kısayol ekler, tek dokunuşla açarsın. Form açıkken internet kesilse de doldurmaya devam edersin; kayıt telefona yazılır."],
+  ["Uygulama indirmem gerekiyor mu?", "Hayır. Fixnote telefonunun tarayıcısında açılır; mağazadan indirme ya da kurulum gerekmez. E-posta adresinle ya da Google hesabınla giriş yaparsın. İstersen ana ekrana kısayol ekler, tek dokunuşla açarsın. Form açıkken internet kesilse de doldurup kaydedersin; rapor telefonda bekler, bağlantı gelince hesabına gönderilir."],
   ["PDF nasıl oluşuyor?", "Rapor ekranındaki \"PDF olarak kaydet\" düğmesi raporu A4 düzeninde telefonun yazdırma ekranına gönderir. Orada \"PDF olarak kaydet\"i seçmen yeterli; Android'de ve iPhone'da aynı şekilde çalışır."],
   ["PDF WhatsApp'tan nasıl gönderiliyor?", "WhatsApp düğmesi, müşterinin numarasına rapor özetini hazır mesaj olarak açar: rapor no, yapılan işlemler, değişen parça, KDV'li toplam ve teknisyen. Kaydettiğin PDF'i aynı sohbete ekleyip gönderirsin. Numara 05xx diye yazılmış olsa da doğru biçime çevrilir."],
   ["Hangi işler için uygun?", "Müşterinin evinde ya da işyerinde iş yapıp teslim eden her servis için: kombi ve klima, beyaz eşya, ilaçlama, elektrik ve tesisat, asansör bakımı, kamera ve alarm kurulumu. Hazır şablonu olmayan işler için kendi kontrol listeni eklersin."],
   ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adını, cihaz türünü ve her satıra bir işlemi yazarsın. Şablon yeni formda hizmet türü olarak çıkar; maddeler işaretli gelir, yapılmayanı kapatırsın."],
   ["Bu bir e-fatura mı?", "Hayır. Fixnote bir iş teslim raporudur: ne yapıldı, hangi parça değişti, müşteri onayladı mı. Faturayı bugün kullandığın yöntemle kesmeye devam edersin."],
-  ["Kayıtlarım nerede saklanıyor?", "Servis kayıtların yalnızca kendi telefonunun tarayıcısında durur; sunucuya gönderilmez. Sunucuda sadece giriş için e-posta adresin ve deneme ya da abonelik bilgin tutulur. Ayarlar'dan tek dosyalık yedek indirirsin; telefon değişirse ya da kaybolursa son yedeğini yeni cihaza yüklersin. Düzenli yedek almanı öneririz."],
+  ["Kayıtlarım nerede saklanıyor?", "Raporların, fotoğrafların ve imzaların hesabında saklanır: Supabase altyapısında, Almanya'daki (Frankfurt) sunucularda. Kayıtları yalnızca hesabına giriş yapanlar görür. Aynı hesapla giren her telefonda aynı kayıtlar açılır; telefon değişse ya da kaybolsa da kayıtların kaybolmaz. İstersen Ayarlar'dan tek dosyalık yedek de indirebilirsin."],
 ];
 
 export default function Home() {
@@ -398,12 +398,12 @@ export default function Home() {
           <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
-              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>Saha servis ekipleri için dijital servis raporu: doldur, imzalat, WhatsApp&apos;tan gönder. Kayıtlar yalnızca senin cihazında saklanır.</p>
+              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>Saha servis ekipleri için dijital servis raporu: doldur, imzalat, WhatsApp&apos;tan gönder. Kayıtların hesabında saklanır, her telefondan açılır.</p>
             </div>
             {[
               ["Ürün", [["Nasıl çalışır", "#nasil"], ["Rapor", "#rapor"], ["Şablonlar", "#sablon"], ["Fiyat", "#fiyat"]]],
               ["Kimler için", [["Kombi ve klima", "#sablon"], ["Beyaz eşya", "#sablon"], ["İlaçlama", "#sablon"], ["Elektrik", "#sablon"]]],
-              ["Daha fazla", [["SSS", "#sss"], ["Uygulamayı aç", "/app"], ["Yeni form", "/app?yeni=1"]]],
+              ["Daha fazla", [["Demoyu dene", "/demo"], ["SSS", "#sss"], ["Uygulamayı aç", "/app"], ["Yeni form", "/app?yeni=1"]]],
             ].map(([b, l]) => (
               <div key={b as string}>
                 <div className="mini" style={{ color: "rgba(255,255,255,.45)" }}>{b as string}</div>

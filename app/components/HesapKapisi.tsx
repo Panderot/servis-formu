@@ -4,7 +4,7 @@ import Link from "next/link";
 import Ikon, { Isaret } from "./Ikon";
 import { ABONELIK_EPOSTA, DENEME_GUN, durumHesapla, supabase, type Durum } from "./supabase";
 
-// Guards /app: no session -> /giris, trial over -> lock screen. The panel itself is unchanged.
+// Guards /app: no session -> /giris, trial over -> lock screen. Records stay in the account (app/components/depo.ts).
 const ONBELLEK = "fixnote_abonelik"; // last known subscription end, so a paid user is not locked out offline
 const MAILTO = `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent("Fixnote abonelik")}`;
 const tarih = (d: Date) => d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -70,11 +70,14 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       }
       const k = oturum.user;
       let abonelik = onbellekOku(k.id);
-      const { data: satir, error } = await sb.from("abonelikler").select("bitis").eq("user_id", k.id).maybeSingle();
-      if (bitti) return;
-      if (!error) {
-        abonelik = (satir?.bitis as string | undefined) ?? null;
-        onbellekYaz(k.id, abonelik);
+      // Without internet the last known subscription is used at once (no retries, no waiting).
+      if (navigator.onLine) {
+        const { data: satir, error } = await sb.from("abonelikler").select("bitis").eq("user_id", k.id).retry(false).maybeSingle();
+        if (bitti) return;
+        if (!error) {
+          abonelik = (satir?.bitis as string | undefined) ?? null;
+          onbellekYaz(k.id, abonelik);
+        }
       }
       setDurum(durumHesapla(k.email ?? "", k.created_at, abonelik));
     })();
@@ -108,7 +111,7 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       <Ekran
         ikon="saat"
         baslik={durum.abonelik ? "Aboneliğin sona erdi" : "Deneme süren doldu"}
-        metin={<>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis)} tarihinde bitti.`} Kayıtların bu cihazda duruyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
+        metin={<>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis)} tarihinde bitti.`} Kayıtların hesabında saklanıyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
         alt={<>Giriş yapılan hesap: {durum.eposta}</>}
       >
         <a className="btn" href={MAILTO}>Abonelik için yaz</a>

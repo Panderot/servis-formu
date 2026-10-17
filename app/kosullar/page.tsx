@@ -16,22 +16,24 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["Hesap", [[
     "Hesap açarken gerçek ve sana ait bir e-posta adresi kullanırsın.",
-    "Şifreni kimseyle paylaşmazsın. Hesabında yapılan işlemlerden sen sorumlusun.",
+    "Firma hesabını, abonelikte belirttiğin sayıda kendi teknisyeninle kullanabilirsin. Hesabı kullanan herkes aynı kayıtları görür; şifreni bunların dışında kimseyle paylaşmazsın.",
+    "Hesabında yapılan işlemlerden sen sorumlusun.",
     `Hesabının izinsiz kullanıldığını düşünürsen hemen ${E} adresine yaz.`,
   ]]],
   ["Ücretsiz deneme", [
-    `Yeni hesap ${DENEME_GUN} gün ücretsiz deneme ile açılır ve kart istenmez. Deneme bitince uygulama kilitlenir. Kayıtların cihazında kalır; abonelik açılınca kaldığın yerden devam edersin.`,
+    `Yeni hesap ${DENEME_GUN} gün ücretsiz deneme ile açılır ve kart istenmez. Deneme bitince uygulama kilitlenir. Kayıtların hesabında saklanmaya devam eder; abonelik açılınca kaldığın yerden devam edersin.`,
   ]],
   ["Abonelik ve ücretler", [[
     "Güncel fiyatlar ana sayfadaki Fiyat bölümünde yazar. Fiyatlara KDV dahil değildir.",
     "Abonelik teknisyen başına, aylık ya da yıllık olarak açılır.",
     `Abonelik için ${E} adresine yazarsın. Ödeme ve fatura bilgileri sana bu yazışmada iletilir.`,
-    "Abonelik süren bitince yenilemezsen uygulama yeniden kilitlenir; kayıtların cihazında kalır.",
+    "Abonelik süren bitince yenilemezsen uygulama yeniden kilitlenir; kayıtların hesabında kalır.",
     "Fiyatları değiştirirsek, değişiklik ödemesini yapmış olduğun dönemi etkilemez.",
   ]]],
   ["Kayıtların ve yedek", [
-    "Servis kayıtların yalnızca cihazında saklanır. Tarayıcı verilerini silmek, cihazı değiştirmek ya da kaybetmek kayıtların kaybolmasına yol açabilir; bu kayıtlar sunucumuzda olmadığı için onları geri getiremeyiz.",
-    "Ayarlar'dan düzenli yedek almak senin sorumluluğundadır.",
+    "Servis kayıtların hesabında, altyapı sağlayıcımızın Almanya'daki sunucularında saklanır ve aynı hesapla giren her cihazda görünür.",
+    "İnternet yokken kaydettiğin rapor, bağlantı gelene kadar o cihazda bekler. Bu sırada tarayıcı verileri silinirse ya da cihaz kaybolursa henüz gönderilmemiş rapor kaybolabilir.",
+    "Kayıtlarını korumak için gereken özeni gösteririz. Yine de Ayarlar'dan ara sıra yedek indirmeni öneririz.",
   ]],
   ["Raporların içeriği ve müşteri bilgileri", [
     "Raporlara yazdığın bilgilerin doğruluğundan ve müşterilerinin kişisel verilerini KVKK'ya uygun işlemekten sen sorumlusun. Müşteri onayı bölümünü yalnızca müşterinin kendisi imzalar.",
@@ -43,10 +45,10 @@ const BOLUMLER: Bolum[] = [
     "Fixnote'u kesintisiz ve hatasız çalıştırmak için çalışırız, ancak bunu garanti edemeyiz. Bakım, güncelleme ya da altyapı sağlayıcılarından kaynaklanan kesintiler olabilir. Hizmeti geliştirirken özellikleri değiştirebiliriz.",
   ]],
   ["Sorumluluğun sınırı", [
-    "Fixnote olduğu gibi sunulur. Yürürlükteki hukukun izin verdiği ölçüde; cihazındaki kayıtların kaybolmasından, raporlara girilen bilgilerden ve dolaylı zararlardan (kâr kaybı gibi) sorumlu değiliz. Her durumda sorumluluğumuz, son 12 ayda Fixnote için ödediğin tutarla sınırlıdır.",
+    "Fixnote olduğu gibi sunulur. Yürürlükteki hukukun izin verdiği ölçüde; henüz gönderilmemiş kayıtların cihazında kaybolmasından, raporlara girilen bilgilerden ve dolaylı zararlardan (kâr kaybı gibi) sorumlu değiliz. Her durumda sorumluluğumuz, son 12 ayda Fixnote için ödediğin tutarla sınırlıdır.",
   ]],
   ["Hesabın kapatılması", [
-    `Hesabını istediğin zaman kapatabilirsin; bunun için ${E} adresine yaz. Hesap kapanınca sunucudaki hesap bilgilerin Gizlilik politikasına göre silinir, cihazındaki kayıtlar sende kalır.`,
+    `Hesabını istediğin zaman kapatabilirsin; bunun için ${E} adresine yaz. Hesap kapanınca hesap bilgilerin ve servis kayıtların Gizlilik politikasına göre silinir; kapatmadan önce Ayarlar'dan yedek indirebilirsin.`,
   ]],
   ["Değişiklikler", [
     "Bu koşulları güncellersek bu sayfadaki tarihi değiştiririz ve önemli değişiklikleri ayrıca duyururuz. Güncellemeden sonra Fixnote'u kullanmaya devam etmen, yeni koşulları kabul ettiğin anlamına gelir.",
@@ -60,7 +62,7 @@ export default function Kosullar() {
   return (
     <YasalSayfa
       baslik="Kullanım koşulları"
-      tarih="16 Ekim 2026"
+      tarih="17 Ekim 2026"
       giris="Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikası sayfasındadır."
       bolumler={BOLUMLER}
     />

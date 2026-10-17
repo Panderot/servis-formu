@@ -847,7 +847,7 @@ const DAHIL = [
   "İtirazı bitiren kanıt: önce / sonra fotoğraf ve imza",
   "Numarayla müşteri geçmişi, kayıtlı cihazlar, arşiv arama",
   "Tahsil bekleyenler ve yaklaşan bakımlar tek ekranda",
-  "Tek dosyalık yedek: telefon değişse de kayıtların seninle",
+  "Bulut arşiv: telefon değişse de raporların hesabında",
 ];
 export function Fiyat() {
   const [yillik, setYillik] = useState(false);
@@ -908,7 +908,7 @@ export function Fiyat() {
           </ul>
           <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)", display: "grid", gap: 7, fontSize: 12.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.5 }}>
             <div><b style={{ color: "var(--ink)" }}>E-fatura değildir.</b> Fixnote iş teslim raporu üretir; faturanı bugünkü yönteminle kesersin.</div>
-            <div><b style={{ color: "var(--ink)" }}>Bulut arşivi isteğe bağlı.</b> Kayıtlar telefonunda durur; merkezi arşiv istenirse kurulumda eklenir.</div>
+            <div><b style={{ color: "var(--ink)" }}>İnternet yokken de kaydeder.</b> Rapor telefonda bekler, bağlantı gelince hesabına gönderilir.</div>
           </div>
         </div>
       </div>
