@@ -912,7 +912,6 @@ export function Fiyat() {
           <ul style={{ listStyle: "none", padding: 0, margin: "22px 0 0", display: "grid", gap: 11 }}>
             <Madde>1 teknisyen</Madde>
             <Madde>Sınırsız servis raporu, rapor başına ücret yok</Madde>
-            <Madde>1 telefon ya da tablet, ofiste 1 bilgisayar</Madde>
             <Madde>Raporların, müşterilerin ve fotoğrafların bulutta</Madde>
             <Madde>Ekip kurunca tek mesajla Firma'ya geçersin</Madde>
             <Madde>Aşağıdaki her şey dahil</Madde>
