@@ -61,7 +61,7 @@ const SSS = {
     ["Hangi işler için uygun?", "Müşterinin evinde ya da işyerinde iş yapıp teslim eden her servis için: kombi ve klima, beyaz eşya, ilaçlama, elektrik ve tesisat, asansör bakımı, kamera ve alarm kurulumu. Hazır şablonu olmayan işler için kendi kontrol listeni eklersin."],
     ["Kendi kontrol listemi ekleyebilir miyim?", "Evet. Ayarlar'da şablon adını, cihaz türünü ve her satıra bir işlemi yazarsın. Şablon yeni formda hizmet türü olarak çıkar; maddeler işaretli gelir, yapılmayanı kapatırsın."],
     ["Bu bir e-fatura mı?", "Hayır. Fixnote bir iş teslim raporudur: ne yapıldı, hangi parça değişti, müşteri onayladı mı. Faturayı bugün kullandığın yöntemle kesmeye devam edersin."],
-    ["Kayıtlarım nerede saklanıyor?", "Raporların, fotoğrafların ve imzaların hesabında saklanır: Supabase altyapısında, Almanya'daki (Frankfurt) sunucularda. Kayıtları yalnızca hesabına giriş yapanlar görür. Aynı hesapla giren her telefonda aynı kayıtlar açılır; telefon değişse ya da kaybolsa da kayıtların kaybolmaz. İstersen Ayarlar'dan tek dosyalık yedek de indirebilirsin."],
+    ["Kayıtlarım nerede saklanıyor?", "Raporların, fotoğrafların ve imzaların hesabında, Supabase'in güvenli bulut sunucularında saklanır. Kayıtların sunucuya şifreli bağlantıyla gider ve orada da şifreli durur. Kayıtları yalnızca hesabına giriş yapanlar görür. Aynı hesapla giren her telefonda aynı kayıtlar açılır; telefon değişse ya da kaybolsa da kayıtların kaybolmaz. İstersen Ayarlar'dan tek dosyalık yedek de indirebilirsin."],
   ],
   en: [
     ["Do I need to download an app?", "No. Fixnote opens in your phone's browser; there is nothing to download or install from a store. You sign in with your email address or your Google account. If you like, add a shortcut to your home screen and open it with one tap. If the connection drops while a form is open, you can still fill it in and save it; the report waits on the phone and is sent to your account when you are back online."],
@@ -70,7 +70,7 @@ const SSS = {
     ["What kind of work is it for?", "Any service that does a job at the customer's home or business and hands it over: boilers and air conditioning, household appliances, pest control, electrical and plumbing work, lift maintenance, CCTV and alarm installation. For jobs without a ready-made template, you add your own checklist."],
     ["Can I add my own checklist?", "Yes. In Settings you enter the template name, the appliance type and one step per line. The template appears as a service type on the new form; its steps come ticked and you switch off any you skipped."],
     ["Is this an invoice?", "No. Fixnote is a job completion report: what was done, which part was replaced, whether the customer signed it off. Keep invoicing the way you do today."],
-    ["Where are my records stored?", "Your reports, photos and signatures are stored in your account on Supabase infrastructure, on servers in Germany (Frankfurt). Only people who sign in to your account can see them. Every phone that signs in to the same account sees the same records; if a phone is replaced or lost, your records are not. You can also download a single-file backup from Settings."],
+    ["Where are my records stored?", "Your reports, photos and signatures are stored in your account on Supabase's secure cloud servers. They travel over an encrypted connection and stay encrypted on the server. Only people who sign in to your account can see them. Every phone that signs in to the same account sees the same records; if a phone is replaced or lost, your records are not. You can also download a single-file backup from Settings."],
   ],
 };
 
@@ -433,7 +433,7 @@ export default function Home() {
             {[
               [c("Ürün", "Product"), [[c("Nasıl çalışır", "How it works"), "#nasil"], [c("Rapor", "Report"), "#rapor"], [c("Şablonlar", "Templates"), "#sablon"], [c("Fiyat", "Pricing"), "#fiyat"]]],
               [c("Kimler için", "Who it's for"), [[c("Kombi ve klima", "Boilers and air conditioning"), "#sablon"], [c("Beyaz eşya", "Appliances"), "#sablon"], [c("İlaçlama", "Pest control"), "#sablon"], [c("Elektrik", "Electrical"), "#sablon"]]],
-              [c("Daha fazla", "More"), [[c("Demoyu dene", "Try the demo"), "/demo"], [c("SSS", "FAQ"), "#sss"], [c("Uygulamayı aç", "Open the app"), "/app"], [c("Yeni form", "New form"), "/app?yeni=1"]]],
+              [c("Daha fazla", "More"), [[c("SSS", "FAQ"), "#sss"], [c("Uygulamayı aç", "Open the app"), "/app"], [c("Yeni form", "New form"), "/app?yeni=1"]]],
             ].map(([b, l]) => (
               <div key={b as string}>
                 <div className="mini" style={{ color: "rgba(255,255,255,.45)" }}>{b as string}</div>
