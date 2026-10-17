@@ -332,7 +332,7 @@ export default function Home() {
         <div className="mx-auto max-w-[1000px] px-4 py-20 md:py-28">
           <div className="text-center">
             <h2 className="h2">Ücretsiz dene, ekibin büyüdükçe ekle.</h2>
-            <p className="sub mt-3">3 gün bütün özellikler açık. Sonra teknisyen başına sabit ücret.</p>
+            <p className="sub mt-3">3 gün bütün özellikler açık, kart istemez. Sonra tek başınaysan Usta, ekibin varsa Firma.</p>
           </div>
           <div className="mt-12"><Fiyat /></div>
         </div>
