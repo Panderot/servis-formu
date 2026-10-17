@@ -29,7 +29,7 @@ Görünüm dosyaları (markalamada serbestçe değişir): `app/page.tsx` (landin
 
 "Logon var mı? Dosyayı (png/jpg/svg) bu klasöre bırakman yeterli, ben yerleştiririm."
 - Dosya verirse: `public/logo.png` olarak kopyala. Landing'deki nav ve footer'da marka adının yanındaki petrol mavisi tikli kareyi (`<Isaret />`, `app/components/Ikon.tsx`) bu logoyla değiştir (yükseklik ~28px, köşeleri hafif yuvarlat); uygulamanın yan menüsünde ve mobil üst barında da aynısını yap.
-- Aynı görseli `app/icon.png` olarak da kaydet; Next.js bunu otomatik favicon yapar.
+- Sekme simgesi (favicon) şu an marka işaretinden (petrol mavisi kare, beyaz tik) üretilmiş üç dosyadır: `app/icon.svg` (tarayıcı sekmesi), `app/favicon.ico` (16/32/48 px, eski tarayıcılar ve /favicon.ico), `app/apple-icon.png` (180 px, köşesiz tam kare; iPhone ana ekran kısayolu). Next.js bunları kendisi bağlar, `layout.tsx`'e bir şey yazılmaz. Logo dosyası gelirse bu üçünü aynı adlarla logodan yeniden üret (ico için 16, 32, 48 px; apple-icon için 180 px, saydam köşe bırakma).
 - Logo yoksa: "Sorun değil, marka adının yanında sade bir petrol mavisi tik işareti zaten var; logon hazır olunca dosyayı bırakman yeterli" de.
 - Not: Bu, ürünün (senin markanın) logosudur. Uygulamayı kullanan servis firmasının kendi logosu ise uygulama içinde **Firma ve şablonlar > Logo yükle** ile girilir ve A4 raporun başlığına basılır.
 - Logoyu yerleştirdikten sonra kullanıcıya ekranda nasıl göründüğünü kontrol ettir.
