@@ -10,6 +10,15 @@ export const metadata: Metadata = {
 const E = ABONELIK_EPOSTA;
 
 const BOLUMLER: Bolum[] = [
+  ["Veri sorumlusu", [
+    "Fixnote'u Motiq Automation Ltd sunar. Kişisel verilerin bakımından veri sorumlusu bu şirkettir:",
+    [
+    "Motiq Automation Ltd (İngiltere ve Galler'de kayıtlı özel limited şirket)",
+    "Şirket numarası: 17303276",
+    "Kayıtlı adres: 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Birleşik Krallık",
+    `E-posta: ${E}`,
+    ],
+  ]],
   ["Kısaca", [[
     "Servis kayıtların (müşteri bilgileri, raporlar, fotoğraflar, imzalar ve firma bilgilerin) hesabında saklanır: altyapı sağlayıcımız Supabase'in Almanya'daki (Frankfurt) sunucularında.",
     "Bu kayıtları yalnızca hesabına giriş yapanlar görür. Biz onlara yalnızca sen destek istediğinde ya da yasal bir zorunluluk olduğunda bakarız.",
@@ -77,6 +86,15 @@ const BOLUMLER: Bolum[] = [
 ];
 
 const BOLUMLER_EN: Bolum[] = [
+  ["Data controller", [
+    "Fixnote is provided by Motiq Automation Ltd, which is the data controller for your personal data:",
+    [
+    "Motiq Automation Ltd (a private limited company registered in England and Wales)",
+    "Company number: 17303276",
+    "Registered office: 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom",
+    `Email: ${E}`,
+    ],
+  ]],
   ["In short", [[
     "Your service records (customer details, reports, photos, signatures and your company details) are stored in your account: on the servers of our infrastructure provider Supabase in Germany (Frankfurt).",
     "Only people who sign in to your account can see these records. We look at them only when you ask for support or when the law requires it.",

@@ -10,6 +10,15 @@ export const metadata: Metadata = {
 const E = ABONELIK_EPOSTA;
 
 const BOLUMLER: Bolum[] = [
+  ["Hizmet sağlayıcı", [
+    "Fixnote'u Motiq Automation Ltd sunar. Bu koşullarda \"biz\" bu şirketi, \"sen\" Fixnote'u kullanan kişiyi ya da firmayı anlatır.",
+    [
+    "Motiq Automation Ltd (İngiltere ve Galler'de kayıtlı özel limited şirket)",
+    "Şirket numarası: 17303276",
+    "Kayıtlı adres: 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Birleşik Krallık",
+    `E-posta: ${E}`,
+    ],
+  ]],
   ["Hizmet", [
     "Fixnote, saha servis ekiplerinin servis raporunu telefondan doldurmasını, müşteriye ekranda imzalatmasını, A4 rapor ve PDF almasını ve raporu WhatsApp ile göndermesini sağlayan bir web uygulamasıdır.",
     "Fixnote bir iş teslim raporu üretir. E-fatura ya da mali belge değildir; faturanı bugünkü yönteminle kesmeye devam edersin.",
@@ -60,6 +69,15 @@ const BOLUMLER: Bolum[] = [
 ];
 
 const BOLUMLER_EN: Bolum[] = [
+  ["Service provider", [
+    "Fixnote is provided by Motiq Automation Ltd. In these terms, \"we\" means this company and \"you\" means the person or company using Fixnote.",
+    [
+    "Motiq Automation Ltd (a private limited company registered in England and Wales)",
+    "Company number: 17303276",
+    "Registered office: 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom",
+    `Email: ${E}`,
+    ],
+  ]],
   ["The service", [
     "Fixnote is a web app that lets field service teams fill in a service report on a phone, have the customer sign it on screen, get an A4 report and PDF, and send the report on WhatsApp.",
     "Fixnote produces a job completion report. It is not an invoice or a tax document; keep invoicing the way you do today.",
