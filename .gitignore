@@ -7,6 +7,9 @@ node_modules/
 next-env.d.ts
 .vercel
 !.env.example
-fixnote-tasarim-goal-prompt.txt
-sil.sh
 .env*
+
+# görev dosyaları ve araç çıktıları
+fixnote-*.txt
+.playwright-mcp/
+*.log
