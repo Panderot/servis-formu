@@ -251,7 +251,7 @@ export default function GirisFormu() {
               <>
                 {(mod === "giris" || mod === "kayit") && (
                   <>
-                    <button type="button" className="btn btn-ghost gr-dugme gr-google" disabled={kapali} onClick={google}>{c("Google ile devam et", "Continue with Google")}</button>
+                    <button type="button" className="btn btn-ghost gr-dugme gr-google" disabled={kapali} onClick={google}><img src="https://developers.google.com/static/identity/images/g-logo.png" alt="" width={18} height={18} style={{ flex: "none", marginRight: 2 }} />{c("Google ile devam et", "Continue with Google")}</button>
                     <div className="gr-ayrac">
                       <span />{c("ya da e-posta ile", "or with email")}<span />
                     </div>
