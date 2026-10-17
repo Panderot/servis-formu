@@ -1,11 +1,16 @@
 "use client";
 import { useEffect, useReducer, useRef, useState } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type Firma, type Rapor, type Sablon, DEMO_FIRMA, DEMO_RAPORLAR, uid, yeniNo } from "../lib/servis";
+import { type Dil, type Firma, type Rapor, type Sablon, DEMO_FIRMA, demoFirma, demoRaporlar, uid, yeniNo } from "../lib/servis";
 import { supabase } from "./supabase";
+import { aktifDil } from "../lib/dil";
+
+// Messages are written in the language in use at the moment they appear.
+const c = (tr: string, en: string) => (aktifDil() === "en" ? en : tr);
 
 // Where the panel keeps its records.
-// demo:  this browser only (localStorage fx_demo_*), seeded with the sample records. /demo
+// demo:  this browser only (localStorage fx_demo_* in Turkish, fx_demo_en_* in English), seeded with
+//        the sample records of that language. /demo
 // bulut: the signed-in account in Supabase (tables firmalar, raporlar; bucket rapor-dosyalari). /app
 //        Every change goes into an outbox in localStorage first, so a report saved without
 //        internet waits on the phone and is sent when the connection is back.
@@ -96,44 +101,53 @@ function hataTuru(e: unknown): HataTuru {
 }
 
 // ======================= DEMO (this browser only) =======================
-const DK = { firma: "fx_demo_firma", raporlar: "fx_demo_raporlar", sablon: "fx_demo_sablonlar", ilk: "fx_demo_baslatildi" };
+// Turkish keys stay as they were; the English demo keeps its own copy.
+const demoAnahtar = (dil: Dil) => {
+  const o = dil === "en" ? "fx_demo_en_" : "fx_demo_";
+  return { firma: o + "firma", raporlar: o + "raporlar", sablon: o + "sablonlar", ilk: o + "baslatildi" };
+};
 
-function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void): Depo {
+function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void, dil: Dil): Depo {
+  const DK = demoAnahtar(dil);
   const [hazir, setHazir] = useState(false);
-  const [firma, setFirma] = useState<Firma>(DEMO_FIRMA);
+  const [firma, setFirma] = useState<Firma>(demoFirma(dil));
   const [raporlar, setRaporlar] = useState<Rapor[]>([]);
   const [ozelSablon, setOzelSablon] = useState<Sablon[]>([]);
 
   useEffect(() => {
-    if (!aktif) return;
+    // dil !== aktifDil(): the first (server-language) render before the browser language applies
+    if (!aktif || dil !== aktifDil()) return;
     let ilk = false;
     try { ilk = !localStorage.getItem(DK.ilk); } catch {}
-    let f = DEMO_FIRMA;
-    let l = DEMO_RAPORLAR;
+    let f = demoFirma(dil);
+    let l = demoRaporlar(dil);
+    let s: Sablon[] = [];
     if (ilk) {
       try {
         localStorage.setItem(DK.ilk, "1");
-        localStorage.setItem(DK.firma, JSON.stringify(DEMO_FIRMA));
-        localStorage.setItem(DK.raporlar, JSON.stringify(DEMO_RAPORLAR));
+        localStorage.setItem(DK.firma, JSON.stringify(f));
+        localStorage.setItem(DK.raporlar, JSON.stringify(l));
       } catch {}
     } else {
       f = oku(DK.firma, BOS_FIRMA);
       l = oku<Rapor[]>(DK.raporlar, []);
-      setOzelSablon(oku<Sablon[]>(DK.sablon, []));
+      s = oku<Sablon[]>(DK.sablon, []);
     }
     setFirma(f);
     setRaporlar(l);
+    setOzelSablon(s);
     setHazir(true);
-  }, [aktif]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aktif, dil]);
 
   const yazRaporlar = (l: Rapor[]) => {
     try { localStorage.setItem(DK.raporlar, JSON.stringify(l)); setRaporlar(l); return true; }
-    catch { bildir("Depolama dolu: bazı fotoğrafları silip yeniden dene ya da Ayarlar'dan yedek alıp eski kayıtları temizle."); return false; }
+    catch { bildir(c("Depolama dolu: bazı fotoğrafları silip yeniden dene ya da Ayarlar'dan yedek alıp eski kayıtları temizle.", "Storage is full: delete some photos and try again, or download a backup in Settings and clear old records.")); return false; }
   };
   const firmaKaydet = (f: Firma) => {
     setFirma(f);
     try { localStorage.setItem(DK.firma, JSON.stringify(f)); return true; }
-    catch { bildir("Logo çok büyük, daha küçük bir dosya dene."); return false; }
+    catch { bildir(c("Logo çok büyük, daha küçük bir dosya dene.", "The logo is too large, try a smaller file.")); return false; }
   };
   const sablonKaydet = (l: Sablon[]) => { setOzelSablon(l); try { localStorage.setItem(DK.sablon, JSON.stringify(l)); } catch {} };
 
@@ -154,10 +168,10 @@ function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void): 
       if (d.firma) firmaKaydet(d.firma);
       yazRaporlar(d.raporlar.map(normal));
       if (Array.isArray(d.sablonlar)) sablonKaydet(d.sablonlar);
-      bildir(`${d.raporlar.length} rapor yüklendi`);
+      bildir(c(`${d.raporlar.length} rapor yüklendi`, `${d.raporlar.length} reports loaded`));
     },
-    ornekYukle: () => { firmaKaydet(DEMO_FIRMA); yazRaporlar(DEMO_RAPORLAR); bildir("Örnek kayıtlar yüklendi"); },
-    tumunuSil: async () => { yazRaporlar([]); bildir("Raporlar silindi"); },
+    ornekYukle: () => { firmaKaydet(demoFirma(dil)); yazRaporlar(demoRaporlar(dil)); bildir(c("Örnek kayıtlar yüklendi", "Sample records loaded")); },
+    tumunuSil: async () => { yazRaporlar([]); bildir(c("Raporlar silindi", "Reports deleted")); },
     yedekVerisi: async () => ({ firma, raporlar, sablonlar: ozelSablon }),
     coz: (r) => r,
     cozSrc: (s) => s,
@@ -368,8 +382,8 @@ class BulutMotor {
     } catch (e) {
       const t = hataTuru(e);
       if (t === "ag") this.cevrimdisi = true;
-      else if (t === "oturum") this.hata = "Oturumun kapanmış. Çıkış yapıp yeniden giriş yap.";
-      else this.hata = "Kayıtlar yüklenemedi. Sayfayı yenileyip tekrar dene.";
+      else if (t === "oturum") this.hata = c("Oturumun kapanmış. Çıkış yapıp yeniden giriş yap.", "Your session has ended. Sign out and sign in again.");
+      else this.hata = c("Kayıtlar yüklenemedi. Sayfayı yenileyip tekrar dene.", "Your records couldn't be loaded. Refresh the page and try again.");
     }
   }
   yenile() {
@@ -404,8 +418,8 @@ class BulutMotor {
             } catch (e) {
               const t = hataTuru(e);
               if (t === "ag") { this.cevrimdisi = true; break; }
-              if (t === "izin") { this.hata = "Deneme ya da abonelik süren bittiği için kayıtlar buluta gönderilemiyor."; break; }
-              if (t === "oturum") { this.hata = "Oturumun kapanmış. Çıkış yapıp yeniden giriş yap; kayıtların telefonda bekliyor."; break; }
+              if (t === "izin") { this.hata = c("Deneme ya da abonelik süren bittiği için kayıtlar buluta gönderilemiyor.", "Your trial or subscription has ended, so records can't be sent to the cloud."); break; }
+              if (t === "oturum") { this.hata = c("Oturumun kapanmış. Çıkış yapıp yeniden giriş yap; kayıtların telefonda bekliyor.", "Your session has ended. Sign out and sign in again; your records are waiting on this phone."); break; }
               atla.add(op.k);
               kalici = String((e as { message?: string })?.message || e).slice(0, 140);
             } finally {
@@ -413,7 +427,7 @@ class BulutMotor {
             }
             this.degisti();
           }
-          if (kalici) this.hata = `Bir kayıt gönderilemedi (${kalici}). Tekrar denenecek.`;
+          if (kalici) this.hata = c(`Bir kayıt gönderilemedi (${kalici}). Tekrar denenecek.`, `A record couldn't be sent (${kalici}). It will be retried.`);
           if (!this.kuyruk.length) this.onbellekYaz();
         } finally {
           this.gonderiliyor = false;
@@ -498,7 +512,7 @@ class BulutMotor {
         const eskiNo = r.no;
         r = { ...r, no: await this.bosNo(r) };
         this.kuyrukDegistir(op.k, { k: op.k, t: "r", r });
-        this.bildir(`${eskiNo} numarası başka bir telefonda kullanılmış. Bu rapor ${r.no} olarak kaydedildi.`, 8000);
+        this.bildir(c(`${eskiNo} numarası başka bir telefonda kullanılmış. Bu rapor ${r.no} olarak kaydedildi.`, `Number ${eskiNo} was already used on another phone. This report was saved as ${r.no}.`), 8000);
         continue;
       }
       throw error;
@@ -596,7 +610,7 @@ class BulutMotor {
     let n = 0;
     for (const r of raporlar) {
       if (varolan.has(r.id)) continue;
-      if (!this.kuyrukEkle({ k: uid() + uid(), t: "a", id: r.id })) { this.bildir("Telefonun depolama alanı dolu; aktarım tamamlanamadı."); return; }
+      if (!this.kuyrukEkle({ k: uid() + uid(), t: "a", id: r.id })) { this.bildir(c("Telefonun depolama alanı dolu; aktarım tamamlanamadı.", "Your phone's storage is full; the transfer couldn't finish.")); return; }
       n++;
     }
     const f = oku<Firma | null>("sf_firma", null);
@@ -610,7 +624,7 @@ class BulutMotor {
     try { localStorage.setItem(this.kA, "tamam"); } catch {}
     this.aktarim = null;
     this.degisti();
-    this.bildir(n ? `${n} rapor hesabına aktarılıyor` : "Bilgilerin hesabına aktarılıyor");
+    this.bildir(n ? c(`${n} rapor hesabına aktarılıyor`, `Moving ${n} reports to your account`) : c("Bilgilerin hesabına aktarılıyor", "Moving your details to your account"));
     this.gonder();
   }
   aktarimGizle() {
@@ -622,7 +636,7 @@ class BulutMotor {
   // ---------- actions ----------
   raporKaydet(r: Rapor): boolean {
     if (!this.kuyrukEkle({ k: uid() + uid(), t: "r", r: normal(kopya(r)) })) {
-      this.bildir("Telefonun depolama alanı dolu: bazı fotoğrafları silip yeniden dene.", 6000);
+      this.bildir(c("Telefonun depolama alanı dolu: bazı fotoğrafları silip yeniden dene.", "Your phone's storage is full: delete some photos and try again."), 6000);
       return false;
     }
     this.gonder();
@@ -634,7 +648,7 @@ class BulutMotor {
   }
   firmaKaydet(f: Firma): boolean {
     if (!this.kuyrukEkle({ k: uid() + uid(), t: "f", firma: f, sablonlar: this.gSablon })) {
-      this.bildir("Logo çok büyük, daha küçük bir dosya dene.");
+      this.bildir(c("Logo çok büyük, daha küçük bir dosya dene.", "The logo is too large, try a smaller file."));
       return false;
     }
     this.gonder();
@@ -645,7 +659,7 @@ class BulutMotor {
     this.gonder();
   }
   async yedekYukle(d: Yedek) {
-    if (!navigator.onLine) { this.bildir("Yedek yüklemek için internet bağlantısı gerekli."); return; }
+    if (!navigator.onLine) { this.bildir(c("Yedek yüklemek için internet bağlantısı gerekli.", "You need an internet connection to restore a backup.")); return; }
     await this.sirada(async () => {
       let n = 0;
       try {
@@ -655,11 +669,11 @@ class BulutMotor {
         for (const r of d.raporlar) {
           await this.uygula({ k: "yedek", t: "r", r: normal(r) });
           n++;
-          if (n % 5 === 0) { this.bildir(`Yedek yükleniyor: ${n} / ${d.raporlar.length}`); this.degisti(); }
+          if (n % 5 === 0) { this.bildir(c(`Yedek yükleniyor: ${n} / ${d.raporlar.length}`, `Restoring backup: ${n} / ${d.raporlar.length}`)); this.degisti(); }
         }
-        this.bildir(`${n} rapor yüklendi`);
+        this.bildir(c(`${n} rapor yüklendi`, `${n} reports loaded`));
       } catch (e) {
-        this.bildir(hataTuru(e) === "ag" ? `Bağlantı kesildi; ${n} rapor yüklendi. Kalanı için yedeği yeniden yükle.` : `Yedek yüklenemedi (${n} rapor yüklendi).`, 7000);
+        this.bildir(hataTuru(e) === "ag" ? c(`Bağlantı kesildi; ${n} rapor yüklendi. Kalanı için yedeği yeniden yükle.`, `Connection lost; ${n} reports loaded. Restore the backup again for the rest.`) : c(`Yedek yüklenemedi (${n} rapor yüklendi).`, `The backup couldn't be restored (${n} reports loaded).`), 7000);
       } finally {
         this.onbellekYaz();
         this.degisti();
@@ -667,7 +681,7 @@ class BulutMotor {
     });
   }
   async tumunuSil() {
-    if (!navigator.onLine) { this.bildir("Raporları silmek için internet bağlantısı gerekli."); return; }
+    if (!navigator.onLine) { this.bildir(c("Raporları silmek için internet bağlantısı gerekli.", "You need an internet connection to delete reports.")); return; }
     await this.sirada(async () => {
       try {
         const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.uid);
@@ -677,9 +691,9 @@ class BulutMotor {
         this.kuyrukYaz(this.kuyrukOku().filter((o) => o.t === "f"));
         this.sunucuRapor.clear();
         this.onbellekYaz();
-        this.bildir("Raporlar silindi");
+        this.bildir(c("Raporlar silindi", "Reports deleted"));
       } catch {
-        this.bildir("Raporlar silinemedi. Bağlantını kontrol edip tekrar dene.");
+        this.bildir(c("Raporlar silinemedi. Bağlantını kontrol edip tekrar dene.", "Reports couldn't be deleted. Check your connection and try again."));
       } finally {
         this.degisti();
       }
@@ -747,8 +761,8 @@ function useBulutDepo(aktif: boolean, bildir: (m: string, ms?: number) => void):
   };
 }
 
-export function useDepo(mod: Mod, bildir: (m: string, ms?: number) => void): Depo {
-  const demo = useDemoDepo(mod === "demo", bildir);
+export function useDepo(mod: Mod, bildir: (m: string, ms?: number) => void, dil: Dil = "tr"): Depo {
+  const demo = useDemoDepo(mod === "demo", bildir, dil);
   const bulut = useBulutDepo(mod === "bulut", bildir);
   return mod === "demo" ? demo : bulut;
 }

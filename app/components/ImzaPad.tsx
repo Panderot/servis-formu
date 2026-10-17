@@ -1,8 +1,10 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { useC } from "../lib/dil";
 
 // Parmakla / fareyle imza. Her vuruş bitince PNG dataURL döner (şeffaf arka plan).
 export default function ImzaPad({ deger, onChange }: { deger: string; onChange: (v: string) => void }) {
+  const yazi = useC();
   const cv = useRef<HTMLCanvasElement>(null);
   const ciz = useRef(false);
   const son = useRef<{ x: number; y: number } | null>(null);
@@ -79,7 +81,7 @@ export default function ImzaPad({ deger, onChange }: { deger: string; onChange: 
       <div style={{ position: "relative", border: "1.5px dashed var(--line-2)", borderRadius: 10, background: "#fff" }}>
         <canvas
           ref={cv}
-          aria-label="İmza alanı"
+          aria-label={yazi("İmza alanı", "Signature area")}
           onPointerDown={bas}
           onPointerMove={hareket}
           onPointerUp={birak}
@@ -88,9 +90,9 @@ export default function ImzaPad({ deger, onChange }: { deger: string; onChange: 
           style={{ width: "100%", height: 190, display: "block", touchAction: "none", cursor: "crosshair" }}
         />
         <div style={{ position: "absolute", left: 18, right: 18, bottom: 38, borderBottom: "1px solid var(--line-2)", pointerEvents: "none" }} />
-        {!deger && <div style={{ position: "absolute", left: 0, right: 0, bottom: 12, textAlign: "center", fontSize: 12.5, color: "var(--muted)", pointerEvents: "none" }}>Müşteri parmağıyla buraya imza atsın</div>}
+        {!deger && <div style={{ position: "absolute", left: 0, right: 0, bottom: 12, textAlign: "center", fontSize: 12.5, color: "var(--muted)", pointerEvents: "none" }}>{yazi("Müşteri parmağıyla buraya imza atsın", "Customer signs here with a finger")}</div>}
       </div>
-      <button type="button" onClick={temizle} className="chip" style={{ marginTop: 8 }}>İmzayı temizle</button>
+      <button type="button" onClick={temizle} className="chip" style={{ marginTop: 8 }}>{yazi("İmzayı temizle", "Clear signature")}</button>
     </div>
   );
 }

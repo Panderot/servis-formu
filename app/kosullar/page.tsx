@@ -59,13 +59,73 @@ const BOLUMLER: Bolum[] = [
   ]],
 ];
 
+const BOLUMLER_EN: Bolum[] = [
+  ["The service", [
+    "Fixnote is a web app that lets field service teams fill in a service report on a phone, have the customer sign it on screen, get an A4 report and PDF, and send the report on WhatsApp.",
+    "Fixnote produces a job completion report. It is not an invoice or a tax document; keep invoicing the way you do today.",
+  ]],
+  ["Your account", [[
+    "You open your account with a real email address that belongs to you.",
+    "You may use your company account with your own technicians (one technician on the Solo plan, unlimited on the Team plan). Everyone using the account sees the same records; you don't share your password with anyone else.",
+    "You are responsible for what is done in your account.",
+    `If you think your account has been used without permission, write to ${E} straight away.`,
+  ]]],
+  ["Free trial", [
+    `A new account opens with a free ${DENEME_GUN}-day trial and no card is needed. When the trial ends the app locks. Your records stay in your account; once a subscription is active you carry on where you left off.`,
+  ]],
+  ["Subscription and fees", [[
+    "Current prices are shown in the Pricing section on the home page. Prices exclude VAT.",
+    "There are two plans: Solo (one technician) and Team (unlimited technicians). Both can be paid monthly or yearly; paying a year upfront gives 20% off the monthly price.",
+    "Prices are in US dollars.",
+    `To subscribe, write to ${E}. Payment and invoice details are sent to you in that conversation.`,
+    "If you don't renew when your subscription ends, the app locks again; your records stay in your account.",
+    "If we change our prices, the change does not affect a period you have already paid for.",
+  ]]],
+  ["Your records and backups", [
+    "Your service records are stored in your account on our infrastructure provider's servers in Germany and appear on every device signed in to the same account.",
+    "A report saved without internet waits on that device until it is back online. If the browser data is cleared or the device is lost in the meantime, a report that has not been sent yet may be lost.",
+    "We take due care to protect your records. Even so, we recommend downloading a backup from Settings from time to time.",
+  ]],
+  ["Report content and customer details", [
+    "You are responsible for the accuracy of what you write in reports and for processing your customers' personal data lawfully, including under KVKK (Turkey's Personal Data Protection Law). Only the customer signs the customer sign-off section.",
+  ]],
+  ["Unacceptable use", [
+    "You may not use Fixnote for illegal purposes, to prepare misleading or fake reports, to sign on someone else's behalf, or to try to disrupt the service or access other people's accounts. In these cases we may suspend or close your account.",
+  ]],
+  ["Continuity of the service", [
+    "We work to keep Fixnote running without interruptions or errors, but we cannot guarantee it. There may be interruptions caused by maintenance, updates or infrastructure providers. We may change features as we improve the service.",
+  ]],
+  ["Limitation of liability", [
+    "Fixnote is provided as is. To the extent permitted by applicable law, we are not liable for records that have not yet been sent being lost on your device, for the information entered in reports, or for indirect losses (such as loss of profit). In any case our liability is limited to the amount you paid for Fixnote in the last 12 months.",
+  ]],
+  ["Closing your account", [
+    `You can close your account at any time by writing to ${E}. When the account is closed, your account details and service records are deleted in line with the Privacy policy; you can download a backup from Settings before closing it.`,
+  ]],
+  ["Changes", [
+    "If we update these terms, we change the date on this page and announce important changes separately. Continuing to use Fixnote after an update means you accept the new terms.",
+  ]],
+  ["Contact", [
+    `For any question about these terms: ${E}`,
+  ]],
+];
+
 export default function Kosullar() {
   return (
     <YasalSayfa
-      baslik="Kullanım koşulları"
-      tarih="17 Ekim 2026"
-      giris="Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikası sayfasındadır."
-      bolumler={BOLUMLER}
+      metin={{
+        tr: {
+          baslik: "Kullanım koşulları",
+          tarih: "17 Ekim 2026",
+          giris: "Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikası sayfasındadır.",
+          bolumler: BOLUMLER,
+        },
+        en: {
+          baslik: "Terms of use",
+          tarih: "17 October 2026",
+          giris: "By opening a Fixnote account or using Fixnote, you accept these terms. Details about your personal data are on the Privacy policy page.",
+          bolumler: BOLUMLER_EN,
+        },
+      }}
     />
   );
 }

@@ -8,6 +8,9 @@ export type Madde = { ad: string; ok: boolean };
 export type Parca = { id: string; ad: string; adet: number; fiyat: number };
 export type Foto = { id: string; tur: "once" | "sonra"; src: string };
 export type Odeme = "nakit" | "kart" | "havale" | "bekliyor" | "garanti";
+export type Dil = "tr" | "en";
+export type ParaBirimi = "TL" | "USD" | "EUR" | "GBP";
+export const PARA_BIRIMLERI: ParaBirimi[] = ["TL", "USD", "EUR", "GBP"];
 
 export type Rapor = {
   id: string;
@@ -31,6 +34,8 @@ export type Rapor = {
   teknisyen: string;
   not: string;
   sonrakiBakim: string; // YYYY-AA-GG ya da boş
+  dil?: Dil; // report language, fixed when the report is created (older reports: Turkish)
+  para?: ParaBirimi; // currency, fixed when the report is created (older reports: TL)
 };
 
 export type Firma = {
@@ -45,6 +50,8 @@ export type Firma = {
   onek: string;
   teknisyen: string;
   altNot: string;
+  raporDili?: Dil; // language of new reports and WhatsApp messages
+  paraBirimi?: ParaBirimi; // currency of new reports
 };
 
 export type Sablon = { id: string; ad: string; cihazTuru: string; maddeler: string[]; ozel?: boolean };
@@ -125,6 +132,84 @@ export const SABLONLAR: Sablon[] = [
   },
 ];
 
+// Same ids as SABLONLAR, so filters and the "sablonId" of a report work in both languages.
+export const SABLONLAR_EN: Sablon[] = [
+  {
+    id: "kombi",
+    ad: "Boiler service",
+    cihazTuru: "Boiler",
+    maddeler: [
+      "Combustion chamber and burner cleaned",
+      "Heat exchanger checked and descaled",
+      "Flue gas analysis carried out",
+      "Gas leak check carried out",
+      "Expansion vessel pressure checked",
+      "System pressure set to 1.5 bar",
+      "Radiators and pipework bled",
+      "Electrical connections and earthing checked",
+      "Appliance test run completed",
+    ],
+  },
+  {
+    id: "klima",
+    ad: "Air conditioner service",
+    cihazTuru: "Air conditioner",
+    maddeler: [
+      "Indoor unit filters washed",
+      "Evaporator cleaned with coil cleaner",
+      "Condensate drain cleared and checked",
+      "Outdoor unit condenser cleaned",
+      "Refrigerant pressure measured",
+      "Supply air temperature measured",
+      "Remote control and sensors tested",
+      "Electrical connections checked",
+    ],
+  },
+  {
+    id: "beyaz",
+    ad: "Appliance repair",
+    cihazTuru: "Washing machine",
+    maddeler: [
+      "Fault diagnosed",
+      "Faulty part replaced",
+      "Hoses and connections checked",
+      "Motor and pump tested",
+      "Door lock and seal checked",
+      "Leak check carried out",
+      "Test cycle run",
+    ],
+  },
+  {
+    id: "ilaclama",
+    ad: "Pest control",
+    cihazTuru: "Pest control",
+    maddeler: [
+      "Treatment areas identified",
+      "Gel bait applied",
+      "Spray treatment applied",
+      "Rodent bait stations checked",
+      "Advice given on nests and entry points",
+      "Re-entry time explained to the customer",
+      "Products used and licence numbers recorded",
+    ],
+  },
+  {
+    id: "elektrik",
+    ad: "Electrical fault",
+    cihazTuru: "Electrical installation",
+    maddeler: [
+      "Fault located",
+      "Fuses and RCD tested",
+      "Cables and joints checked",
+      "Faulty component replaced",
+      "Earth continuity tested",
+      "Voltage and load measured",
+      "Circuit re-energised and tested",
+    ],
+  },
+];
+export const sablonlarDil = (dil: Dil) => (dil === "en" ? SABLONLAR_EN : SABLONLAR);
+
 export const ODEME: Record<Odeme, string> = {
   nakit: "Ödendi (nakit)",
   kart: "Ödendi (kart)",
@@ -132,6 +217,16 @@ export const ODEME: Record<Odeme, string> = {
   bekliyor: "Ödeme bekliyor",
   garanti: "Garanti kapsamında",
 };
+export const ODEME_EN: Record<Odeme, string> = {
+  nakit: "Paid (cash)",
+  kart: "Paid (card)",
+  havale: "Paid (bank transfer)",
+  bekliyor: "Payment pending",
+  garanti: "Under warranty",
+};
+export const odemeAd = (o: Odeme, dil: Dil = "tr") => (dil === "en" ? ODEME_EN : ODEME)[o];
+// Sales tax name: KDV in Turkish, VAT in English.
+export const vergiAd = (dil: Dil = "tr") => (dil === "en" ? "VAT" : "KDV");
 
 export const KDV_ORANLARI = [20, 10, 1, 0];
 
@@ -145,18 +240,32 @@ export function bugun(d = new Date()) {
   return { tarih: `${d.getFullYear()}-${iki(d.getMonth() + 1)}-${iki(d.getDate())}`, saat: `${iki(d.getHours())}:${iki(d.getMinutes())}` };
 }
 
-export function tarihTR(iso: string) {
+const AYLAR_EN_KISA = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// Turkish: 03.10.2026. English: 3 Oct 2026 (day first, month as a word, so it is never misread).
+export function tarihTR(iso: string, dil: Dil = "tr") {
   if (!iso) return "";
   const [y, m, g] = iso.split("-");
+  if (dil === "en") return `${Number(g)} ${AYLAR_EN_KISA[Number(m) - 1]} ${y}`;
   return `${g}.${m}.${y}`;
+}
+// Day and month only: 03.10 / 3 Oct
+export function tarihGunAy(iso: string, dil: Dil = "tr") {
+  if (!iso) return "";
+  const [, m, g] = iso.split("-");
+  return dil === "en" ? `${Number(g)} ${AYLAR_EN_KISA[Number(m) - 1]}` : `${g}.${m}`;
 }
 
 const AYLAR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-export function tarihUzun(iso: string) {
+const AYLAR_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+export function tarihUzun(iso: string, dil: Dil = "tr") {
   if (!iso) return "";
   const [y, m, g] = iso.split("-").map(Number);
-  return `${g} ${AYLAR[m - 1]} ${y}`;
+  return `${g} ${(dil === "en" ? AYLAR_EN : AYLAR)[m - 1]} ${y}`;
 }
+export const GUN_KISA: Record<Dil, string[]> = {
+  tr: ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+};
 
 // Intl farklarına takılmamak için elle biçimlendirme: 1.250,00 TL
 export function tl(n: number, birim = true) {
@@ -166,8 +275,33 @@ export function tl(n: number, birim = true) {
   return `${neg ? "-" : ""}${noktali},${kur}${birim ? " TL" : ""}`;
 }
 
-export function sayi(s: string) {
-  const t = s.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+// Money in any currency. Grouping follows the language (tr 1.250,00 / en 1,250.00);
+// TL is written after the number, $ € £ before it. kurussuz drops ",00" / ".00".
+const SEMBOL: Record<ParaBirimi, string> = { TL: "TL", USD: "$", EUR: "€", GBP: "£" };
+export function para(n: number, birim: ParaBirimi = "TL", dil: Dil = "tr", kurussuz = false) {
+  const neg = n < 0;
+  const [tam, kur] = Math.abs(n).toFixed(2).split(".");
+  const grup = tam.replace(/\B(?=(\d{3})+(?!\d))/g, dil === "en" ? "," : ".");
+  const sayi = kurussuz && kur === "00" ? grup : `${grup}${dil === "en" ? "." : ","}${kur}`;
+  return `${neg ? "-" : ""}${birim === "TL" ? `${sayi} TL` : `${SEMBOL[birim]}${sayi}`}`;
+}
+export const paraSembol = (b: ParaBirimi) => SEMBOL[b];
+
+// Language and currency of a report. A report keeps the values it was created with; older reports
+// have none and are Turkish / TL. New reports take the firm's setting; a firm that has not chosen
+// yet (new account, no firm name) follows the app language, an existing firm stays Turkish / TL.
+export function raporAyari(f: Firma, uiDil: Dil): { dil: Dil; para: ParaBirimi } {
+  const yeni = !f.ad.trim();
+  const dil: Dil = f.raporDili || (yeni ? uiDil : "tr");
+  return { dil, para: f.paraBirimi || (yeni && dil === "en" ? "USD" : "TL") };
+}
+export const raporDili = (r: Pick<Rapor, "dil">): Dil => r.dil || "tr";
+export const raporPara = (r: Pick<Rapor, "para">): ParaBirimi => r.para || "TL";
+export const buyukHarf = (s: string, dil: Dil = "tr") => s.toLocaleUpperCase(dil === "en" ? "en-US" : "tr-TR");
+
+// Parses a typed amount. Turkish: 1.250,50 (dot groups, comma decimals). English: 1,250.50.
+export function sayi(s: string, dil: Dil = "tr") {
+  const t = dil === "en" ? s.replace(/[\s,]/g, "") : s.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
   const n = parseFloat(t);
   return Number.isFinite(n) ? n : 0;
 }
@@ -187,8 +321,9 @@ export function yeniNo(raporlar: Rapor[], onek: string, yil: number) {
   return bas + String(max + 1).padStart(4, "0");
 }
 
-export function bosRapor(firma: Firma, raporlar: Rapor[], simdi = new Date()): Rapor {
+export function bosRapor(firma: Firma, raporlar: Rapor[], simdi = new Date(), uiDil: Dil = "tr"): Rapor {
   const { tarih, saat } = bugun(simdi);
+  const ayar = raporAyari(firma, uiDil);
   return {
     id: uid(),
     no: yeniNo(raporlar, firma.onek, simdi.getFullYear()),
@@ -211,6 +346,8 @@ export function bosRapor(firma: Firma, raporlar: Rapor[], simdi = new Date()): R
     teknisyen: firma.teknisyen,
     not: "",
     sonrakiBakim: "",
+    dil: ayar.dil,
+    para: ayar.para,
   };
 }
 
@@ -224,13 +361,14 @@ export function sablonUygula(r: Rapor, s: Sablon): Rapor {
   };
 }
 
-export function eksikler(r: Rapor): string[] {
+export function eksikler(r: Rapor, dil: Dil = "tr"): string[] {
   const e: string[] = [];
-  if (!r.musteri.ad.trim()) e.push("Müşteri adı");
-  if (telefonRakam(r.musteri.telefon).length < 10) e.push("Müşteri telefonu");
-  if (!r.hizmet.trim()) e.push("Hizmet türü");
-  if (!r.teknisyen.trim()) e.push("Teknisyen adı");
-  if (!r.imza) e.push("Müşteri imzası");
+  const en = dil === "en";
+  if (!r.musteri.ad.trim()) e.push(en ? "Customer name" : "Müşteri adı");
+  if (telefonRakam(r.musteri.telefon).length < 10) e.push(en ? "Customer phone" : "Müşteri telefonu");
+  if (!r.hizmet.trim()) e.push(en ? "Service type" : "Hizmet türü");
+  if (!r.teknisyen.trim()) e.push(en ? "Technician name" : "Teknisyen adı");
+  if (!r.imza) e.push(en ? "Customer signature" : "Müşteri imzası");
   return e;
 }
 
@@ -253,6 +391,7 @@ export function telefonGoster(tel: string) {
 }
 
 export function waMetin(r: Rapor, f: Firma) {
+  if (raporDili(r) === "en") return waMetinEn(r, f);
   const h = hesapla(r);
   const yapilan = r.maddeler.filter((m) => m.ok).map((m) => m.ad);
   const markaModel = [r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ");
@@ -275,11 +414,44 @@ export function waMetin(r: Rapor, f: Firma) {
   }
   if (r.parcalar.length) satirlar.push(`*Değişen parçalar:* ${r.parcalar.map((p) => `${p.ad}${p.adet > 1 ? ` x${p.adet}` : ""}`).join(", ")}`);
   if (r.odeme === "garanti") satirlar.push("*Ücret:* Garanti kapsamında, ücret alınmadı.");
-  else satirlar.push(`*Toplam:* ${tl(h.toplam)} (KDV dahil), ${ODEME[r.odeme]}`);
+  else satirlar.push(`*Toplam:* ${para(h.toplam, raporPara(r), "tr")} (KDV dahil), ${ODEME[r.odeme]}`);
   if (r.sonrakiBakim) satirlar.push(`*Sonraki bakım:* ${tarihTR(r.sonrakiBakim)}`);
   if (r.teknisyen) satirlar.push(`*Teknisyen:* ${r.teknisyen}`);
   satirlar.push("");
   satirlar.push("İmzalı servis raporunuz PDF olarak bu mesajın ardından iletilecektir. Bizi tercih ettiğiniz için teşekkür ederiz.");
+  if (f.ad || f.telefon) satirlar.push("");
+  if (f.ad) satirlar.push(`*${f.ad}*`);
+  if (f.telefon) satirlar.push(f.telefon);
+  return satirlar.join("\n");
+}
+
+function waMetinEn(r: Rapor, f: Firma) {
+  const h = hesapla(r);
+  const yapilan = r.maddeler.filter((m) => m.ok).map((m) => m.ad);
+  const markaModel = [r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ");
+  const cihaz = [r.cihaz.tur, markaModel].filter(Boolean).join(", ");
+  const ad = r.musteri.ad.trim();
+  const satirlar = [
+    ad ? `Dear ${ad},` : "Hello,",
+    `Your service visit on ${tarihTR(r.tarih, "en")} is complete. Here is your report summary.`,
+    "",
+    `*Report no:* ${r.no}`,
+  ];
+  if (r.hizmet) satirlar.push(`*Service:* ${r.hizmet}`);
+  if (cihaz) satirlar.push(`*Appliance:* ${cihaz}`);
+  if (r.sikayet) satirlar.push(`*Reported problem:* ${r.sikayet}`);
+  if (yapilan.length) {
+    satirlar.push("*Work carried out:*");
+    yapilan.slice(0, 4).forEach((m) => satirlar.push(`• ${m}`));
+    if (yapilan.length > 4) satirlar.push(`• and ${yapilan.length - 4} more (full list in the report)`);
+  }
+  if (r.parcalar.length) satirlar.push(`*Parts replaced:* ${r.parcalar.map((p) => `${p.ad}${p.adet > 1 ? ` x${p.adet}` : ""}`).join(", ")}`);
+  if (r.odeme === "garanti") satirlar.push("*Charge:* Covered by warranty, no charge.");
+  else satirlar.push(`*Total:* ${para(h.toplam, raporPara(r), "en")} (incl. VAT), ${ODEME_EN[r.odeme]}`);
+  if (r.sonrakiBakim) satirlar.push(`*Next service:* ${tarihTR(r.sonrakiBakim, "en")}`);
+  if (r.teknisyen) satirlar.push(`*Technician:* ${r.teknisyen}`);
+  satirlar.push("");
+  satirlar.push("Your signed service report will follow this message as a PDF. Thank you for choosing us.");
   if (f.ad || f.telefon) satirlar.push("");
   if (f.ad) satirlar.push(`*${f.ad}*`);
   if (f.telefon) satirlar.push(f.telefon);
@@ -293,7 +465,8 @@ export function waLink(r: Rapor, f: Firma) {
 
 // ---------- arama + müşteri geçmişi ----------
 
-const kucuk = (s: string) => s.toLocaleLowerCase("tr-TR");
+// Turkish lowercase, with dotless ı folded into i so "Ian" and "ian" match in both languages.
+export const kucuk = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
 
 export function ara(raporlar: Rapor[], q: string, hizmet = "") {
   const t = kucuk(q.trim());
@@ -504,3 +677,130 @@ export const DEMO_RAPORLAR: Rapor[] = DEMO_GIRDI.map((g, i) => {
     fotolar: foto ? [{ id: "f1", tur: "once", src: demoFoto("once") }, { id: "f2", tur: "sonra", src: demoFoto("sonra") }] : [],
   } as Rapor;
 });
+
+// ---------- English demo (a fictional London firm; phone numbers from Ofcom's drama ranges) ----------
+
+export const DEMO_FIRMA_EN: Firma = {
+  ad: "Brightline Heating & Cooling Ltd",
+  telefon: "+44 20 7946 0958",
+  eposta: "service@brightline-heating.co.uk",
+  adres: "14 Mill Lane, Hackney, London E8 2PQ",
+  vergiDairesi: "",
+  vergiNo: "GB 284 5617 39",
+  logo: "",
+  kdv: 20,
+  onek: "SR",
+  teknisyen: "Daniel Hughes",
+  altNot: "Replaced parts are guaranteed for 1 year and labour for 6 months, provided the appliance has not been repaired by anyone else.",
+  raporDili: "en",
+  paraBirimi: "GBP",
+};
+
+const sabEn = (id: string) => SABLONLAR_EN.find((s) => s.id === id)!;
+const madEn = (id: string, atla: number[] = []) => sabEn(id).maddeler.map((ad, i) => ({ ad, ok: !atla.includes(i) }));
+
+const DEMO_GIRDI_EN: DemoGirdi[] = [
+  {
+    no: "SR-2026-0048", tarih: "2026-10-03", saat: "15:40",
+    musteri: { ad: "Sarah Collins", telefon: "+44 7700 900417", adres: "Flat 6, 3 Elm Grove, Hackney, London E8 3QX" },
+    cihaz: { tur: "Boiler", marka: "Vaillant", model: "ecoTEC pro 24", seriNo: "21184500100245" },
+    sablonId: "kombi", hizmet: "Boiler service",
+    sikayet: "Hot water takes a long time to come through and the pressure keeps dropping.",
+    tespit: "Scale in the heat exchanger and pressure loss in the expansion vessel. Vessel recharged to 1 bar, pressure relief valve replaced.",
+    maddeler: madEn("kombi"),
+    parcalar: [{ id: "p1", ad: "Pressure relief valve 3 bar", adet: 1, fiyat: 45 }, { id: "p2", ad: "Seal kit", adet: 1, fiyat: 18 }],
+    iscilik: 120, odeme: "kart", imzalayan: "Sarah Collins", teknisyen: "Daniel Hughes", sonrakiBakim: "2027-09-15",
+  },
+  {
+    no: "SR-2026-0047", tarih: "2026-10-03", saat: "11:05",
+    musteri: { ad: "Corner Café (Mark Ellis)", telefon: "+44 7700 900832", adres: "212 Kingsland Road, Dalston, London E2 8AX" },
+    cihaz: { tur: "Air conditioner", marka: "Mitsubishi Electric", model: "MSZ-HR35", seriNo: "4002317T" },
+    sablonId: "klima", hizmet: "Air conditioner service",
+    sikayet: "The unit is dripping water and smells bad.",
+    tespit: "Condensate drain blocked and filters very dirty. Drain cleared, evaporator cleaned with coil cleaner.",
+    maddeler: madEn("klima"), parcalar: [], iscilik: 95, odeme: "havale",
+    imzalayan: "Mark Ellis", teknisyen: "Daniel Hughes", sonrakiBakim: "2027-04-01", foto: true,
+  },
+  {
+    no: "SR-2026-0046", tarih: "2026-10-02", saat: "17:20",
+    musteri: { ad: "Tom Bradley", telefon: "+44 7700 900248", adres: "9 Ashwin Street, Dalston, London E8 3DL" },
+    cihaz: { tur: "Washing machine", marka: "Beko", model: "WTL84141W", seriNo: "7110541300-4471" },
+    sablonId: "beyaz", hizmet: "Appliance repair",
+    sikayet: "The machine won't drain and stops mid-cycle.",
+    tespit: "Drain pump faulty. Pump replaced, filter cleaned.",
+    maddeler: madEn("beyaz", [4]),
+    parcalar: [{ id: "p3", ad: "Drain pump", adet: 1, fiyat: 115 }],
+    iscilik: 75, odeme: "bekliyor", imzalayan: "Tom Bradley", teknisyen: "Ryan Patel", sonrakiBakim: "",
+  },
+  {
+    no: "SR-2026-0045", tarih: "2026-10-01", saat: "09:30",
+    musteri: { ad: "Emma Wright", telefon: "+44 7700 900515", adres: "21 Clapton Square, London E5 8HP" },
+    cihaz: { tur: "Electrical installation", marka: "", model: "Consumer unit", seriNo: "" },
+    sablonId: "elektrik", hizmet: "Electrical fault",
+    sikayet: "The kitchen circuit keeps tripping.",
+    tespit: "Scorched joint found behind the oven socket. Socket and 2.5 mm cable replaced, RCD tested.",
+    maddeler: madEn("elektrik"),
+    parcalar: [{ id: "p4", ad: "Double socket (flush)", adet: 2, fiyat: 14 }, { id: "p5", ad: "2.5 mm twin and earth cable (m)", adet: 6, fiyat: 2.8 }],
+    iscilik: 90, odeme: "nakit", imzalayan: "Emma Wright", teknisyen: "Ryan Patel", sonrakiBakim: "",
+  },
+  {
+    no: "SR-2026-0044", tarih: "2026-09-29", saat: "14:15",
+    musteri: { ad: "Greenway Court Management", telefon: "+44 20 7946 0366", adres: "Greenway Court, 2 Mare Street, London E8 4RP" },
+    cihaz: { tur: "Pest control", marka: "", model: "Basement + bin store", seriNo: "" },
+    sablonId: "ilaclama", hizmet: "Pest control",
+    sikayet: "Cockroaches and signs of mice in the basement.",
+    tespit: "Heavy cockroach activity in the bin store and basement. 6 rodent bait stations installed.",
+    maddeler: madEn("ilaclama"),
+    parcalar: [{ id: "p6", ad: "Rodent bait station", adet: 6, fiyat: 16 }],
+    iscilik: 240, odeme: "havale", imzalayan: "Steven Lowe", teknisyen: "Daniel Hughes", sonrakiBakim: "2026-10-29",
+  },
+  {
+    no: "SR-2026-0043", tarih: "2026-09-26", saat: "10:45",
+    musteri: { ad: "Sarah Collins", telefon: "+44 7700 900417", adres: "Flat 6, 3 Elm Grove, Hackney, London E8 3QX" },
+    cihaz: { tur: "Air conditioner", marka: "Daikin", model: "FTXM35R", seriNo: "E004871" },
+    sablonId: "klima", hizmet: "Air conditioner service",
+    sikayet: "End-of-season service.",
+    tespit: "Refrigerant pressure normal, filters washed.",
+    maddeler: madEn("klima", [4]), parcalar: [], iscilik: 85, odeme: "nakit",
+    imzalayan: "Sarah Collins", teknisyen: "Ryan Patel", sonrakiBakim: "2027-05-01",
+  },
+  {
+    no: "SR-2026-0042", tarih: "2026-09-24", saat: "16:00",
+    musteri: { ad: "James Turner", telefon: "+44 7700 900729", adres: "7 Lauriston Road, London E9 7EY" },
+    cihaz: { tur: "Boiler", marka: "Worcester Bosch", model: "Greenstar 30i", seriNo: "WB30-0091735" },
+    sablonId: "kombi", hizmet: "Boiler service",
+    sikayet: "Boiler shows fault code EA and won't light.",
+    tespit: "Ignition electrode worn, replaced. Gas valve setting checked.",
+    maddeler: madEn("kombi", [2]),
+    parcalar: [{ id: "p7", ad: "Ignition electrode", adet: 1, fiyat: 52 }],
+    iscilik: 0, odeme: "garanti", imzalayan: "James Turner", teknisyen: "Daniel Hughes", sonrakiBakim: "",
+  },
+  {
+    no: "SR-2026-0041", tarih: "2026-09-22", saat: "13:10",
+    musteri: { ad: "Olivia Green", telefon: "+44 7700 900950", adres: "48 Old Ford Road, London E2 9PJ" },
+    cihaz: { tur: "Dishwasher", marka: "Bosch", model: "SMS4HVI33E", seriNo: "FD9811-00342" },
+    sablonId: "beyaz", hizmet: "Appliance repair",
+    sikayet: "The dishwasher doesn't heat the water.",
+    tespit: "Heating element faulty, replaced.",
+    maddeler: madEn("beyaz", [4, 5]),
+    parcalar: [{ id: "p8", ad: "Heat pump with heating element", adet: 1, fiyat: 235 }],
+    iscilik: 80, odeme: "kart", imzalayan: "Olivia Green", teknisyen: "Ryan Patel", sonrakiBakim: "",
+  },
+];
+
+export const DEMO_RAPORLAR_EN: Rapor[] = DEMO_GIRDI_EN.map((g, i) => {
+  const { foto, imzasiz, ...rest } = g;
+  return {
+    ...rest,
+    id: `demo${i + 1}`,
+    kdv: g.kdv ?? 20,
+    not: g.not ?? "",
+    imza: imzasiz ? "" : demoImza(31 + i * 17),
+    fotolar: foto ? [{ id: "f1", tur: "once", src: demoFoto("once") }, { id: "f2", tur: "sonra", src: demoFoto("sonra") }] : [],
+    dil: "en",
+    para: "GBP",
+  } as Rapor;
+});
+
+export const demoFirma = (dil: Dil) => (dil === "en" ? DEMO_FIRMA_EN : DEMO_FIRMA);
+export const demoRaporlar = (dil: Dil) => (dil === "en" ? DEMO_RAPORLAR_EN : DEMO_RAPORLAR);

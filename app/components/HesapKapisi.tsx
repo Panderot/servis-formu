@@ -2,12 +2,16 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Ikon, { Isaret } from "./Ikon";
+import { DilDugmesi } from "./Dil";
+import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA, DENEME_GUN, durumHesapla, supabase, type Durum } from "./supabase";
 
 // Guards /app: no session -> /giris, trial over -> lock screen. Records stay in the account (app/components/depo.ts).
 const ONBELLEK = "fixnote_abonelik"; // last known subscription end, so a paid user is not locked out offline
-const MAILTO = `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent("Fixnote abonelik")}`;
-const tarih = (d: Date) => d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
+const mailto = (dil: Dil) => `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(dil === "en" ? "Fixnote subscription" : "Fixnote abonelik")}`;
+// Turkish 03.10.2026, English 3 Oct 2026
+const tarih = (d: Date, dil: Dil) =>
+  dil === "en" ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 function onbellekOku(id: string): string | null {
   try {
@@ -33,7 +37,8 @@ async function cikis() {
 
 function Ekran({ ikon, baslik, metin, alt, children }: { ikon: string; baslik: string; metin: React.ReactNode; alt?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px" }}>
+    <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 16px", position: "relative" }}>
+      <DilDugmesi style={{ position: "absolute", top: 14, right: 14 }} />
       <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 18, letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</Link>
       <div className="card" style={{ width: "100%", maxWidth: 440, marginTop: 22, borderRadius: 20, padding: "28px 26px", boxShadow: "var(--shadow-md)", textAlign: "center" }}>
         <span style={{ width: 48, height: 48, borderRadius: 14, background: "var(--accent-soft)", color: "var(--accent)", display: "inline-grid", placeItems: "center" }}><Ikon ad={ikon} boy={22} /></span>
@@ -48,6 +53,9 @@ function Ekran({ ikon, baslik, metin, alt, children }: { ikon: string; baslik: s
 
 export default function HesapKapisi({ children }: { children: React.ReactNode }) {
   const [durum, setDurum] = useState<Durum>({ tur: "yukleniyor" });
+  const dil = useDil();
+  const c = (tr: string, en: string) => (dil === "en" ? en : tr);
+  const MAILTO = mailto(dil);
 
   useEffect(() => {
     const sb = supabase();
@@ -94,15 +102,15 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
 
   if (durum.tur === "ayarsiz")
     return (
-      <Ekran ikon="ayar" baslik="Giriş henüz yapılandırılmadı" metin="Supabase adresi ve anahtarı eklenince uygulama giriş ekranıyla açılır.">
-        <Link href="/" className="btn btn-ghost">Ana sayfaya dön</Link>
+      <Ekran ikon="ayar" baslik={c("Giriş henüz yapılandırılmadı", "Sign-in isn't configured yet")} metin={c("Supabase adresi ve anahtarı eklenince uygulama giriş ekranıyla açılır.", "Once the Supabase address and key are added, the app opens with the sign-in screen.")}>
+        <Link href="/" className="btn btn-ghost">{c("Ana sayfaya dön", "Back to home")}</Link>
       </Ekran>
     );
 
   if (durum.tur === "baglanti")
     return (
-      <Ekran ikon="telefon" baslik="İnternet bağlantısı yok" metin="Giriş yapmak için bir kez internete bağlanman gerekiyor. Bağlanınca tekrar dene.">
-        <button className="btn" onClick={() => window.location.reload()}>Tekrar dene</button>
+      <Ekran ikon="telefon" baslik={c("İnternet bağlantısı yok", "No internet connection")} metin={c("Giriş yapmak için bir kez internete bağlanman gerekiyor. Bağlanınca tekrar dene.", "You need to be online once to sign in. Try again when you're connected.")}>
+        <button className="btn" onClick={() => window.location.reload()}>{c("Tekrar dene", "Try again")}</button>
       </Ekran>
     );
 
@@ -110,12 +118,14 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
     return (
       <Ekran
         ikon="saat"
-        baslik={durum.abonelik ? "Aboneliğin sona erdi" : "Deneme süren doldu"}
-        metin={<>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis)} tarihinde bitti.`} Kayıtların hesabında saklanıyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
-        alt={<>Giriş yapılan hesap: {durum.eposta}</>}
+        baslik={durum.abonelik ? c("Aboneliğin sona erdi", "Your subscription has ended") : c("Deneme süren doldu", "Your trial has ended")}
+        metin={dil === "en"
+          ? <>{durum.abonelik ? `Your subscription ended on ${tarih(durum.bitis, dil)}.` : `Your free ${DENEME_GUN}-day trial ended on ${tarih(durum.bitis, dil)}.`} Your records are kept in your account; once your subscription is active you carry on where you left off.</>
+          : <>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis, dil)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis, dil)} tarihinde bitti.`} Kayıtların hesabında saklanıyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
+        alt={<>{c("Giriş yapılan hesap:", "Signed in as:")} {durum.eposta}</>}
       >
-        <a className="btn" href={MAILTO}>Abonelik için yaz</a>
-        <button className="btn btn-ghost" onClick={cikis}>Çıkış yap</button>
+        <a className="btn" href={MAILTO}>{c("Abonelik için yaz", "Email us to subscribe")}</a>
+        <button className="btn btn-ghost" onClick={cikis}>{c("Çıkış yap", "Sign out")}</button>
       </Ekran>
     );
 
@@ -127,14 +137,14 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
             {/* very narrow phones (under 380 px) get a shorter text and no clock icon so the bar stays on one line */}
             <Ikon ad="saat" boy={14} className="hidden min-[380px]:block" style={{ color: "#7cc4d6", flex: "none" }} />
             {durum.tur === "deneme" ? (
-              <span><span className="hidden min-[380px]:inline">Ücretsiz deneme: </span><span className="min-[380px]:hidden">Deneme: </span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{durum.kalanGun} gün kaldı</b></span>
+              <span><span className="hidden min-[380px]:inline">{c("Ücretsiz deneme: ", "Free trial: ")}</span><span className="min-[380px]:hidden">{c("Deneme: ", "Trial: ")}</span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{dil === "en" ? `${durum.kalanGun} ${durum.kalanGun === 1 ? "day" : "days"} left` : `${durum.kalanGun} gün kaldı`}</b></span>
             ) : (
-              <span><span className="hidden min-[380px]:inline">Aboneliğin aktif · {tarih(durum.bitis)} tarihine kadar</span><span className="min-[380px]:hidden">Abonelik aktif · bitiş {tarih(durum.bitis)}</span></span>
+              <span><span className="hidden min-[380px]:inline">{dil === "en" ? `Subscription active · until ${tarih(durum.bitis, dil)}` : `Aboneliğin aktif · ${tarih(durum.bitis, dil)} tarihine kadar`}</span><span className="min-[380px]:hidden">{dil === "en" ? `Active · ends ${tarih(durum.bitis, dil)}` : `Abonelik aktif · bitiş ${tarih(durum.bitis, dil)}`}</span></span>
             )}
           </span>
-          {durum.tur === "deneme" && <a href={MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>Aboneliğe geç</a>}
+          {durum.tur === "deneme" && <a href={MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
           <span className="hidden sm:inline" style={{ marginLeft: "auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{durum.eposta}</span>
-          <button onClick={cikis} className="ml-auto sm:-ml-2 hover:text-white" style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", flex: "none", padding: "11px 8px", marginTop: -11, marginBottom: -11, marginRight: -8 }}>Çıkış</button>
+          <button onClick={cikis} className="ml-auto sm:-ml-2 hover:text-white" style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", flex: "none", padding: "11px 8px", marginTop: -11, marginBottom: -11, marginRight: -8 }}>{c("Çıkış", "Sign out")}</button>
         </div>
       </div>
       {children}

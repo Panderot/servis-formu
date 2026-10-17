@@ -7,16 +7,28 @@ import Olcekli from "./Olcekli";
 import ImzaPad from "./ImzaPad";
 import Ikon, { Isaret } from "./Ikon";
 import { useDepo, type Mod } from "./depo";
+import { DilDugmesi } from "./Dil";
+import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
-  type Firma, type Rapor, type Odeme, type MusteriOzet,
-  SABLONLAR, ODEME, KDV_ORANLARI, DEMO_FIRMA,
-  bosRapor, sablonUygula, hesapla, tl, tarihTR, tarihUzun, eksikler, waLink, waNumara, telefonGoster,
-  ara, musteriler, gecmis, ozet, uid, bugun,
+  type Firma, type Rapor, type Odeme, type MusteriOzet, type Dil, type ParaBirimi,
+  ODEME, KDV_ORANLARI, PARA_BIRIMLERI, demoFirma, sablonlarDil, odemeAd, vergiAd, paraSembol,
+  bosRapor, sablonUygula, hesapla, para, tarihTR, tarihGunAy, tarihUzun, eksikler, waLink, waNumara, telefonGoster,
+  ara, musteriler, musteriAnahtar, gecmis, ozet, uid, bugun, kucuk, buyukHarf, raporAyari, raporDili, raporPara, GUN_KISA,
 } from "../lib/servis";
 
 type Gorunum = "raporlar" | "form" | "musteriler" | "ayarlar";
-const ADIMLAR = ["Müşteri", "Cihaz", "İşlemler", "Ücret", "Foto", "İmza"];
+const ADIMLAR: Record<Dil, string[]> = {
+  tr: ["Müşteri", "Cihaz", "İşlemler", "Ücret", "Foto", "İmza"],
+  en: ["Customer", "Appliance", "Work", "Charges", "Photos", "Signature"],
+};
+const ADIM_BASLIK: Record<Dil, string[]> = {
+  tr: ["Müşteri bilgisi", "Cihaz ve şikayet", "Yapılan işlemler", "Parça, işçilik, KDV", "Önce / sonra fotoğrafları", "Müşteri imzası"],
+  en: ["Customer details", "Appliance and problem", "Work carried out", "Parts, labour, VAT", "Before / after photos", "Customer signature"],
+};
+const PARA_AD: Record<ParaBirimi, string> = { TL: "TL", USD: "$ USD", EUR: "€ EUR", GBP: "£ GBP" };
+// Tax rate label: Turkish %20, English 20%
+const oran = (k: number, dil: Dil) => (dil === "en" ? `${k}%` : `%${k}`);
 const MAX_FOTO = 6;
 const KAYIT_LINKI = "/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1";
 
@@ -30,13 +42,16 @@ function gorsellerYuklensin(el: Element | null, ms = 8000) {
   ]);
 }
 
-function OdemePill({ o }: { o: Odeme }) {
-  const c = o === "bekliyor" ? "warn" : o === "garanti" ? "info" : "ok";
-  return <span className={`pill ${c}`}>{o === "bekliyor" ? "Ödeme bekliyor" : o === "garanti" ? "Garanti" : "Ödendi"}</span>;
+function OdemePill({ o, dil }: { o: Odeme; dil: Dil }) {
+  const sinif = o === "bekliyor" ? "warn" : o === "garanti" ? "info" : "ok";
+  const en = dil === "en";
+  return <span className={`pill ${sinif}`}>{o === "bekliyor" ? (en ? "Payment pending" : "Ödeme bekliyor") : o === "garanti" ? (en ? "Warranty" : "Garanti") : en ? "Paid" : "Ödendi"}</span>;
 }
 
 // The panel. mod "demo": sample records in this browser (/demo). mod "bulut": the account's records in Supabase (/app).
 export default function Uygulama({ mod }: { mod: Mod }) {
+  const dil = useDil();
+  const c = (tr: string, en: string) => (dil === "en" ? en : tr);
   const [mesaj, setMesaj] = useState("");
   const mesajZaman = useRef(0);
   const flash = (t: string, ms = 2600) => {
@@ -44,7 +59,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     window.clearTimeout(mesajZaman.current);
     mesajZaman.current = window.setTimeout(() => setMesaj(""), ms);
   };
-  const depo = useDepo(mod, flash);
+  const depo = useDepo(mod, flash, dil);
   const { hazir, firma, raporlar, ozelSablon } = depo;
   const bulut = mod === "bulut";
   const [gor, setGor] = useState<Gorunum>("raporlar");
@@ -67,7 +82,13 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const [sMad, setSMad] = useState("");
   const dosyaRef = useRef<HTMLInputElement>(null);
 
-  const sablonlar = useMemo(() => [...SABLONLAR, ...ozelSablon], [ozelSablon]);
+  // language and currency of new reports (the firm's setting; see raporAyari)
+  const ayar = raporAyari(firma, dil);
+  // menus and filters show template names in the app language; the form uses the report language
+  const sablonlar = useMemo(() => [...sablonlarDil(dil), ...ozelSablon], [ozelSablon, dil]);
+  // money on a report: the report's own currency; totals across reports: the firm's currency
+  const rp = (n: number, x: Rapor) => para(n, raporPara(x), dil);
+  const fp = (n: number) => para(n, ayar.para, dil);
 
   // ---- yükleme: /app?yeni=1 opens a new form once the records are loaded ----
   const yeniAcildi = useRef(false);
@@ -76,16 +97,19 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     yeniAcildi.current = true;
     const q = new URLSearchParams(window.location.search);
     if (q.get("yeni") === "1") {
-      setTaslak(bosRapor(firma, raporlar));
+      setTaslak(bosRapor(firma, raporlar, new Date(), dil));
       setGor("form");
       // drop ?yeni=1 so a refresh or the browser's address suggestion does not reopen the form
       q.delete("yeni");
       const kalan = q.toString();
       window.history.replaceState(window.history.state, "", window.location.pathname + (kalan ? `?${kalan}` : "") + window.location.hash);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hazir, firma, raporlar]);
 
-  const kaydetFirma = (f: Firma) => depo.firmaKaydet(f);
+  // A firm keeps the report language and currency it has been using: saving fixes the current values,
+  // so naming a new firm later does not switch its reports back to Turkish / TL.
+  const kaydetFirma = (f: Firma) => depo.firmaKaydet({ ...f, raporDili: f.raporDili || ayar.dil, paraBirimi: f.paraBirimi || ayar.para });
   const kaydetSablon = depo.sablonKaydet;
 
   const liste = useMemo(() => ara(raporlar, q, filtre), [raporlar, q, filtre]);
@@ -99,25 +123,25 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const git = (g: Gorunum) => { if (g === "ayarlar") setAf(firma); setGor(g); setMobilDetay(false); setMusteriSec(""); window.scrollTo(0, 0); };
 
   function yeniForm(onDolu?: Partial<Rapor>) {
-    const r = { ...bosRapor(firma, raporlar), ...onDolu };
+    const r = { ...bosRapor(firma, raporlar, new Date(), dil), ...onDolu };
     setTaslak(r); setAdim(0); setDuzenle(false); setGor("form"); window.scrollTo(0, 0);
   }
   const duzenleAc = async (r: Rapor) => { const t = await depo.duzenlemeHazirla(r); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
 
   const tamamla = () => {
     if (!taslak) return;
-    const e = eksikler(taslak);
-    if (e.length) { flash("Eksik: " + e.join(", ")); return; }
+    const e = eksikler(taslak, dil);
+    if (e.length) { flash(c("Eksik: ", "Missing: ") + e.join(", ")); return; }
     const r = { ...taslak, imzalayan: taslak.imzalayan || taslak.musteri.ad };
     if (!depo.raporKaydet(r)) return;
     if (r.teknisyen && r.teknisyen !== firma.teknisyen) kaydetFirma({ ...firma, teknisyen: r.teknisyen });
     setTaslak(null); setSecili(r.id); setGor("raporlar"); setMobilDetay(true); setQ(""); setFiltre("");
     window.scrollTo(0, 0);
-    flash(duzenle ? "Rapor güncellendi" : `Rapor ${r.no} kaydedildi`);
+    flash(duzenle ? c("Rapor güncellendi", "Report updated") : c(`Rapor ${r.no} kaydedildi`, `Report ${r.no} saved`));
   };
 
   const sil = (r: Rapor) => {
-    if (!confirm(`${r.no} numaralı rapor silinsin mi?`)) return;
+    if (!confirm(c(`${r.no} numaralı rapor silinsin mi?`, `Delete report ${r.no}?`))) return;
     depo.raporSil(r.id);
     setSecili(""); setMobilDetay(false);
   };
@@ -134,7 +158,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   };
 
   const wa = (r: Rapor) => {
-    if (waNumara(r.musteri.telefon).length < 11) { flash("Müşteri telefonu eksik ya da hatalı"); return; }
+    if (waNumara(r.musteri.telefon).length < 11) { flash(c("Müşteri telefonu eksik ya da hatalı", "The customer's phone number is missing or invalid")); return; }
     window.open(waLink(r, firma), "_blank", "noopener");
   };
 
@@ -147,12 +171,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
   const demoVar = !bulut;
   const d = depo.durum;
-  const durumYazi = !d ? "" : d.hata ? d.hata : d.cevrimdisi ? (d.bekleyen ? `İnternet yok: ${d.bekleyen} kayıt telefonda bekliyor` : "İnternet yok") : d.bekleyen ? `${d.bekleyen} kayıt gönderiliyor` : "Tüm kayıtlar hesabında";
+  const durumYazi = !d ? "" : d.hata ? d.hata : d.cevrimdisi ? (d.bekleyen ? c(`İnternet yok: ${d.bekleyen} kayıt telefonda bekliyor`, `Offline: ${d.bekleyen} records waiting on this phone`) : c("İnternet yok", "Offline")) : d.bekleyen ? c(`${d.bekleyen} kayıt gönderiliyor`, `Sending ${d.bekleyen} records`) : c("Tüm kayıtlar hesabında", "All records are in your account");
   const durumRenk = !d ? "" : d.hata ? "var(--bad)" : d.cevrimdisi || d.bekleyen ? "var(--warn)" : "var(--ok)";
   const ilkAd = (firma.teknisyen || "").trim().split(" ")[0];
   const saatNow = new Date().getHours();
-  const selam = saatNow < 12 ? "Günaydın" : saatNow < 18 ? "İyi günler" : "İyi akşamlar";
-  const NAV = [["raporlar", "Raporlar", "belge", raporlar.length], ["musteriler", "Müşteriler", "kisiler", mList.length], ["ayarlar", "Firma ve şablonlar", "ayar", null]] as const;
+  const selam = saatNow < 12 ? c("Günaydın", "Good morning") : saatNow < 18 ? c("İyi günler", "Good afternoon") : c("İyi akşamlar", "Good evening");
+  const NAV = [["raporlar", c("Raporlar", "Reports"), "belge", raporlar.length], ["musteriler", c("Müşteriler", "Customers"), "kisiler", mList.length], ["ayarlar", c("Firma ve şablonlar", "Company and templates"), "ayar", null]] as const;
 
   // ================= ARAYÜZ =================
   return (
@@ -161,8 +185,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         {!bulut && (
           <div data-demo-serit className="no-print" style={{ background: "var(--ink)", color: "rgba(255,255,255,.75)", fontSize: 12.5, fontWeight: 600 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "8px 16px" }}>
-              <span style={{ minWidth: 0 }}><b style={{ color: "#fff" }}>Demo:</b> örnek kayıtlarla dene. Değişiklikler sadece bu tarayıcıda kalır.</span>
-              <a href={KAYIT_LINKI} style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", display: "inline-block", padding: "11px 6px", marginTop: -11, marginBottom: -11, marginRight: -6, marginLeft: "auto" }}>Ücretsiz hesap aç</a>
+              <span style={{ minWidth: 0 }}><b style={{ color: "#fff" }}>Demo:</b> {c("örnek kayıtlarla dene. Değişiklikler sadece bu tarayıcıda kalır.", "try it with sample records. Changes stay in this browser only.")}</span>
+              <a href={KAYIT_LINKI} style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", display: "inline-block", padding: "11px 6px", marginTop: -11, marginBottom: -11, marginRight: -6, marginLeft: "auto" }}>{c("Ücretsiz hesap aç", "Open a free account")}</a>
             </div>
           </div>
         )}
@@ -172,9 +196,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <Link href="/" style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
               <Isaret boy={22} />Fixnote
             </Link>
-            <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || "Firma adı girilmedi"}</div>
+            <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || c("Firma adı girilmedi", "No company name yet")}</div>
             <button className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }} onClick={() => yeniForm()}>
-              <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>Yeni servis formu
+              <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>{c("Yeni servis formu", "New service form")}
             </button>
             <nav style={{ marginTop: 16, display: "grid", gap: 2 }}>
               {NAV.map(([g, t, ik, n]) => (
@@ -183,7 +207,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 </button>
               ))}
             </nav>
-            <div className="mini" style={{ padding: "20px 10px 6px" }}>Şablonlar</div>
+            <div className="mini" style={{ padding: "20px 10px 6px" }}>{c("Şablonlar", "Templates")}</div>
             <div style={{ display: "grid", gap: 1 }}>
               {sablonlar.slice(0, 7).map((s) => (
                 <button key={s.id} onClick={() => { git("raporlar"); setFiltre(s.id); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", padding: "5px 10px", fontSize: 12.5, fontWeight: 600, color: filtre === s.id && gor === "raporlar" ? "var(--accent-ink)" : "var(--muted)", textAlign: "left" }}>
@@ -199,11 +223,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 </div>
               ) : (
                 <>
-                  <span className="pill acc" style={{ marginBottom: 8 }}>Demo mod · örnek kayıtlar</span>
-                  <div>Kayıtlar bu tarayıcıda saklanır.</div>
-                  <div>Kullanılan alan: {depoKB()} KB</div>
+                  <span className="pill acc" style={{ marginBottom: 8 }}>{c("Demo mod · örnek kayıtlar", "Demo mode · sample records")}</span>
+                  <div>{c("Kayıtlar bu tarayıcıda saklanır.", "Records are kept in this browser.")}</div>
+                  <div>{c("Kullanılan alan:", "Space used:")} {depoKB()} KB</div>
                 </>
               )}
+              <DilDugmesi style={{ marginTop: 12 }} />
             </div>
           </aside>
 
@@ -213,9 +238,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <Link href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "8px 0", margin: "-8px 0" }}>
                 <Isaret boy={22} />Fixnote
               </Link>
-              {demoVar ? <span className="pill acc">Demo mod</span> : d && (d.hata || d.cevrimdisi || d.bekleyen) ? (
-                <span className={`pill ${d.hata ? "bad" : "warn"}`} style={{ maxWidth: 190, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.hata ? "Gönderilemedi" : d.cevrimdisi ? `İnternet yok${d.bekleyen ? ` · ${d.bekleyen} bekliyor` : ""}` : `${d.bekleyen} gönderiliyor`}</span>
-              ) : <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, maxWidth: 170, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad}</span>}
+              <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              {demoVar ? <span className="pill acc">{c("Demo mod", "Demo mode")}</span> : d && (d.hata || d.cevrimdisi || d.bekleyen) ? (
+                <span className={`pill ${d.hata ? "bad" : "warn"}`} style={{ maxWidth: 150, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.hata ? c("Gönderilemedi", "Not sent") : d.cevrimdisi ? `${c("İnternet yok", "Offline")}${d.bekleyen ? ` · ${d.bekleyen} ${c("bekliyor", "waiting")}` : ""}` : c(`${d.bekleyen} gönderiliyor`, `Sending ${d.bekleyen}`)}</span>
+              ) : <span style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, maxWidth: 130, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad}</span>}
+              <DilDugmesi />
+              </span>
             </header>
 
             <div style={{ paddingBottom: 96 }}>
@@ -230,11 +258,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         {/* Mobil alt sekme */}
         {gor !== "form" && (
           <nav className="grid lg:hidden" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, background: "var(--paper)", borderTop: "1px solid var(--line)", gridTemplateColumns: "1fr 1fr 1.4fr 1fr", alignItems: "center", padding: "6px 8px calc(6px + env(safe-area-inset-bottom))", boxShadow: "0 -8px 24px rgba(16,39,58,.06)" }}>
-            {([["raporlar", "Raporlar", "belge"], ["musteriler", "Müşteriler", "kisiler"]] as const).map(([g, t, ik]) => (
+            {([["raporlar", c("Raporlar", "Reports"), "belge"], ["musteriler", c("Müşteriler", "Customers"), "kisiler"]] as const).map(([g, t, ik]) => (
               <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
             ))}
-            <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni form</button>
-            <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />Ayarlar</button>
+            <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni form", "New form")}</button>
+            <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />{c("Ayarlar", "Settings")}</button>
           </nav>
         )}
 
@@ -255,7 +283,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     const gunler = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(); d.setDate(d.getDate() - 6 + i);
       const iso = bugun(d).tarih;
-      return { g: ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"][d.getDay()], n: raporlar.filter((x) => x.tarih === iso).length };
+      return { g: GUN_KISA[dil][d.getDay()], n: raporlar.filter((x) => x.tarih === iso).length };
     });
     const maxg = Math.max(1, ...gunler.map((x) => x.n));
     const bekleyenN = raporlar.filter((x) => x.odeme === "bekliyor").length;
@@ -268,12 +296,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <div data-aktarim className="card" style={{ padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", borderColor: "var(--accent)" }}>
               <span style={{ flex: "none", width: 34, height: 34, borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={17} /></span>
               <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-                <b style={{ fontSize: 14 }}>{depo.aktarim.rapor ? `Bu cihazda daha önce kaydettiğin ${depo.aktarim.rapor} rapor var.` : "Bu cihazda daha önce girdiğin firma bilgileri var."}</b>
-                <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>Hesabına aktarırsan her telefondan görürsün. Bu cihazdaki kopya silinmez.</div>
+                <b style={{ fontSize: 14 }}>{depo.aktarim.rapor ? c(`Bu cihazda daha önce kaydettiğin ${depo.aktarim.rapor} rapor var.`, `This device has ${depo.aktarim.rapor} reports you saved earlier.`) : c("Bu cihazda daha önce girdiğin firma bilgileri var.", "This device has company details you entered earlier.")}</b>
+                <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>{c("Hesabına aktarırsan her telefondan görürsün. Bu cihazdaki kopya silinmez.", "Move them to your account to see them on any phone. The copy on this device is kept.")}</div>
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button className="btn" style={{ padding: "9px 14px" }} onClick={depo.aktar}>Hesabıma aktar</button>
-                <button className="chip" onClick={depo.aktarimGizle}>Şimdi değil</button>
+                <button className="btn" style={{ padding: "9px 14px" }} onClick={depo.aktar}>{c("Hesabıma aktar", "Move to my account")}</button>
+                <button className="chip" onClick={depo.aktarimGizle}>{c("Şimdi değil", "Not now")}</button>
               </div>
             </div>
           )}
@@ -283,32 +311,32 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           {bulut && hazir && !firma.ad.trim() && (
             <button data-firma-eksik onClick={() => git("ayarlar")} className="card" style={{ width: "100%", padding: "12px 14px", marginBottom: 14, display: "flex", gap: 10, alignItems: "center", cursor: "pointer", textAlign: "left", boxShadow: "none" }}>
               <span style={{ flex: "none", width: 30, height: 30, borderRadius: 9, background: "var(--warn-soft)", color: "var(--warn)", display: "grid", placeItems: "center" }}><Ikon ad="ayar" boy={15} /></span>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700 }}>Rapor başlığın boş. Firma adını, telefonunu ve logonu ekle.<span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>Firma ve şablonlar</span></span>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700 }}>{c("Rapor başlığın boş. Firma adını, telefonunu ve logonu ekle.", "Your report header is empty. Add your company name, phone and logo.")}<span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{c("Firma ve şablonlar", "Company and templates")}</span></span>
               <Ikon ad="ok" boy={16} style={{ color: "var(--muted)" }} />
             </button>
           )}
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{selam}{ilkAd ? ` ${ilkAd}` : ""}.</h1>
-              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>{tarihUzun(bg)} · bu ay {oz.adet} rapor</div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{selam}{ilkAd ? `${dil === "en" ? "," : ""} ${ilkAd}` : ""}.</h1>
+              <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>{tarihUzun(bg, dil)} · {c(`bu ay ${oz.adet} rapor`, `${oz.adet} ${oz.adet === 1 ? "report" : "reports"} this month`)}</div>
             </div>
-            <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni servis formu</button></div>
+            <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>
           </div>
 
           {/* Mobil: büyük petrol mavisi kart (referanstaki telefon maketi) */}
           <div className="lg:hidden"><button onClick={() => yeniForm()} style={{ marginTop: 14, width: "100%", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 16, padding: "16px 16px", display: "flex", alignItems: "center", gap: 12, fontWeight: 800, fontSize: 16, cursor: "pointer", textAlign: "left" }}>
             <span style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={18} /></span>
-            Yeni servis formu<Ikon ad="ok" boy={18} style={{ marginLeft: "auto" }} />
+            {c("Yeni servis formu", "New service form")}<Ikon ad="ok" boy={18} style={{ marginLeft: "auto" }} />
           </button></div>
 
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" style={{ marginTop: 16 }}>
             <div className="card col-span-2 lg:col-span-1" style={{ padding: "12px 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 17 }}><span className="mini">Bu ay rapor</span>{oz.adet > 0 && <span className="pill ok" style={{ fontSize: 9.5 }}>%{oz.imzali} imzalı</span>}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", minHeight: 17 }}><span className="mini">{c("Bu ay rapor", "Reports this month")}</span>{oz.adet > 0 && <span className="pill ok" style={{ fontSize: 9.5 }}>{c(`%${oz.imzali} imzalı`, `${oz.imzali}% signed`)}</span>}</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginTop: 4 }}>
                 <span className="num" style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.1 }}>{oz.adet}</span>
-                <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, flex: 1 }} aria-label="Son 7 gün rapor sayısı">
+                <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 36, flex: 1 }} aria-label={c("Son 7 gün rapor sayısı", "Reports in the last 7 days")}>
                   {gunler.map((x, i) => (
-                    <div key={i} style={{ flex: 1, textAlign: "center" }} title={`${x.g}: ${x.n} rapor`}>
+                    <div key={i} style={{ flex: 1, textAlign: "center" }} title={c(`${x.g}: ${x.n} rapor`, `${x.g}: ${x.n} reports`)}>
                       <div style={{ height: 4 + (x.n / maxg) * 22, borderRadius: 3, background: i === 6 ? "var(--accent)" : x.n ? "#a9cfdb" : "var(--tile)" }} />
                       <div style={{ fontSize: 8, color: "var(--faint)", fontWeight: 700, marginTop: 2 }}>{x.g}</div>
                     </div>
@@ -317,11 +345,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
             </div>
             {[
-              ["Bu ay tutar", tl(oz.ciro), <span key="k" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>KDV dahil</span>],
-              ["Tahsil bekleyen", tl(oz.bekleyen), bekleyenN ? <span key="b" className="pill warn">{bekleyenN} rapor</span> : raporlar.length ? <span key="b" className="pill ok">Hepsi tahsil</span> : null],
-              ["Müşteri", String(mList.length), <span key="m" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{raporlar.length} raporda</span>],
-            ].map(([k, v, alt]) => (
-              <div key={k as string} className={`card ${k === "Müşteri" ? "hidden lg:block" : ""}`} style={{ padding: "12px 14px" }}>
+              ["tutar", c("Bu ay tutar", "This month"), fp(oz.ciro), <span key="k" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{c("KDV dahil", "incl. tax")}</span>],
+              ["bekleyen", c("Tahsil bekleyen", "Unpaid"), fp(oz.bekleyen), bekleyenN ? <span key="b" className="pill warn">{c(`${bekleyenN} rapor`, `${bekleyenN} ${bekleyenN === 1 ? "report" : "reports"}`)}</span> : raporlar.length ? <span key="b" className="pill ok">{c("Hepsi tahsil", "All paid")}</span> : null],
+              ["musteri", c("Müşteri", "Customers"), String(mList.length), <span key="m" style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{c(`${raporlar.length} raporda`, `across ${raporlar.length} reports`)}</span>],
+            ].map(([id, k, v, alt]) => (
+              <div key={id as string} className={`card ${id === "musteri" ? "hidden lg:block" : ""}`} style={{ padding: "12px 14px" }}>
                 <span className="mini">{k as string}</span>
                 <div className="num" style={{ fontSize: "clamp(16px, 5vw, 20px)", fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6, whiteSpace: "nowrap" }}>{v as string}</div>
                 <div style={{ marginTop: 2 }}>{alt}</div>
@@ -331,16 +359,16 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           {yaklasan.length > 0 && (
             <div style={{ marginTop: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "2px 10px" }}><b style={{ fontSize: 14 }}>Yaklaşan bakımlar</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>tıkla, aynı müşteriye form aç</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "2px 10px" }}><b style={{ fontSize: 14 }}>{c("Yaklaşan bakımlar", "Upcoming services")}</b><span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c("tıkla, aynı müşteriye form aç", "tap to open a form for the same customer")}</span></div>
               <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginTop: 8 }}>
                 {yaklasan.map((x, i) => {
                   const f = gunFark(x.sonrakiBakim);
                   return (
                     <button key={x.id} onClick={() => yeniForm({ musteri: { ...x.musteri }, cihaz: { ...x.cihaz } })} className="card" style={{ flex: "0 0 auto", minWidth: 220, padding: "9px 12px", display: "flex", gap: 10, alignItems: "stretch", cursor: "pointer", textAlign: "left", boxShadow: "none" }}>
-                      <div className="num" style={{ fontSize: 12.5, fontWeight: 800, lineHeight: 1.25, minWidth: 40 }}>{tarihTR(x.sonrakiBakim).slice(0, 5)}<div style={{ fontSize: 10, color: "var(--faint)" }}>{x.sonrakiBakim.slice(0, 4)}</div></div>
+                      <div className="num" style={{ fontSize: 12.5, fontWeight: 800, lineHeight: 1.25, minWidth: 40 }}>{tarihGunAy(x.sonrakiBakim, dil)}<div style={{ fontSize: 10, color: "var(--faint)" }}>{x.sonrakiBakim.slice(0, 4)}</div></div>
                       <span style={{ width: 2, borderRadius: 2, background: i === 0 ? "var(--accent)" : "var(--line-2)" }} />
                       <div style={{ minWidth: 0 }}>
-                        <div className="mini" style={{ fontSize: 8.5 }}>{x.hizmet} · {f === 0 ? "bugün" : `${f} gün sonra`}</div>
+                        <div className="mini" style={{ fontSize: 8.5 }}>{x.hizmet} · {f === 0 ? c("bugün", "today") : c(`${f} gün sonra`, f === 1 ? "in 1 day" : `in ${f} days`)}</div>
                         <div style={{ fontSize: 13, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 170 }}>{x.musteri.ad}</div>
                       </div>
                     </button>
@@ -356,13 +384,13 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           <div className={mobilDetay ? "hidden lg:block" : "block"}>
             <div className="card" style={{ overflow: "hidden" }}>
               <div style={{ padding: "12px 12px 10px", borderBottom: "1px solid var(--line)", display: "grid", gap: 9 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><b style={{ fontSize: 14 }}>Son raporlar</b><span className="num" style={{ fontSize: 12, color: "var(--faint)", fontWeight: 700 }}>{liste.length} / {raporlar.length}</span></div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><b style={{ fontSize: 14 }}>{c("Son raporlar", "Latest reports")}</b><span className="num" style={{ fontSize: 12, color: "var(--faint)", fontWeight: 700 }}>{liste.length} / {raporlar.length}</span></div>
                 <div style={{ position: "relative" }}>
                   <Ikon ad="ara" boy={16} style={{ position: "absolute", left: 12, top: 14, color: "var(--faint)" }} />
-                  <input className="field" style={{ paddingLeft: 36 }} placeholder="Müşteri, telefon, rapor no, seri no" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Raporlarda ara" />
+                  <input className="field" style={{ paddingLeft: 36 }} placeholder={c("Müşteri, telefon, rapor no, seri no", "Customer, phone, report no, serial no")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={c("Raporlarda ara", "Search reports")} />
                 </div>
                 <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
-                  <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>Tümü</button>
+                  <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>{c("Tümü", "All")}</button>
                   {sablonlar.map((s) => (
                     <button key={s.id} className={`chip ${filtre === s.id ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flex: "none" }} onClick={() => setFiltre(s.id)}>{s.ad}</button>
                   ))}
@@ -370,9 +398,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
               {liste.length === 0 && (
                 <div style={{ padding: 28, textAlign: "center", color: "var(--muted)", fontWeight: 600 }}>
-                  {raporlar.length ? "Aramaya uyan rapor yok." : "Henüz rapor yok. İlk servis formunu oluştur."}
-                  <div><button className="btn" style={{ marginTop: 14 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />Yeni servis formu</button></div>
-                  {bulut && !raporlar.length && <div style={{ marginTop: 14, fontSize: 13 }}>Önce nasıl göründüğüne bakmak istersen: <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>Örnek kayıtlarla dene</a></div>}
+                  {raporlar.length ? c("Aramaya uyan rapor yok.", "No reports match your search.") : c("Henüz rapor yok. İlk servis formunu oluştur.", "No reports yet. Create your first service form.")}
+                  <div><button className="btn" style={{ marginTop: 14 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>
+                  {bulut && !raporlar.length && <div style={{ marginTop: 14, fontSize: 13 }}>{c("Önce nasıl göründüğüne bakmak istersen:", "Want to see how it looks first?")} <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>{c("Örnek kayıtlarla dene", "Try it with sample records")}</a></div>}
                 </div>
               )}
               <div>
@@ -384,17 +412,17 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                         <span className="doc-ico" style={r && r.id === x.id ? { background: "var(--accent-soft)", color: "var(--accent)" } : undefined}><Ikon ad="belge" boy={15} /></span>
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: ".01em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.musteri.ad.trim() ? x.musteri.ad.toLocaleUpperCase("tr-TR") : x.no}</span>
-                            <span className="num" style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 700, whiteSpace: "nowrap" }}>{tarihTR(x.tarih)}</span>
+                            <span style={{ fontWeight: 800, fontSize: 12, letterSpacing: ".01em", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.musteri.ad.trim() ? buyukHarf(x.musteri.ad, raporDili(x)) : x.no}</span>
+                            <span className="num" style={{ fontSize: 11.5, color: "var(--faint)", fontWeight: 700, whiteSpace: "nowrap" }}>{tarihTR(x.tarih, dil)}</span>
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 3, fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>
                             <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.hizmet}{x.cihaz.marka ? ` · ${x.cihaz.marka}` : ""}</span>
-                            <span className="num" style={{ fontWeight: 800, color: "var(--ink)", whiteSpace: "nowrap" }}>{x.odeme === "garanti" ? "Garanti" : tl(h.toplam)}</span>
+                            <span className="num" style={{ fontWeight: 800, color: "var(--ink)", whiteSpace: "nowrap" }}>{x.odeme === "garanti" ? c("Garanti", "Warranty") : rp(h.toplam, x)}</span>
                           </div>
                           <div style={{ display: "flex", gap: 5, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
-                            <OdemePill o={x.odeme} />
-                            {x.imza ? <span className="pill mute">İmzalı</span> : <span className="pill bad">İmzasız</span>}
-                            {x.fotolar.length > 0 && <span className="pill mute">{x.fotolar.length} foto</span>}
+                            <OdemePill o={x.odeme} dil={dil} />
+                            {x.imza ? <span className="pill mute">{c("İmzalı", "Signed")}</span> : <span className="pill bad">{c("İmzasız", "Not signed")}</span>}
+                            {x.fotolar.length > 0 && <span className="pill mute">{x.fotolar.length} {c("foto", x.fotolar.length === 1 ? "photo" : "photos")}</span>}
                             {x.musteri.ad.trim() && <span className="num" style={{ marginLeft: "auto", fontSize: 11, color: "var(--faint)", fontWeight: 700, whiteSpace: "nowrap" }}>{x.no}</span>}
                           </div>
                         </div>
@@ -411,27 +439,27 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {r ? (
               <div>
                 <div className="lg:hidden" style={{ padding: "4px 0 12px" }}>
-                  <button className="chip" onClick={() => setMobilDetay(false)}><Ikon ad="sol" boy={15} />Raporlar</button>
+                  <button className="chip" onClick={() => setMobilDetay(false)}><Ikon ad="sol" boy={15} />{c("Raporlar", "Reports")}</button>
                 </div>
                 <div className="card" style={{ padding: 14, marginBottom: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <div style={{ minWidth: 0, display: "flex", gap: 11, alignItems: "center" }}>
                       <span className="doc-ico" style={{ width: 40, height: 40, borderRadius: 11, background: "var(--accent-soft)", color: "var(--accent)" }}><Ikon ad="belge" boy={19} /></span>
                       <div style={{ minWidth: 0 }}>
-                        <div className="num" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{r.no} · {tarihTR(r.tarih)} {r.saat}</div>
+                        <div className="num" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 700 }}>{r.no} · {tarihTR(r.tarih, dil)} {r.saat}</div>
                         <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: "-0.02em", marginTop: 1 }}>{r.musteri.ad}</div>
                       </div>
                     </div>
                     <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-                      <button className="btn btn-dark" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => pdf(r)}><Ikon ad="indir" boy={15} /><span className="sm:hidden">PDF kaydet</span><span className="hidden sm:inline">PDF olarak kaydet</span></button>
-                      <button className="btn btn-wa" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} /><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">WhatsApp&apos;la gönder</span></button>
+                      <button className="btn btn-dark" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => pdf(r)}><Ikon ad="indir" boy={15} /><span className="sm:hidden">{c("PDF kaydet", "Save PDF")}</span><span className="hidden sm:inline">{c("PDF olarak kaydet", "Save as PDF")}</span></button>
+                      <button className="btn btn-wa" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} /><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">{c("WhatsApp'la gönder", "Send on WhatsApp")}</span></button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap" style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
-                    <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />Düzenle</button>
-                    <button className="chip eylem" aria-label="Bu müşteriye yeni form" onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">Yeni form</span><span className="hidden sm:inline">Bu müşteriye yeni form</span></button>
-                    <button className="chip eylem" aria-label="Müşteri geçmişi" onClick={() => { setMusteriSec(waNumara(r.musteri.telefon) || r.musteri.ad.toLocaleLowerCase("tr-TR")); setGor("musteriler"); }}><Ikon ad="saat" boy={14} /><span className="sm:hidden">Geçmiş</span><span className="hidden sm:inline">Müşteri geçmişi</span></button>
-                    <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />Sil</button>
+                    <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />{c("Düzenle", "Edit")}</button>
+                    <button className="chip eylem" aria-label={c("Bu müşteriye yeni form", "New form for this customer")} onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">{c("Yeni form", "New form")}</span><span className="hidden sm:inline">{c("Bu müşteriye yeni form", "New form for this customer")}</span></button>
+                    <button className="chip eylem" aria-label={c("Müşteri geçmişi", "Customer history")} onClick={() => { setMusteriSec(musteriAnahtar(r.musteri)); setGor("musteriler"); }}><Ikon ad="saat" boy={14} /><span className="sm:hidden">{c("Geçmiş", "History")}</span><span className="hidden sm:inline">{c("Müşteri geçmişi", "Customer history")}</span></button>
+                    <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />{c("Sil", "Delete")}</button>
                   </div>
                 </div>
                 <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 16, padding: 12 }}>
@@ -439,7 +467,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 </div>
               </div>
             ) : (
-              <div className="card hidden lg:block" style={{ padding: 40, textAlign: "center", color: "var(--muted)", fontWeight: 600 }}>Bir rapor seç ya da yeni form oluştur.</div>
+              <div className="card hidden lg:block" style={{ padding: 40, textAlign: "center", color: "var(--muted)", fontWeight: 600 }}>{c("Bir rapor seç ya da yeni form oluştur.", "Pick a report or create a new form.")}</div>
             )}
           </div>
         </div>
@@ -452,9 +480,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     const t = taslak!;
     const set = (p: Partial<Rapor>) => setTaslak({ ...t, ...p });
     const h = hesapla(t);
-    const eksik = eksikler(t);
+    const eksik = eksikler(t, dil);
+    const rd = raporDili(t);
+    const pb = raporPara(t);
+    const formSablon = [...sablonlarDil(rd), ...ozelSablon];
     const oneriler = t.musteri.ad.trim().length >= 2 && adim === 0
-      ? mList.filter((m) => m.ad.toLocaleLowerCase("tr-TR").includes(t.musteri.ad.toLocaleLowerCase("tr-TR").trim()) && m.ad !== t.musteri.ad).slice(0, 4)
+      ? mList.filter((m) => kucuk(m.ad).includes(kucuk(t.musteri.ad.trim())) && m.ad !== t.musteri.ad).slice(0, 4)
       : [];
     const kayitliMusteri = mList.find((m) => waNumara(m.telefon) === waNumara(t.musteri.telefon) && waNumara(t.musteri.telefon).length >= 11);
 
@@ -463,16 +494,16 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{duzenle ? "Raporu düzenle" : "Yeni servis formu"}</h1>
-              <div className="num" style={{ fontSize: 12.5, marginTop: 2, color: "var(--muted)", fontWeight: 700 }}>{t.no} · {tarihTR(t.tarih)} {t.saat}</div>
+              <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{duzenle ? c("Raporu düzenle", "Edit report") : c("Yeni servis formu", "New service form")}</h1>
+              <div className="num" style={{ fontSize: 12.5, marginTop: 2, color: "var(--muted)", fontWeight: 700 }}>{t.no} · {tarihTR(t.tarih, dil)} {t.saat}{rd !== dil || pb !== ayar.para ? ` · ${rd === "en" ? "English" : "Türkçe"} / ${pb}` : ""}</div>
             </div>
-            <button className="chip" onClick={() => { if (confirm("Form kapatılsın mı? Kaydedilmeyen bilgiler silinir.")) { setTaslak(null); git("raporlar"); } }}>Vazgeç</button>
+            <button className="chip" onClick={() => { if (confirm(c("Form kapatılsın mı? Kaydedilmeyen bilgiler silinir.", "Close the form? Anything not saved will be lost."))) { setTaslak(null); git("raporlar"); } }}>{c("Vazgeç", "Cancel")}</button>
           </div>
 
           {/* Adım göstergesi */}
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${ADIMLAR.length}, 1fr)`, gap: 4, marginTop: 4 }}>
-            {ADIMLAR.map((a, i) => (
-              <button key={a} onClick={() => setAdim(i)} aria-label={`${i + 1}. adım: ${a}`} style={{ background: "none", border: "none", padding: "10px 0 8px", cursor: "pointer", textAlign: "left", minWidth: 0 }}>
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${ADIMLAR[dil].length}, 1fr)`, gap: 4, marginTop: 4 }}>
+            {ADIMLAR[dil].map((a, i) => (
+              <button key={i} onClick={() => setAdim(i)} aria-label={c(`${i + 1}. adım: ${a}`, `Step ${i + 1}: ${a}`)} style={{ background: "none", border: "none", padding: "10px 0 8px", cursor: "pointer", textAlign: "left", minWidth: 0 }}>
                 <div style={{ height: 4, borderRadius: 3, background: i <= adim ? "var(--accent)" : "var(--line-2)", opacity: i < adim ? 0.45 : 1 }} />
                 <div style={{ fontSize: 11, fontWeight: 800, marginTop: 6, color: i === adim ? "var(--ink)" : "var(--faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a}</div>
               </button>
@@ -480,33 +511,34 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
 
           <div className="card" style={{ padding: 16, marginTop: 6 }}>
-            <div className="mini" style={{ color: "var(--accent)" }}>Adım {adim + 1} / {ADIMLAR.length}</div>
-            <h2 style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.03em", margin: "2px 0 16px" }}> {["Müşteri bilgisi", "Cihaz ve şikayet", "Yapılan işlemler", "Parça, işçilik, KDV", "Önce / sonra fotoğrafları", "Müşteri imzası"][adim]}</h2>
+            <div className="mini" style={{ color: "var(--accent)" }}>{c("Adım", "Step")} {adim + 1} / {ADIMLAR[dil].length}</div>
+            <h2 style={{ fontWeight: 800, fontSize: 20, letterSpacing: "-0.03em", margin: "2px 0 16px" }}> {ADIM_BASLIK[dil][adim]}</h2>
 
             {adim === 0 && (
               <div style={{ display: "grid", gap: 12 }}>
                 <div style={{ position: "relative" }}>
-                  <label className="lbl" htmlFor="mad">Ad soyad / firma</label>
-                  <input id="mad" className="field" autoComplete="off" placeholder="Örn. Ayşe Kaplan" value={t.musteri.ad} onChange={(e) => set({ musteri: { ...t.musteri, ad: e.target.value } })} />
+                  <label className="lbl" htmlFor="mad">{c("Ad soyad / firma", "Name / company")}</label>
+                  <input id="mad" className="field" autoComplete="off" placeholder={c("Örn. Ayşe Kaplan", "e.g. Sarah Collins")} value={t.musteri.ad} onChange={(e) => set({ musteri: { ...t.musteri, ad: e.target.value } })} />
                   {oneriler.length > 0 && (
                     <div className="card" style={{ marginTop: 6, overflow: "hidden" }}>
-                      <div className="font-mono" style={{ fontSize: 10.5, padding: "8px 12px 4px", color: "var(--muted)", letterSpacing: ".08em" }}>KAYITLI MÜŞTERİ</div>
+                      <div className="font-mono" style={{ fontSize: 10.5, padding: "8px 12px 4px", color: "var(--muted)", letterSpacing: ".08em" }}>{c("KAYITLI MÜŞTERİ", "SAVED CUSTOMER")}</div>
                       {oneriler.map((m) => (
                         <button key={m.anahtar} className="row-btn" style={{ padding: "10px 12px" }} onClick={() => set({ musteri: { ad: m.ad, telefon: m.telefon, adres: m.adres } })}>
-                          <b>{m.ad}</b> <span style={{ color: "var(--muted)", fontSize: 13 }}>· {telefonGoster(m.telefon)}  |  {m.sayi} rapor</span>
+                          <b>{m.ad}</b> <span style={{ color: "var(--muted)", fontSize: 13 }}>· {telefonGoster(m.telefon)}  |  {m.sayi} {c("rapor", m.sayi === 1 ? "report" : "reports")}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="lbl" htmlFor="mtel">Telefon (WhatsApp)</label>
-                  <input id="mtel" className="field" type="tel" inputMode="tel" placeholder="05xx xxx xx xx" value={t.musteri.telefon} onChange={(e) => set({ musteri: { ...t.musteri, telefon: e.target.value } })} />
-                  {kayitliMusteri && !duzenle && <div style={{ fontSize: 13, marginTop: 6, color: "var(--accent-ink)", fontWeight: 700 }}>Kayıtlı müşteri: {kayitliMusteri.sayi} önceki servis, son {tarihTR(kayitliMusteri.son)}</div>}
+                  <label className="lbl" htmlFor="mtel">{c("Telefon (WhatsApp)", "Phone (WhatsApp)")}</label>
+                  <input id="mtel" className="field" type="tel" inputMode="tel" placeholder={c("05xx xxx xx xx", "+44 7700 900123")} value={t.musteri.telefon} onChange={(e) => set({ musteri: { ...t.musteri, telefon: e.target.value } })} />
+                  {dil === "en" && !kayitliMusteri && <div style={{ fontSize: 12.5, marginTop: 6, color: "var(--muted)", fontWeight: 600 }}>Include the country code (for example +44) so WhatsApp opens the right number.</div>}
+                  {kayitliMusteri && !duzenle && <div style={{ fontSize: 13, marginTop: 6, color: "var(--accent-ink)", fontWeight: 700 }}>{c(`Kayıtlı müşteri: ${kayitliMusteri.sayi} önceki servis, son ${tarihTR(kayitliMusteri.son, dil)}`, `Saved customer: ${kayitliMusteri.sayi} previous ${kayitliMusteri.sayi === 1 ? "visit" : "visits"}, last on ${tarihTR(kayitliMusteri.son, dil)}`)}</div>}
                 </div>
                 <div>
-                  <label className="lbl" htmlFor="madr">Adres</label>
-                  <textarea id="madr" className="field" style={{ minHeight: 64 }} placeholder="Mahalle, sokak, no, ilçe / il" value={t.musteri.adres} onChange={(e) => set({ musteri: { ...t.musteri, adres: e.target.value } })} />
+                  <label className="lbl" htmlFor="madr">{c("Adres", "Address")}</label>
+                  <textarea id="madr" className="field" style={{ minHeight: 64 }} placeholder={c("Mahalle, sokak, no, ilçe / il", "Street, number, town, postcode")} value={t.musteri.adres} onChange={(e) => set({ musteri: { ...t.musteri, adres: e.target.value } })} />
                 </div>
               </div>
             )}
@@ -514,16 +546,16 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {adim === 1 && (
               <div style={{ display: "grid", gap: 12 }}>
                 <div>
-                  <div className="lbl">Hizmet türü (kontrol listesini otomatik doldurur)</div>
+                  <div className="lbl">{c("Hizmet türü (kontrol listesini otomatik doldurur)", "Service type (fills in the checklist)")}</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {sablonlar.map((s) => (
+                    {formSablon.map((s) => (
                       <button key={s.id} className={`chip ${t.sablonId === s.id ? "on" : ""}`} onClick={() => setTaslak(sablonUygula({ ...t, cihaz: { ...t.cihaz, tur: t.sablonId === s.id ? t.cihaz.tur : "" } }, s))}>{s.ad}</button>
                     ))}
                   </div>
                 </div>
                 {kayitliMusteri && kayitliMusteri.cihazlar.length > 0 && (
                   <div>
-                    <div className="lbl">Bu müşterinin kayıtlı cihazları</div>
+                    <div className="lbl">{c("Bu müşterinin kayıtlı cihazları", "This customer's saved appliances")}</div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {kayitliMusteri.cihazlar.map((c, i) => (
                         <button key={i} className="chip" onClick={() => set({ cihaz: { ...c } })}>{[c.tur, c.marka, c.model].filter(Boolean).join(" ")}</button>
@@ -532,14 +564,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   </div>
                 )}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <div><label className="lbl" htmlFor="ctur">Cihaz türü</label><input id="ctur" className="field" value={t.cihaz.tur} onChange={(e) => set({ cihaz: { ...t.cihaz, tur: e.target.value } })} /></div>
-                  <div><label className="lbl" htmlFor="cmar">Marka</label><input id="cmar" className="field" value={t.cihaz.marka} onChange={(e) => set({ cihaz: { ...t.cihaz, marka: e.target.value } })} /></div>
+                  <div><label className="lbl" htmlFor="ctur">{c("Cihaz türü", "Appliance type")}</label><input id="ctur" className="field" value={t.cihaz.tur} onChange={(e) => set({ cihaz: { ...t.cihaz, tur: e.target.value } })} /></div>
+                  <div><label className="lbl" htmlFor="cmar">{c("Marka", "Make")}</label><input id="cmar" className="field" value={t.cihaz.marka} onChange={(e) => set({ cihaz: { ...t.cihaz, marka: e.target.value } })} /></div>
                   <div><label className="lbl" htmlFor="cmod">Model</label><input id="cmod" className="field" value={t.cihaz.model} onChange={(e) => set({ cihaz: { ...t.cihaz, model: e.target.value } })} /></div>
-                  <div><label className="lbl" htmlFor="cser">Seri no</label><input id="cser" className="field" value={t.cihaz.seriNo} onChange={(e) => set({ cihaz: { ...t.cihaz, seriNo: e.target.value } })} /></div>
+                  <div><label className="lbl" htmlFor="cser">{c("Seri no", "Serial no")}</label><input id="cser" className="field" value={t.cihaz.seriNo} onChange={(e) => set({ cihaz: { ...t.cihaz, seriNo: e.target.value } })} /></div>
                 </div>
                 <div>
-                  <label className="lbl" htmlFor="sik">Şikayet / arıza</label>
-                  <textarea id="sik" className="field" placeholder="Müşterinin anlattığı sorun" value={t.sikayet} onChange={(e) => set({ sikayet: e.target.value })} />
+                  <label className="lbl" htmlFor="sik">{c("Şikayet / arıza", "Problem / fault")}</label>
+                  <textarea id="sik" className="field" placeholder={c("Müşterinin anlattığı sorun", "The problem as the customer describes it")} value={t.sikayet} onChange={(e) => set({ sikayet: e.target.value })} />
                 </div>
               </div>
             )}
@@ -548,38 +580,38 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
             {adim === 3 && (
               <div style={{ display: "grid", gap: 12 }}>
-                <div className="lbl" style={{ marginBottom: 0 }}>Kullanılan parçalar</div>
-                {t.parcalar.length === 0 && <div style={{ fontSize: 14, color: "var(--muted)" }}>Parça kullanılmadıysa boş bırak.</div>}
+                <div className="lbl" style={{ marginBottom: 0 }}>{c("Kullanılan parçalar", "Parts used")}</div>
+                {t.parcalar.length === 0 && <div style={{ fontSize: 14, color: "var(--muted)" }}>{c("Parça kullanılmadıysa boş bırak.", "Leave empty if no parts were used.")}</div>}
                 {t.parcalar.map((p, i) => (
                   <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 46px", gap: 6, alignItems: "end", paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>
-                    <div style={{ gridColumn: "1 / -1" }}>{i === 0 && <span className="lbl">Parça</span>}<input className="field" aria-label="Parça adı" value={p.ad} placeholder="Parça adı" onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, ad: e.target.value } : x)) })} /></div>
-                    <div><span className="lbl">Adet</span><input className="field" aria-label="Adet" type="number" inputMode="numeric" min={1} value={p.adet || ""} onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, adet: parseFloat(e.target.value) || 0 } : x)) })} /></div>
-                    <div><span className="lbl">Birim fiyat (TL)</span><input className="field" aria-label="Birim fiyat" type="number" inputMode="decimal" min={0} value={p.fiyat || ""} onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, fiyat: parseFloat(e.target.value) || 0 } : x)) })} /></div>
-                    <button aria-label="Parçayı sil" onClick={() => set({ parcalar: t.parcalar.filter((x) => x.id !== p.id) })} style={{ height: 46, border: "1.5px solid var(--line-2)", borderRadius: 8, background: "var(--paper)", cursor: "pointer", fontSize: 18 }}>×</button>
+                    <div style={{ gridColumn: "1 / -1" }}>{i === 0 && <span className="lbl">{c("Parça", "Part")}</span>}<input className="field" aria-label={c("Parça adı", "Part name")} value={p.ad} placeholder={c("Parça adı", "Part name")} onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, ad: e.target.value } : x)) })} /></div>
+                    <div><span className="lbl">{c("Adet", "Qty")}</span><input className="field" aria-label={c("Adet", "Quantity")} type="number" inputMode="numeric" min={1} value={p.adet || ""} onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, adet: parseFloat(e.target.value) || 0 } : x)) })} /></div>
+                    <div><span className="lbl">{c("Birim fiyat", "Unit price")} ({paraSembol(pb)})</span><input className="field" aria-label={c("Birim fiyat", "Unit price")} type="number" inputMode="decimal" min={0} value={p.fiyat || ""} onChange={(e) => set({ parcalar: t.parcalar.map((x) => (x.id === p.id ? { ...x, fiyat: parseFloat(e.target.value) || 0 } : x)) })} /></div>
+                    <button aria-label={c("Parçayı sil", "Remove part")} onClick={() => set({ parcalar: t.parcalar.filter((x) => x.id !== p.id) })} style={{ height: 46, border: "1.5px solid var(--line-2)", borderRadius: 8, background: "var(--paper)", cursor: "pointer", fontSize: 18 }}>×</button>
                   </div>
                 ))}
-                <button className="chip" style={{ justifySelf: "start" }} onClick={() => set({ parcalar: [...t.parcalar, { id: uid(), ad: "", adet: 1, fiyat: 0 }] })}>+ Parça ekle</button>
+                <button className="chip" style={{ justifySelf: "start" }} onClick={() => set({ parcalar: [...t.parcalar, { id: uid(), ad: "", adet: 1, fiyat: 0 }] })}>{c("+ Parça ekle", "+ Add part")}</button>
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                  <div><label className="lbl" htmlFor="isc">İşçilik (TL, KDV hariç)</label><input id="isc" className="field" type="number" inputMode="decimal" min={0} value={t.iscilik || ""} onChange={(e) => set({ iscilik: parseFloat(e.target.value) || 0 })} /></div>
+                  <div><label className="lbl" htmlFor="isc">{dil === "en" ? `Labour (${paraSembol(pb)}, excl. ${vergiAd(rd)})` : `İşçilik (${paraSembol(pb)}, ${vergiAd(rd)} hariç)`}</label><input id="isc" className="field" type="number" inputMode="decimal" min={0} value={t.iscilik || ""} onChange={(e) => set({ iscilik: parseFloat(e.target.value) || 0 })} /></div>
                   <div>
-                    <div className="lbl">KDV oranı</div>
+                    <div className="lbl">{c(`${vergiAd(rd)} oranı`, `${vergiAd(rd)} rate`)}</div>
                     <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      {KDV_ORANLARI.map((k) => <button key={k} className={`chip ${t.kdv === k ? "on" : ""}`} style={{ padding: "9px 11px" }} onClick={() => set({ kdv: k })}>%{k}</button>)}
+                      {KDV_ORANLARI.map((k) => <button key={k} className={`chip ${t.kdv === k ? "on" : ""}`} style={{ padding: "9px 11px" }} onClick={() => set({ kdv: k })}>{oran(k, dil)}</button>)}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <div className="lbl">Ödeme</div>
+                  <div className="lbl">{c("Ödeme", "Payment")}</div>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {(Object.keys(ODEME) as Odeme[]).map((o) => <button key={o} className={`chip ${t.odeme === o ? "on" : ""}`} onClick={() => set({ odeme: o })}>{ODEME[o]}</button>)}
+                    {(Object.keys(ODEME) as Odeme[]).map((o) => <button key={o} className={`chip ${t.odeme === o ? "on" : ""}`} onClick={() => set({ odeme: o })}>{odemeAd(o, dil)}</button>)}
                   </div>
                 </div>
                 <div style={{ background: "var(--ink)", color: "#fff", borderRadius: 14, padding: "14px 16px", fontVariantNumeric: "tabular-nums" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>Parça</span><span>{tl(h.parca)}</span></div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>İşçilik</span><span>{tl(h.iscilik)}</span></div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>KDV %{t.kdv}</span><span>{tl(h.kdv)}</span></div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.14)", fontSize: 20, fontWeight: 800 }}><span>Toplam</span><span>{tl(h.toplam)}</span></div>
-                  {t.odeme === "garanti" && <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", marginTop: 4 }}>Garanti kapsamında: parçalar raporda listelenir, ücret yansıtılmaz.</div>}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>{c("Parça", "Parts")}</span><span>{rp(h.parca, t)}</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>{c("İşçilik", "Labour")}</span><span>{rp(h.iscilik, t)}</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(255,255,255,.7)" }}><span>{vergiAd(rd)} {oran(t.kdv, dil)}</span><span>{rp(h.kdv, t)}</span></div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.14)", fontSize: 20, fontWeight: 800 }}><span>{c("Toplam", "Total")}</span><span>{rp(h.toplam, t)}</span></div>
+                  {t.odeme === "garanti" && <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.7)", marginTop: 4 }}>{c("Garanti kapsamında: parçalar raporda listelenir, ücret yansıtılmaz.", "Under warranty: parts are listed on the report, nothing is charged.")}</div>}
                 </div>
               </div>
             )}
@@ -590,13 +622,13 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <div style={{ display: "grid", gap: 12 }}>
                 <ImzaPad deger={t.imza} onChange={(v) => setTaslak((p) => (p ? { ...p, imza: v } : p))} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <div><label className="lbl" htmlFor="imz">İmzalayan</label><input id="imz" className="field" placeholder={t.musteri.ad || "Müşteri adı"} value={t.imzalayan} onChange={(e) => set({ imzalayan: e.target.value })} /></div>
-                  <div><label className="lbl" htmlFor="tek">Teknisyen</label><input id="tek" className="field" value={t.teknisyen} onChange={(e) => set({ teknisyen: e.target.value })} /></div>
+                  <div><label className="lbl" htmlFor="imz">{c("İmzalayan", "Signed by")}</label><input id="imz" className="field" placeholder={t.musteri.ad || c("Müşteri adı", "Customer name")} value={t.imzalayan} onChange={(e) => set({ imzalayan: e.target.value })} /></div>
+                  <div><label className="lbl" htmlFor="tek">{c("Teknisyen", "Technician")}</label><input id="tek" className="field" value={t.teknisyen} onChange={(e) => set({ teknisyen: e.target.value })} /></div>
                 </div>
                 {eksik.length > 0 ? (
-                  <div style={{ fontSize: 14, color: "var(--bad)", fontWeight: 700 }}>Tamamlamak için eksik: {eksik.join(", ")}</div>
+                  <div style={{ fontSize: 14, color: "var(--bad)", fontWeight: 700 }}>{c("Tamamlamak için eksik:", "Still needed:")} {eksik.join(", ")}</div>
                 ) : (
-                  <div style={{ fontSize: 14, color: "var(--ok)", fontWeight: 700 }}>Her şey hazır. Toplam {t.odeme === "garanti" ? "garanti kapsamında" : tl(h.toplam)}.</div>
+                  <div style={{ fontSize: 14, color: "var(--ok)", fontWeight: 700 }}>{c("Her şey hazır. Toplam", "All set. Total")} {t.odeme === "garanti" ? c("garanti kapsamında", "under warranty") : rp(h.toplam, t)}.</div>
                 )}
               </div>
             )}
@@ -604,18 +636,18 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           {/* Alt gezinme */}
           <div style={{ position: "sticky", bottom: 0, zIndex: 10, background: "var(--bg)", borderTop: "1px solid var(--line)", marginTop: 14, padding: "12px 0 calc(12px + env(safe-area-inset-bottom))", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
-            <button className="btn btn-ghost" disabled={adim === 0} onClick={() => { setAdim(adim - 1); window.scrollTo(0, 0); }}>Geri</button>
-            {adim < ADIMLAR.length - 1 ? (
-              <button className="btn" onClick={() => { setAdim(adim + 1); window.scrollTo(0, 0); }}>İleri: {ADIMLAR[adim + 1]}<Ikon ad="ok" boy={15} /></button>
+            <button className="btn btn-ghost" disabled={adim === 0} onClick={() => { setAdim(adim - 1); window.scrollTo(0, 0); }}>{c("Geri", "Back")}</button>
+            {adim < ADIMLAR[dil].length - 1 ? (
+              <button className="btn" onClick={() => { setAdim(adim + 1); window.scrollTo(0, 0); }}>{c("İleri", "Next")}: {ADIMLAR[dil][adim + 1]}<Ikon ad="ok" boy={15} /></button>
             ) : (
-              <button className="btn btn-dark" onClick={tamamla}><Ikon ad="tik" boy={15} kalinlik={2.6} />{duzenle ? "Raporu güncelle" : "Raporu oluştur"}</button>
+              <button className="btn btn-dark" onClick={tamamla}><Ikon ad="tik" boy={15} kalinlik={2.6} />{duzenle ? c("Raporu güncelle", "Update report") : c("Raporu oluştur", "Create report")}</button>
             )}
           </div>
         </div>
 
         {/* Canlı önizleme (masaüstü) */}
         <div className="hidden lg:block" style={{ position: "sticky", top: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span className="mini">Canlı rapor önizleme</span><span className="pill acc">A4</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><span className="mini">{c("Canlı rapor önizleme", "Live report preview")}</span><span className="pill acc">A4</span></div>
           <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 16, padding: 12 }}><Olcekli max={0.82}><RaporSayfa r={depo.coz(t)} f={firma} /></Olcekli></div>
         </div>
       </div>
@@ -629,12 +661,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       <div style={{ display: "grid", gap: 10 }}>
         {t.maddeler.length === 0 && (
           <div style={{ fontSize: 14, color: "var(--muted)" }}>
-            Hizmet türü seçmedin. Bir önceki adımda şablon seçersen kontrol listesi otomatik gelir, ya da aşağıdan kendi maddeni ekle.
+            {c("Hizmet türü seçmedin. Bir önceki adımda şablon seçersen kontrol listesi otomatik gelir, ya da aşağıdan kendi maddeni ekle.", "You haven't picked a service type. Pick a template in the previous step to fill in the checklist, or add your own steps below.")}
           </div>
         )}
         {t.maddeler.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--muted)" }}>
-            <span>{t.maddeler.filter((m) => m.ok).length}/{t.maddeler.length} işlem yapıldı  |  uygulanmayanın üstüne dokun</span>
+            <span>{t.maddeler.filter((m) => m.ok).length}/{t.maddeler.length} {c("işlem yapıldı  |  uygulanmayanın üstüne dokun", "steps done  |  tap any step you skipped")}</span>
           </div>
         )}
         {t.maddeler.map((m, i) => (
@@ -643,16 +675,16 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </button>
         ))}
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 6 }}>
-          <input className="field" placeholder="Ek işlem yaz" aria-label="Ek işlem" value={yeni} onChange={(e) => setYeni(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && yeni.trim()) { set({ maddeler: [...t.maddeler, { ad: yeni.trim(), ok: true }] }); setYeni(""); } }} />
-          <button className="btn btn-ghost" onClick={() => { if (yeni.trim()) { set({ maddeler: [...t.maddeler, { ad: yeni.trim(), ok: true }] }); setYeni(""); } }}>Ekle</button>
+          <input className="field" placeholder={c("Ek işlem yaz", "Add a step")} aria-label={c("Ek işlem", "Extra step")} value={yeni} onChange={(e) => setYeni(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && yeni.trim()) { set({ maddeler: [...t.maddeler, { ad: yeni.trim(), ok: true }] }); setYeni(""); } }} />
+          <button className="btn btn-ghost" onClick={() => { if (yeni.trim()) { set({ maddeler: [...t.maddeler, { ad: yeni.trim(), ok: true }] }); setYeni(""); } }}>{c("Ekle", "Add")}</button>
         </div>
         <div>
-          <label className="lbl" htmlFor="tes">Tespit ve yapılan iş</label>
-          <textarea id="tes" className="field" placeholder="Arızanın nedeni ve çözüm" value={t.tespit} onChange={(e) => set({ tespit: e.target.value })} />
+          <label className="lbl" htmlFor="tes">{c("Tespit ve yapılan iş", "Findings and work done")}</label>
+          <textarea id="tes" className="field" placeholder={c("Arızanın nedeni ve çözüm", "Cause of the fault and the fix")} value={t.tespit} onChange={(e) => set({ tespit: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          <div><label className="lbl" htmlFor="sb">Sonraki bakım</label><input id="sb" className="field" type="date" value={t.sonrakiBakim} onChange={(e) => set({ sonrakiBakim: e.target.value })} /></div>
-          <div><label className="lbl" htmlFor="nt">Not</label><input id="nt" className="field" placeholder="İsteğe bağlı" value={t.not} onChange={(e) => set({ not: e.target.value })} /></div>
+          <div><label className="lbl" htmlFor="sb">{c("Sonraki bakım", "Next service")}</label><input id="sb" className="field" type="date" value={t.sonrakiBakim} onChange={(e) => set({ sonrakiBakim: e.target.value })} /></div>
+          <div><label className="lbl" htmlFor="nt">{c("Not", "Note")}</label><input id="nt" className="field" placeholder={c("İsteğe bağlı", "Optional")} value={t.not} onChange={(e) => set({ not: e.target.value })} /></div>
         </div>
       </div>
     );
@@ -663,26 +695,26 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     const ekle = async (tur: "once" | "sonra", dosyalar: FileList | null) => {
       if (!dosyalar || !dosyalar.length) return;
       const yer = MAX_FOTO - t.fotolar.length;
-      if (yer <= 0) { flash(`En fazla ${MAX_FOTO} fotoğraf eklenir`); return; }
+      if (yer <= 0) { flash(c(`En fazla ${MAX_FOTO} fotoğraf eklenir`, `You can add up to ${MAX_FOTO} photos`)); return; }
       setIsleniyor(true);
       const yeni: Rapor["fotolar"] = [];
       for (const f of Array.from(dosyalar).slice(0, yer)) {
-        try { yeni.push({ id: uid(), tur, src: await kucult(f, 1000, 0.7) }); } catch { flash("Bir fotoğraf açılamadı"); }
+        try { yeni.push({ id: uid(), tur, src: await kucult(f, 1000, 0.7) }); } catch { flash(c("Bir fotoğraf açılamadı", "A photo couldn't be opened")); }
       }
       setIsleniyor(false);
       setTaslak((p) => (p ? { ...p, fotolar: [...p.fotolar, ...yeni] } : p));
     };
     return (
       <div style={{ display: "grid", gap: 14 }}>
-        <div style={{ fontSize: 14, color: "var(--muted)" }}>Fotoğraflar telefonda küçültülür (en uzun kenar 1000 px), rapora ve arşive eklenir. En fazla {MAX_FOTO} fotoğraf.</div>
+        <div style={{ fontSize: 14, color: "var(--muted)" }}>{c(`Fotoğraflar telefonda küçültülür (en uzun kenar 1000 px), rapora ve arşive eklenir. En fazla ${MAX_FOTO} fotoğraf.`, `Photos are resized on the phone (longest side 1000 px) and added to the report and the archive. Up to ${MAX_FOTO} photos.`)}</div>
         {(["once", "sonra"] as const).map((tur) => {
           const l = t.fotolar.filter((x) => x.tur === tur);
           return (
             <div key={tur}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <span className="lbl" style={{ margin: 0, fontSize: 14 }}>{tur === "once" ? "Önce" : "Sonra"} ({l.length})</span>
+                <span className="lbl" style={{ margin: 0, fontSize: 14 }}>{tur === "once" ? c("Önce", "Before") : c("Sonra", "After")} ({l.length})</span>
                 <label className="chip" style={{ cursor: "pointer" }}>
-                  + Fotoğraf çek / seç
+                  {c("+ Fotoğraf çek / seç", "+ Take / choose photo")}
                   <input type="file" accept="image/*" capture="environment" multiple hidden onChange={(e) => { ekle(tur, e.target.files); e.target.value = ""; }} />
                 </label>
               </div>
@@ -690,15 +722,15 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 {l.map((x) => (
                   <div key={x.id} style={{ position: "relative" }}>
                     <img src={depo.cozSrc(x.src)} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 8, border: "1px solid var(--line)" }} />
-                    <button aria-label="Fotoğrafı sil" onClick={() => setTaslak((p) => (p ? { ...p, fotolar: p.fotolar.filter((f) => f.id !== x.id) } : p))} style={{ position: "absolute", top: 4, right: 4, width: 28, height: 28, borderRadius: 14, border: "none", background: "rgba(22,25,29,.8)", color: "#fff", cursor: "pointer" }}>×</button>
+                    <button aria-label={c("Fotoğrafı sil", "Remove photo")} onClick={() => setTaslak((p) => (p ? { ...p, fotolar: p.fotolar.filter((f) => f.id !== x.id) } : p))} style={{ position: "absolute", top: 4, right: 4, width: 28, height: 28, borderRadius: 14, border: "none", background: "rgba(22,25,29,.8)", color: "#fff", cursor: "pointer" }}>×</button>
                   </div>
                 ))}
-                {l.length === 0 && <div style={{ gridColumn: "1 / -1", border: "1.5px dashed var(--line-2)", borderRadius: 8, padding: 18, textAlign: "center", fontSize: 13, color: "var(--muted)" }}>Henüz fotoğraf yok</div>}
+                {l.length === 0 && <div style={{ gridColumn: "1 / -1", border: "1.5px dashed var(--line-2)", borderRadius: 8, padding: 18, textAlign: "center", fontSize: 13, color: "var(--muted)" }}>{c("Henüz fotoğraf yok", "No photos yet")}</div>}
               </div>
             </div>
           );
         })}
-        {isleniyor && <div style={{ fontSize: 14, fontWeight: 700 }}>Fotoğraf küçültülüyor...</div>}
+        {isleniyor && <div style={{ fontSize: 14, fontWeight: 700 }}>{c("Fotoğraf küçültülüyor...", "Resizing photo...")}</div>}
       </div>
     );
   }
@@ -710,14 +742,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       const g = gecmis(raporlar, m.anahtar);
       return (
         <div style={{ padding: "20px 16px 0", maxWidth: 900 }}>
-          <button className="chip" onClick={() => setMusteriSec("")}>← Müşteriler</button>
+          <button className="chip" onClick={() => setMusteriSec("")}>← {c("Müşteriler", "Customers")}</button>
           <div className="card" style={{ padding: 18, marginTop: 12 }}>
-            <div className="tag">Müşteri kartı</div>
+            <div className="tag">{c("Müşteri kartı", "Customer card")}</div>
             <h1 className="font-display" style={{ fontSize: 26, fontWeight: 800, margin: "6px 0 4px" }}>{m.ad}</h1>
             <div style={{ color: "var(--muted)", fontSize: 14 }}>{telefonGoster(m.telefon)}  |  {m.adres}</div>
             {/* phones: one row per figure (label left, amount right) so large totals never overflow; wider screens: 3 tiles */}
             <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-3 sm:gap-2" style={{ marginTop: 14 }}>
-              {[["Servis", String(m.sayi)], ["Toplam", tl(m.toplam)], ["Bekleyen", tl(m.bekleyen)]].map(([k, v]) => (
+              {[[c("Servis", "Visits"), String(m.sayi)], [c("Toplam", "Total"), fp(m.toplam)], [c("Bekleyen", "Unpaid"), fp(m.bekleyen)]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-3 sm:block" style={{ background: "var(--bg)", borderRadius: 8, padding: "10px 12px", minWidth: 0 }}>
                   <div className="font-mono" style={{ fontSize: 10.5, color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".08em" }}>{k}</div>
                   <div className="font-display sm:mt-0.5" style={{ fontWeight: 800, fontSize: 17, whiteSpace: "nowrap" }}>{v}</div>
@@ -725,48 +757,48 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" style={{ marginTop: 14 }}>
-              <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>+ Bu müşteriye yeni form</button>
-              <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}><Ikon ad="telefon" boy={15} />Ara</a>
+              <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>{c("+ Bu müşteriye yeni form", "+ New form for this customer")}</button>
+              <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}><Ikon ad="telefon" boy={15} />{c("Ara", "Call")}</a>
               <a className="btn btn-wa" href={`https://wa.me/${waNumara(m.telefon)}`} target="_blank" rel="noopener noreferrer"><Ikon ad="mesaj" boy={15} />WhatsApp</a>
             </div>
             {m.cihazlar.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <div className="lbl">Kayıtlı cihazlar</div>
+                <div className="lbl">{c("Kayıtlı cihazlar", "Saved appliances")}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{m.cihazlar.map((c, i) => <span key={i} className="pill mute" style={{ fontSize: 13, padding: "5px 10px", whiteSpace: "normal", maxWidth: "100%", overflowWrap: "anywhere", lineHeight: 1.4 }}>{[c.tur, c.marka, c.model].filter(Boolean).join(" ")}{c.seriNo ? `  |  SN ${c.seriNo}` : ""}</span>)}</div>
               </div>
             )}
           </div>
-          <div className="tag" style={{ marginTop: 20 }}>Servis geçmişi</div>
+          <div className="tag" style={{ marginTop: 20 }}>{c("Servis geçmişi", "Service history")}</div>
           <div className="card" style={{ marginTop: 8, overflow: "hidden" }}>
             {g.map((r) => (
               <button key={r.id} className="row-btn" onClick={() => { setSecili(r.id); setGor("raporlar"); setMobilDetay(true); setMusteriSec(""); window.scrollTo(0, 0); }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                  <b>{r.hizmet}</b><span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{r.odeme === "garanti" ? "Garanti" : tl(hesapla(r).toplam)}</span>
+                  <b>{r.hizmet}</b><span style={{ fontWeight: 700, whiteSpace: "nowrap" }}>{r.odeme === "garanti" ? c("Garanti", "Warranty") : rp(hesapla(r).toplam, r)}</span>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>{tarihTR(r.tarih)}  |  {r.no}  |  {[r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ")}  |  {r.teknisyen}</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3 }}>{tarihTR(r.tarih, dil)}  |  {r.no}  |  {[r.cihaz.marka, r.cihaz.model].filter(Boolean).join(" ")}  |  {r.teknisyen}</div>
               </button>
             ))}
           </div>
         </div>
       );
     }
-    const l = mList.filter((x) => !mq.trim() || (x.ad + " " + x.telefon + " " + x.adres).toLocaleLowerCase("tr-TR").includes(mq.toLocaleLowerCase("tr-TR").trim()));
+    const l = mList.filter((x) => !mq.trim() || kucuk(x.ad + " " + x.telefon + " " + x.adres).includes(kucuk(mq.trim())));
     return (
       <div style={{ padding: "20px 16px 0", maxWidth: 900 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>Müşteriler</h1>
-        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, margin: "2px 0 14px" }}>{mList.length} müşteri · telefon numarasından birleşen servis geçmişi</div>
-        <input className="field" placeholder="Ad, telefon ya da adres ara" aria-label="Müşteri ara" value={mq} onChange={(e) => setMq(e.target.value)} />
+        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{c("Müşteriler", "Customers")}</h1>
+        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, margin: "2px 0 14px" }}>{c(`${mList.length} müşteri · telefon numarasından birleşen servis geçmişi`, `${mList.length} ${mList.length === 1 ? "customer" : "customers"} · service history grouped by phone number`)}</div>
+        <input className="field" placeholder={c("Ad, telefon ya da adres ara", "Search name, phone or address")} aria-label={c("Müşteri ara", "Search customers")} value={mq} onChange={(e) => setMq(e.target.value)} />
         <div className="card" style={{ marginTop: 10, overflow: "hidden" }}>
-          {l.length === 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--muted)" }}>Müşteri bulunamadı.</div>}
+          {l.length === 0 && <div style={{ padding: 24, textAlign: "center", color: "var(--muted)" }}>{c("Müşteri bulunamadı.", "No customers found.")}</div>}
           {l.map((x) => (
             <button key={x.anahtar} className="row-btn" onClick={() => setMusteriSec(x.anahtar)}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                 <b style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{x.ad}</b>
-                <span className="font-mono" style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap" }}>{x.sayi} servis</span>
+                <span className="font-mono" style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap" }}>{x.sayi} {c("servis", x.sayi === 1 ? "visit" : "visits")}</span>
               </div>
               <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3, display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{telefonGoster(x.telefon)}  |  son {tarihTR(x.son)}</span>
-                {x.bekleyen > 0 && <span className="pill warn">{tl(x.bekleyen)} bekliyor</span>}
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{telefonGoster(x.telefon)}  |  {c("son", "last")} {tarihTR(x.son, dil)}</span>
+                {x.bekleyen > 0 && <span className="pill warn">{c(`${fp(x.bekleyen)} bekliyor`, `${fp(x.bekleyen)} unpaid`)}</span>}
               </div>
             </button>
           ))}
@@ -796,7 +828,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         a.download = `fixnote-yedek-${bugun().tarih}.json`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      } catch { flash("Yedek hazırlanamadı. Bağlantını kontrol edip tekrar dene."); }
+      } catch { flash(c("Yedek hazırlanamadı. Bağlantını kontrol edip tekrar dene.", "The backup couldn't be prepared. Check your connection and try again.")); }
       finally { setYedekHazirlaniyor(false); }
     };
     const yedekYukle = async (fl: FileList | null) => {
@@ -805,86 +837,114 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       try {
         d = JSON.parse(await fl[0].text());
         if (!Array.isArray(d.raporlar)) throw new Error();
-      } catch { flash("Yedek dosyası okunamadı"); return; }
+      } catch { flash(c("Yedek dosyası okunamadı", "The backup file couldn't be read")); return; }
       await depo.yedekYukle(d);
       if (d.firma) setF({ ...firma, ...d.firma });
     };
+    const fAyar = raporAyari(f, dil);
+    const firmaKaydetDugme = () => { if (kaydetFirma({ ...f, onek: (f.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR", raporDili: fAyar.dil, paraBirimi: fAyar.para })) flash(c("Firma bilgileri kaydedildi", "Company details saved")); };
     return (
       <div style={{ padding: "20px 16px 0", maxWidth: 900 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>Firma ve şablonlar</h1>
-        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, margin: "2px 0 14px" }}>Rapor başlığı, kontrol listeleri ve yedek</div>
+        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{c("Firma ve şablonlar", "Company and templates")}</h1>
+        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, margin: "2px 0 14px" }}>{c("Rapor başlığı, dil, kontrol listeleri ve yedek", "Report header, language, checklists and backup")}</div>
 
         <div className="card" style={{ padding: 16 }}>
-          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>Rapor başlığı</h2>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>{c("Rapor başlığı", "Report header")}</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            {f.logo ? <img src={f.logo} alt="Logo" style={{ height: 52, maxWidth: 140, objectFit: "contain", border: "1px solid var(--line)", borderRadius: 6, padding: 4 }} /> : <div style={{ width: 52, height: 52, borderRadius: 6, background: "var(--ink)", color: "var(--accent)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24 }} className="font-display">{(f.ad.trim()[0] || "S").toLocaleUpperCase("tr-TR")}</div>}
+            {f.logo ? <img src={f.logo} alt="Logo" style={{ height: 52, maxWidth: 140, objectFit: "contain", border: "1px solid var(--line)", borderRadius: 6, padding: 4 }} /> : <div style={{ width: 52, height: 52, borderRadius: 6, background: "var(--ink)", color: "var(--accent)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24 }} className="font-display">{buyukHarf(f.ad.trim()[0] || "S", dil)}</div>}
             <label className="chip" style={{ cursor: "pointer" }}>
-              {f.logo ? "Logoyu değiştir" : "Logo yükle"}
+              {f.logo ? c("Logoyu değiştir", "Change logo") : c("Logo yükle", "Upload logo")}
               <input type="file" accept="image/*" hidden onChange={async (e) => { const fl = e.target.files?.[0]; if (fl) { const src = await kucult(fl, 400, 0.9, "image/png"); setF({ ...f, logo: src }); } e.target.value = ""; }} />
             </label>
-            {f.logo && <button className="chip" onClick={() => setF({ ...f, logo: "" })}>Kaldır</button>}
+            {f.logo && <button className="chip" onClick={() => setF({ ...f, logo: "" })}>{c("Kaldır", "Remove")}</button>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
-            {alan("ad", "Firma adı", "Örn. Akyol Isı ve Klima Teknik Servis")}
-            {alan("telefon", "Telefon")}
-            {alan("eposta", "E-posta")}
-            {alan("adres", "Adres")}
-            {alan("vergiDairesi", "Vergi dairesi")}
-            {alan("vergiNo", "Vergi no")}
-            {alan("teknisyen", "Varsayılan teknisyen")}
-            {alan("onek", "Rapor no ön eki", "SR")}
+            {alan("ad", c("Firma adı", "Company name"), c("Örn. Akyol Isı ve Klima Teknik Servis", "e.g. Brightline Heating & Cooling Ltd"))}
+            {alan("telefon", c("Telefon", "Phone"))}
+            {alan("eposta", c("E-posta", "Email"))}
+            {alan("adres", c("Adres", "Address"))}
+            {alan("vergiDairesi", c("Vergi dairesi", "Tax office (optional)"))}
+            {alan("vergiNo", c("Vergi no", "Tax / VAT no"))}
+            {alan("teknisyen", c("Varsayılan teknisyen", "Default technician"))}
+            {alan("onek", c("Rapor no ön eki", "Report no prefix"), "SR")}
             <div>
-              <div className="lbl">Varsayılan KDV</div>
-              <div style={{ display: "flex", gap: 5 }}>{KDV_ORANLARI.map((k) => <button key={k} className={`chip ${f.kdv === k ? "on" : ""}`} onClick={() => setF({ ...f, kdv: k })}>%{k}</button>)}</div>
+              <div className="lbl">{c(`Varsayılan ${vergiAd(fAyar.dil)}`, `Default ${vergiAd(fAyar.dil)}`)}</div>
+              <div style={{ display: "flex", gap: 5 }}>{KDV_ORANLARI.map((k) => <button key={k} className={`chip ${f.kdv === k ? "on" : ""}`} onClick={() => setF({ ...f, kdv: k })}>{oran(k, dil)}</button>)}</div>
             </div>
           </div>
           <div style={{ marginTop: 10 }}>
-            <label className="lbl" htmlFor="f-alt">Rapor alt notu (garanti şartları)</label>
+            <label className="lbl" htmlFor="f-alt">{c("Rapor alt notu (garanti şartları)", "Report footer (warranty terms)")}</label>
             <textarea id="f-alt" className="field" value={f.altNot} onChange={(e) => setF({ ...f, altNot: e.target.value })} />
           </div>
-          <button className="btn" style={{ marginTop: 12 }} onClick={() => { if (kaydetFirma({ ...f, onek: (f.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR" })) flash("Firma bilgileri kaydedildi"); }}>Kaydet</button>
+          <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
+        </div>
+
+        <div className="card" data-dil-ayar style={{ padding: 16, marginTop: 14 }}>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Dil ve para birimi", "Language and currency")}</h2>
+          <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>{c("Uygulama dili sadece bu telefonda değişir. Rapor dili ve para birimi yeni raporlara ve WhatsApp mesajına yazılır; eski raporlar kendi dilinde kalır.", "The app language only changes on this phone. The report language and currency apply to new reports and the WhatsApp message; older reports keep their own language.")}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <div>
+              <div className="lbl">{c("Uygulama dili", "App language")}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {(["tr", "en"] as const).map((d) => <button key={d} data-uygulama-dili={d} lang={d} className={`chip ${dil === d ? "on" : ""}`} aria-pressed={dil === d} onClick={() => dilSec(d)}>{d === "en" ? "English" : "Türkçe"}</button>)}
+              </div>
+            </div>
+            <div>
+              <div className="lbl">{c("Rapor dili", "Report language")}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {(["tr", "en"] as const).map((d) => <button key={d} data-rapor-dili={d} lang={d} className={`chip ${fAyar.dil === d ? "on" : ""}`} aria-pressed={fAyar.dil === d} onClick={() => setF({ ...f, raporDili: d, paraBirimi: fAyar.para })}>{d === "en" ? "English" : "Türkçe"}</button>)}
+              </div>
+            </div>
+            <div>
+              <div className="lbl">{c("Para birimi", "Currency")}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {PARA_BIRIMLERI.map((b) => <button key={b} data-para={b} className={`chip ${fAyar.para === b ? "on" : ""}`} aria-pressed={fAyar.para === b} onClick={() => setF({ ...f, paraBirimi: b, raporDili: fAyar.dil })}>{PARA_AD[b]}</button>)}
+              </div>
+            </div>
+          </div>
+          <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
         </div>
 
         <div className="card" style={{ padding: 16, marginTop: 14 }}>
-          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>Kontrol listesi şablonları</h2>
-          <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>Hazır 5 şablon her zaman var. Kendi hizmetin için şablon ekle (asansör bakımı, kamera kurulumu, su arıtma...).</div>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Kontrol listesi şablonları", "Checklist templates")}</h2>
+          <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>{c("Hazır 5 şablon her zaman var. Kendi hizmetin için şablon ekle (asansör bakımı, kamera kurulumu, su arıtma...).", "The 5 ready-made templates are always there. Add a template for your own service (lift maintenance, CCTV installation, water treatment...).")}</div>
           <div style={{ display: "grid", gap: 6 }}>
             {sablonlar.map((s) => (
               <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "9px 12px", border: "1px solid var(--line)", borderRadius: 8 }}>
-                <span><b>{s.ad}</b> <span style={{ color: "var(--muted)", fontSize: 13 }}>· {s.maddeler.length} madde{s.ozel ? "  |  senin şablonun" : ""}</span></span>
-                {s.ozel && <button className="chip" style={{ color: "var(--bad)" }} onClick={() => kaydetSablon(ozelSablon.filter((x) => x.id !== s.id))}>Sil</button>}
+                <span><b>{s.ad}</b> <span style={{ color: "var(--muted)", fontSize: 13 }}>· {s.maddeler.length} {c("madde", "steps")}{s.ozel ? c("  |  senin şablonun", "  |  your template") : ""}</span></span>
+                {s.ozel && <button className="chip" style={{ color: "var(--bad)" }} onClick={() => kaydetSablon(ozelSablon.filter((x) => x.id !== s.id))}>{c("Sil", "Delete")}</button>}
               </div>
             ))}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 14 }}>
-            <div><label className="lbl" htmlFor="s-ad">Şablon adı</label><input id="s-ad" className="field" placeholder="Asansör periyodik bakım" value={sAd} onChange={(e) => setSAd(e.target.value)} /></div>
-            <div><label className="lbl" htmlFor="s-tur">Cihaz türü</label><input id="s-tur" className="field" placeholder="Asansör" value={sTur} onChange={(e) => setSTur(e.target.value)} /></div>
+            <div><label className="lbl" htmlFor="s-ad">{c("Şablon adı", "Template name")}</label><input id="s-ad" className="field" placeholder={c("Asansör periyodik bakım", "Lift maintenance")} value={sAd} onChange={(e) => setSAd(e.target.value)} /></div>
+            <div><label className="lbl" htmlFor="s-tur">{c("Cihaz türü", "Appliance type")}</label><input id="s-tur" className="field" placeholder={c("Asansör", "Lift")} value={sTur} onChange={(e) => setSTur(e.target.value)} /></div>
           </div>
           <div style={{ marginTop: 10 }}>
-            <label className="lbl" htmlFor="s-mad">Maddeler (her satıra bir işlem)</label>
-            <textarea id="s-mad" className="field" style={{ minHeight: 110 }} placeholder={"Fren sistemi kontrol edildi\nKapı kilitleri test edildi\nHalatlar yağlandı"} value={sMad} onChange={(e) => setSMad(e.target.value)} />
+            <label className="lbl" htmlFor="s-mad">{c("Maddeler (her satıra bir işlem)", "Steps (one per line)")}</label>
+            <textarea id="s-mad" className="field" style={{ minHeight: 110 }} placeholder={c("Fren sistemi kontrol edildi\nKapı kilitleri test edildi\nHalatlar yağlandı", "Brake system checked\nDoor locks tested\nRopes lubricated")} value={sMad} onChange={(e) => setSMad(e.target.value)} />
           </div>
           <button className="btn btn-ghost" style={{ marginTop: 10 }} onClick={() => {
             const maddeler = sMad.split("\n").map((x) => x.trim()).filter(Boolean);
-            if (!sAd.trim() || !maddeler.length) { flash("Şablon adı ve en az bir madde gerekli"); return; }
+            if (!sAd.trim() || !maddeler.length) { flash(c("Şablon adı ve en az bir madde gerekli", "A template name and at least one step are needed")); return; }
             kaydetSablon([...ozelSablon, { id: "ozel-" + uid(), ad: sAd.trim(), cihazTuru: sTur.trim(), maddeler, ozel: true }]);
-            setSAd(""); setSTur(""); setSMad(""); flash("Şablon eklendi");
-          }}>+ Şablonu ekle</button>
+            setSAd(""); setSTur(""); setSMad(""); flash(c("Şablon eklendi", "Template added"));
+          }}>{c("+ Şablonu ekle", "+ Add template")}</button>
         </div>
 
         <div className="card" style={{ padding: 16, marginTop: 14 }}>
-          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>Veri</h2>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Veri", "Data")}</h2>
           <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>
             {bulut
-              ? "Raporların, fotoğrafların ve imzaların hesabında saklanır; telefon değişse de kaybolmaz. İnternet yokken kaydettiğin rapor telefonda bekler, bağlantı gelince gönderilir. İstersen tek dosyalık yedek de indirebilirsin."
-              : `Demo kayıtları yalnızca bu tarayıcıda durur (şu an ${depoKB()} KB).`}
+              ? c("Raporların, fotoğrafların ve imzaların hesabında saklanır; telefon değişse de kaybolmaz. İnternet yokken kaydettiğin rapor telefonda bekler, bağlantı gelince gönderilir. İstersen tek dosyalık yedek de indirebilirsin.", "Your reports, photos and signatures are stored in your account, so changing phones loses nothing. A report saved offline waits on the phone and is sent when you're back online. You can also download a single-file backup.")
+              : c(`Demo kayıtları yalnızca bu tarayıcıda durur (şu an ${depoKB()} KB).`, `Demo records stay in this browser only (currently ${depoKB()} KB).`)}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button className="chip" onClick={yedekAl} disabled={yedekHazirlaniyor}>{yedekHazirlaniyor ? "Yedek hazırlanıyor..." : "Yedek indir (JSON)"}</button>
-            <button className="chip" onClick={() => dosyaRef.current?.click()}>Yedek yükle</button>
+            <button className="chip" onClick={yedekAl} disabled={yedekHazirlaniyor}>{yedekHazirlaniyor ? c("Yedek hazırlanıyor...", "Preparing backup...") : c("Yedek indir (JSON)", "Download backup (JSON)")}</button>
+            <button className="chip" onClick={() => dosyaRef.current?.click()}>{c("Yedek yükle", "Restore backup")}</button>
             <input ref={dosyaRef} type="file" accept="application/json" hidden onChange={(e) => { yedekYukle(e.target.files); e.target.value = ""; }} />
-            {!bulut && <button className="chip" onClick={() => { depo.ornekYukle(); setF(DEMO_FIRMA); }}>Örnek kayıtları yükle</button>}
-            <button className="chip" style={{ color: "var(--bad)" }} onClick={async () => { if (confirm(bulut ? "Hesabındaki tüm raporlar, fotoğraflar ve imzalar silinsin mi? Bu geri alınamaz." : "Tüm raporlar silinsin mi? Bu geri alınamaz.")) { await depo.tumunuSil(); setSecili(""); } }}>Tüm raporları sil</button>
+            {!bulut && <button className="chip" onClick={() => { depo.ornekYukle(); setF(demoFirma(dil)); }}>{c("Örnek kayıtları yükle", "Load sample records")}</button>}
+            <button className="chip" style={{ color: "var(--bad)" }} onClick={async () => { if (confirm(bulut ? c("Hesabındaki tüm raporlar, fotoğraflar ve imzalar silinsin mi? Bu geri alınamaz.", "Delete every report, photo and signature in your account? This can't be undone.") : c("Tüm raporlar silinsin mi? Bu geri alınamaz.", "Delete all reports? This can't be undone."))) { await depo.tumunuSil(); setSecili(""); } }}>{c("Tüm raporları sil", "Delete all reports")}</button>
           </div>
         </div>
       </div>
