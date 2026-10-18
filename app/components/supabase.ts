@@ -69,7 +69,8 @@ export type Durum =
   | { tur: "bitti"; eposta: string; bitis: Date; abonelik: boolean };
 
 // Trial = account creation + 3 days. A row in public.abonelikler with a future "bitis" date
-// (set by hand in the Supabase dashboard) unlocks the app until that date.
+// unlocks the app until that date. The row is written by the Stripe webhook
+// (app/api/odeme/webhook) or by hand in the Supabase dashboard.
 export function durumHesapla(eposta: string, olusturma: string, abonelikBitis: string | null, simdi = Date.now()): Durum {
   if (abonelikBitis) {
     const b = new Date(abonelikBitis);
@@ -82,9 +83,9 @@ export function durumHesapla(eposta: string, olusturma: string, abonelikBitis: s
   return { tur: "bitti", eposta, bitis, abonelik: false };
 }
 
-// Only paths inside the app are allowed after login (no open redirect).
+// Only paths inside the app (and the plan page) are allowed after login (no open redirect).
 export function guvenliSonra(s: string | null): string {
-  return s && /^\/app(\/|\?|$)/.test(s) ? s : "/app";
+  return s && /^\/(app|abonelik)(\/|\?|$)/.test(s) ? s : "/app";
 }
 
 export function hataMetni(m: string): string {

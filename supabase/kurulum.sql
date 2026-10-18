@@ -1,5 +1,5 @@
 -- Fixnote: Supabase kurulumu (Supabase > SQL Editor'da çalıştırılabilir; tekrar çalıştırmak güvenlidir).
--- 1) abonelikler: ödeme yapan kullanıcının uygulamayı hangi tarihe kadar kullanacağı.
+-- 1) abonelikler: ödeme yapan kullanıcının uygulamayı hangi tarihe kadar kullanacağı (Stripe ya da elle).
 -- 2) firmalar + raporlar + rapor-dosyalari: servis kayıtları (firma bilgisi, şablonlar, raporlar,
 --    fotoğraf ve imzalar). Her kullanıcı sadece kendi kayıtlarını görür; deneme ya da abonelik
 --    bitince yeni kayıt ve değişiklik sunucuda da engellenir, okuma ve silme serbest kalır.
@@ -19,12 +19,21 @@ revoke all on table public.abonelikler from anon;
 revoke insert, update, delete on table public.abonelikler from authenticated;
 grant select on table public.abonelikler to authenticated;
 
--- Kullanıcı sadece kendi satırını okuyabilir. Ekleme ve değiştirme sadece Supabase panelinden
--- (Table Editor) yapılır; uygulamadan yazılamaz.
+-- Kullanıcı sadece kendi satırını okuyabilir. Satırı Stripe webhook'u (app/api/odeme/webhook,
+-- gizli anahtarla) ya da Supabase paneli (Table Editor) yazar; uygulama yazamaz.
 drop policy if exists "kendi aboneligini okur" on public.abonelikler;
 create policy "kendi aboneligini okur" on public.abonelikler
   for select to authenticated
   using ((select auth.uid()) = user_id);
+
+-- Online ödeme (Stripe) bilgileri. Elle girilen satırlarda boş kalır.
+alter table public.abonelikler add column if not exists stripe_musteri text;
+alter table public.abonelikler add column if not exists stripe_abonelik text;
+alter table public.abonelikler add column if not exists plan text;
+alter table public.abonelikler add column if not exists donem text;
+alter table public.abonelikler add column if not exists durum text;
+alter table public.abonelikler add column if not exists guncelleme timestamptz not null default now();
+create unique index if not exists abonelikler_stripe_musteri on public.abonelikler (stripe_musteri) where stripe_musteri is not null;
 
 -- ============ 2) Servis kayıtları ============
 -- Yazma izni: aboneliği süren ya da hesabı 3 günden yeni (deneme) kullanıcı.

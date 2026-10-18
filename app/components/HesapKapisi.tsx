@@ -5,11 +5,17 @@ import Ikon, { Isaret } from "./Ikon";
 import { DilDugmesi } from "./Dil";
 import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA, DENEME_GUN, durumHesapla, supabase, type Durum } from "./supabase";
+import { ODEME_ACIK } from "../lib/paket";
+import { aboneligiYonet, odemeHataMetni } from "./odeme";
 
 // Guards /app: no session -> /giris, trial over -> lock screen. Records stay in the account (app/components/depo.ts).
+// With online payment on (ODEME_ACIK) "subscribe" leads to /abonelik; back from the payment page
+// (/app?odeme=tamam) it waits until the Stripe webhook has written the new subscription.
 const ONBELLEK = "fixnote_abonelik"; // last known subscription end, so a paid user is not locked out offline
 const mailto = (dil: Dil) => `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(dil === "en" ? "Fixnote subscription" : "Fixnote abonelik")}`;
 // Turkish 03.10.2026, English 3 Oct 2026
+const BEKLE_DENEME = 20; // back from payment: check the subscription every 2 s, up to 40 s
+const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const tarih = (d: Date, dil: Dil) =>
   dil === "en" ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
@@ -53,6 +59,9 @@ function Ekran({ ikon, baslik, metin, alt, children }: { ikon: string; baslik: s
 
 export default function HesapKapisi({ children }: { children: React.ReactNode }) {
   const [durum, setDurum] = useState<Durum>({ tur: "yukleniyor" });
+  const [stripeMusteri, setStripeMusteri] = useState(false); // has a Stripe customer: show "manage subscription"
+  const [onay, setOnay] = useState<"" | "bekliyor" | "gecikti">(""); // back from the payment page, subscription not written yet
+  const [yonetHata, setYonetHata] = useState("");
   const dil = useDil();
   const c = (tr: string, en: string) => (dil === "en" ? en : tr);
   const MAILTO = mailto(dil);
@@ -79,15 +88,45 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       const k = oturum.user;
       let abonelik = onbellekOku(k.id);
       // Without internet the last known subscription is used at once (no retries, no waiting).
-      if (navigator.onLine) {
-        const { data: satir, error } = await sb.from("abonelikler").select("bitis").eq("user_id", k.id).retry(false).maybeSingle();
+      const oku = async () => {
+        const { data: satir, error } = await sb.from("abonelikler").select(ODEME_ACIK ? "bitis, stripe_musteri" : "bitis").eq("user_id", k.id).retry(false).maybeSingle();
+        if (error) return false;
+        const s = satir as { bitis?: string; stripe_musteri?: string | null } | null;
+        abonelik = s?.bitis ?? null;
+        onbellekYaz(k.id, abonelik);
+        setStripeMusteri(!!s?.stripe_musteri);
+        return true;
+      };
+      if (navigator.onLine) await oku();
+      if (bitti) return;
+      let d = durumHesapla(k.email ?? "", k.created_at, abonelik);
+      setDurum(d);
+
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("odeme") !== "tamam") return;
+      const temizle = () => {
+        q.delete("odeme");
+        const kalan = q.toString();
+        window.history.replaceState(null, "", window.location.pathname + (kalan ? `?${kalan}` : "") + window.location.hash);
+      };
+      if (!ODEME_ACIK || d.tur === "aktif") {
+        temizle();
+        return;
+      }
+      setOnay("bekliyor");
+      for (let i = 0; i < BEKLE_DENEME && !bitti; i++) {
+        await bekle(2000);
         if (bitti) return;
-        if (!error) {
-          abonelik = (satir?.bitis as string | undefined) ?? null;
-          onbellekYaz(k.id, abonelik);
+        if (!(await oku())) continue;
+        d = durumHesapla(k.email ?? "", k.created_at, abonelik);
+        if (d.tur === "aktif") {
+          setDurum(d);
+          setOnay("");
+          temizle();
+          return;
         }
       }
-      setDurum(durumHesapla(k.email ?? "", k.created_at, abonelik));
+      if (!bitti) setOnay("gecikti");
     })();
     const { data: dinleyici } = sb.auth.onAuthStateChange((olay) => {
       if (olay === "SIGNED_OUT" && !cikiyor) window.location.replace("/giris"); // signed out in another tab
@@ -114,6 +153,16 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       </Ekran>
     );
 
+  // Back from the payment page with the app still locked: wait for the subscription here.
+  if (onay && durum.tur === "bitti")
+    return onay === "bekliyor" ? (
+      <Ekran ikon="saat" baslik={c("Ödemen alındı", "Payment received")} metin={c("Aboneliğin açılıyor, birkaç saniye sürer…", "Your subscription is being activated, this takes a few seconds…")} />
+    ) : (
+      <Ekran ikon="saat" baslik={c("Ödemen alındı", "Payment received")} metin={c(`Aboneliğin henüz açılmadı. Birkaç dakika sonra sayfayı yenile; sorun sürerse ${ABONELIK_EPOSTA} adresine yaz.`, `Your subscription isn't active yet. Refresh the page in a few minutes; if it still isn't, write to ${ABONELIK_EPOSTA}.`)}>
+        <button className="btn" onClick={() => window.location.reload()}>{c("Sayfayı yenile", "Refresh the page")}</button>
+      </Ekran>
+    );
+
   if (durum.tur === "bitti")
     return (
       <Ekran
@@ -124,7 +173,11 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
           : <>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis, dil)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis, dil)} tarihinde bitti.`} Kayıtların hesabında saklanıyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
         alt={<>{c("Giriş yapılan hesap:", "Signed in as:")} {durum.eposta}</>}
       >
-        <a className="btn" href={MAILTO}>{c("Abonelik için yaz", "Email us to subscribe")}</a>
+        {ODEME_ACIK ? (
+          <Link className="btn" href="/abonelik">{durum.abonelik ? c("Aboneliği yenile", "Renew subscription") : c("Paket seç", "Choose a plan")}</Link>
+        ) : (
+          <a className="btn" href={MAILTO}>{c("Abonelik için yaz", "Email us to subscribe")}</a>
+        )}
         <button className="btn btn-ghost" onClick={cikis}>{c("Çıkış yap", "Sign out")}</button>
       </Ekran>
     );
@@ -142,11 +195,33 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
               <span><span className="hidden min-[380px]:inline">{dil === "en" ? `Subscription active · until ${tarih(durum.bitis, dil)}` : `Aboneliğin aktif · ${tarih(durum.bitis, dil)} tarihine kadar`}</span><span className="min-[380px]:hidden">{dil === "en" ? `Active · ends ${tarih(durum.bitis, dil)}` : `Abonelik aktif · bitiş ${tarih(durum.bitis, dil)}`}</span></span>
             )}
           </span>
-          {durum.tur === "deneme" && <a href={MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
+          {durum.tur === "deneme" && <a href={ODEME_ACIK ? "/abonelik" : MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
+          {durum.tur === "aktif" && ODEME_ACIK && stripeMusteri && (
+            <button
+              data-abonelik-yonet
+              onClick={async () => {
+                setYonetHata("");
+                const kod = await aboneligiYonet(dil);
+                if (kod) setYonetHata(odemeHataMetni(kod, dil));
+              }}
+              className="hover:text-white"
+              style={{ background: "none", border: "none", color: "#fff", font: "inherit", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", cursor: "pointer", padding: "11px 4px", margin: "-11px -4px" }}
+            >
+              {c("Yönet", "Manage")}
+            </button>
+          )}
           <span className="hidden sm:inline" style={{ marginLeft: "auto", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{durum.eposta}</span>
           <button onClick={cikis} className="ml-auto sm:-ml-2 hover:text-white" style={{ background: "none", border: "none", color: "inherit", font: "inherit", cursor: "pointer", flex: "none", padding: "11px 8px", marginTop: -11, marginBottom: -11, marginRight: -8 }}>{c("Çıkış", "Sign out")}</button>
         </div>
       </div>
+      {yonetHata && (
+        <div role="alert" className="no-print" style={{ background: "var(--bad-soft)", color: "var(--bad)", fontSize: 13, fontWeight: 700, padding: "8px 16px" }}>{yonetHata}</div>
+      )}
+      {onay && durum.tur === "deneme" && (
+        <div className="no-print" data-odeme-bekliyor style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", fontSize: 13, fontWeight: 700, padding: "8px 16px" }}>
+          {onay === "bekliyor" ? c("Ödemen alındı, aboneliğin açılıyor…", "Payment received, activating your subscription…") : c(`Ödemen alındı; aboneliğin birkaç dakika içinde açılacak. Sorun sürerse ${ABONELIK_EPOSTA} adresine yaz.`, `Payment received; your subscription will be active within a few minutes. If it isn't, write to ${ABONELIK_EPOSTA}.`)}
+        </div>
+      )}
       {children}
     </>
   );

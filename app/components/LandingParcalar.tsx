@@ -6,6 +6,7 @@ import Ikon from "./Ikon";
 import { type Dil, demoFirma, demoRaporlar, sablonlarDil, gecmis, hesapla, musteriler, tarihTR, telefonGoster, para, raporPara, waMetin } from "../lib/servis";
 import { useDil } from "../lib/dil";
 import { raporEtiket } from "./RaporSayfa";
+import { PAKET } from "../lib/paket";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
@@ -921,8 +922,7 @@ export function IsDongu() {
 }
 
 // ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Sitede sadece ABD doları görünür. ----------
-// $, KDV hariç. ay: aylık ödeme; yil: yıllık peşin (aylığın %20 altı, 12'ye tam bölünür).
-const PAKET = { usta: { ay: 10, yil: 96 }, firma: { ay: 25, yil: 240 } };
+// Tutarlar app/lib/paket.ts içinde (PAKET); ödeme sayfası ve ödeme API'si de oradan okur.
 const KAYIT = "/giris?kayit=1";
 const sent = (usd: number) => Math.round(usd * 100); // amounts are compared and shown in whole cents
 const dolar = (c: number, dil: Dil = "tr") => `$${c % 100 === 0 ? c / 100 : dil === "en" ? (c / 100).toFixed(2) : (c / 100).toFixed(2).replace(".", ",")}`;
