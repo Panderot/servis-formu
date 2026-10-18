@@ -5,6 +5,7 @@
 --    fotoğraf ve imzalar). Her firma hesabı (sahibi ve ekibi) sadece kendi kayıtlarını görür; deneme
 --    ya da abonelik bitince yeni kayıt ve değişiklik sunucuda da engellenir, okuma ve silme serbest kalır.
 -- 3) ekip fonksiyonları: davet, katılma, liste, çıkarma (uygulama bunları rpc ile çağırır).
+-- 4) hesap silme: kullanıcı Ayarlar'dan kendi hesabını ve kayıtlarını siler.
 
 -- ============ 1) Abonelikler ============
 create table if not exists public.abonelikler (
@@ -30,6 +31,8 @@ alter table public.abonelikler add column if not exists stripe_abonelik text;
 alter table public.abonelikler add column if not exists plan text;
 alter table public.abonelikler add column if not exists donem text;
 alter table public.abonelikler add column if not exists durum text;
+-- Abonelik dönem sonunda yenilenecek mi (iptal edilmişse false). Hesap silme buna bakar.
+alter table public.abonelikler add column if not exists yenilenecek boolean;
 alter table public.abonelikler add column if not exists guncelleme timestamptz not null default now();
 create unique index if not exists abonelikler_stripe_musteri on public.abonelikler (stripe_musteri) where stripe_musteri is not null;
 -- Stripe webhook'u satırı gizli anahtarla (service_role) yazar; bu projede service_role'ün yeni tablolara varsayılan yetkisi yok.
@@ -402,3 +405,47 @@ revoke all on function public.ekip_durumu(), public.davet_olustur(), public.dave
 grant execute on function public.ekip_durumu(), public.davet_olustur(), public.davet_bilgisi(text),
   public.ekibe_katil(text, text), public.ekip_listesi(), public.uye_cikar(uuid),
   public.davetleri_iptal(), public.ekipten_ayril() to authenticated;
+
+-- ============ 4) Hesap silme (uygulama rpc ile çağırır) ============
+-- Kullanıcı kendi hesabını siler. Firma bilgisi, raporlar, abonelik satırı, ekip üyelikleri ve davetler
+-- yabancı anahtarlarla (on delete cascade) birlikte silinir; sahip silinince teknisyenlerinin erişimi
+-- biter. Teknisyen silinince yazdığı raporlar firmada kalır (yazan boşalır).
+-- Fotoğraf ve imza dosyaları SQL ile silinemez: uygulama önce kendi klasörünü (<user id>/) depodan
+-- boşaltır, klasörde dosya kaldıysa silme reddedilir (dosyalar_var).
+-- Yenilenecek bir Stripe aboneliği varken silinmez (abonelik_aktif): önce Yönet > iptal. İptal edilmiş
+-- ve dönem sonunu bekleyen abonelik silmeyi engellemez.
+-- p_kontrol = true: sadece kontrol eder (uygulama dosyaları silmeden önce sorar), hiçbir şey silmez.
+create or replace function public.hesabimi_sil(p_kontrol boolean default false)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  u uuid := (select auth.uid());
+begin
+  if u is null then raise exception 'oturum'; end if;
+  if exists (
+    select 1 from public.abonelikler a
+    where a.user_id = u
+      and a.stripe_abonelik is not null
+      and coalesce(a.durum, '') in ('active', 'trialing', 'past_due')
+      and coalesce(a.yenilenecek, true)
+      and a.bitis > now()
+  ) then
+    raise exception 'abonelik_aktif';
+  end if;
+  if p_kontrol then return; end if;
+  if exists (
+    select 1 from storage.objects o
+    where o.bucket_id = 'rapor-dosyalari' and (storage.foldername(o.name))[1] = u::text
+  ) then
+    raise exception 'dosyalar_var';
+  end if;
+  delete from auth.users where id = u;
+end;
+$$;
+
+revoke all on function public.hesabimi_sil(boolean) from public, anon;
+grant execute on function public.hesabimi_sil(boolean) to authenticated;

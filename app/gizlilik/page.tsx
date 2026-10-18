@@ -67,7 +67,7 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["Ne kadar saklıyoruz", [
     "Hesap bilgilerin ve servis kayıtların hesabın açık olduğu sürece saklanır. Deneme ya da abonelik bitince kayıtların silinmez; abonelik açılınca kaldığın yerden devam edersin.",
-    "Bir raporu sildiğinde fotoğrafları ve imzası da silinir. Hesabının silinmesini istersen, kanunen saklamamız gereken kayıtlar dışında hesap bilgilerin ve servis kayıtların silinir. Altyapı sağlayıcımızın yedeklerinden tamamen silinmesi birkaç gün sürebilir.",
+    "Bir raporu sildiğinde fotoğrafları ve imzası da silinir. Hesabını uygulamada Ayarlar > Hesabımı sil'den kendin silebilir ya da bize yazarak silinmesini isteyebilirsin; kanunen saklamamız gereken kayıtlar dışında hesap bilgilerin, firma bilgilerin ve servis kayıtların (fotoğraf ve imzalar dahil) hemen silinir. Altyapı sağlayıcımızın yedeklerinden tamamen silinmesi birkaç gün sürebilir.",
     "Teknik kayıtlar sağlayıcıların belirlediği sınırlı sürelerle tutulur.",
   ]],
   ["Verilerin güvenliği", [
@@ -170,7 +170,7 @@ const BOLUMLER_EN: Bolum[] = [
   ]],
   ["How long we keep it", [
     "Your account details and service records are kept while your account is open. When a trial or subscription ends your records are not deleted; once a subscription is active you carry on where you left off.",
-    "When you delete a report, its photos and signature are deleted too. If you ask for your account to be deleted, your account details and service records are deleted, except for records we must keep by law. Full deletion from our infrastructure provider's backups may take a few days.",
+    "When you delete a report, its photos and signature are deleted too. You can delete your account yourself in the app under Settings > Delete my account, or ask us to delete it; your account details, company details and service records (photos and signatures included) are deleted at once, except for records we must keep by law. Full deletion from our infrastructure provider's backups may take a few days.",
     "Technical logs are kept for the limited periods set by the providers.",
   ]],
   ["Keeping data secure", [

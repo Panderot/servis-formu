@@ -36,6 +36,7 @@ export default function GirisFormu() {
   const [sonra, setSonra] = useState("/app");
   const [kalan, setKalan] = useState(0); // seconds until a new reset link can be requested
   const [tekrar, setTekrar] = useState(false); // a new link was sent from the "check your e-mail" screen
+  const [silindi, setSilindi] = useState(false); // came here after Settings > Delete my account
 
   // Read ?sonra= and ?yenile=1 on the client; an existing session goes straight to the app.
   useEffect(() => {
@@ -43,6 +44,10 @@ export default function GirisFormu() {
     const q = new URLSearchParams(window.location.search);
     const hedef = guvenliSonra(q.get("sonra"));
     setSonra(hedef);
+    if (q.get("silindi") === "1") {
+      setSilindi(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
     const yenile = q.get("yenile") === "1";
     if (yenile) setMod("yenile");
     else if (q.get("kayit") === "1") setMod("kayit"); // trial buttons open the sign-up tab
@@ -219,6 +224,10 @@ export default function GirisFormu() {
           <div className="gr-kart">
             {!hesapAyarli && (
               <div role="status" className="gr-not">{c("Giriş henüz yapılandırılmadı. Supabase adresi ve anahtarı eklenince bu sayfa çalışır.", "Sign-in isn't configured yet. This page works once the Supabase address and key are added.")}</div>
+            )}
+
+            {silindi && (
+              <div role="status" className="gr-not" data-hesap-silindi style={{ background: "var(--ok-soft)", color: "var(--ok)" }}>{c("Hesabın ve kayıtların silindi.", "Your account and records have been deleted.")}</div>
             )}
 
             {(mod === "giris" || mod === "kayit") && (

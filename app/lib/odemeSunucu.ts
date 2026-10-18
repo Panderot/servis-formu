@@ -124,10 +124,13 @@ export async function aboneligiYaz(abonelikId: string): Promise<string> {
         plan,
         donem,
         durum: s.status,
+        yenilenecek: !s.cancel_at_period_end && !s.cancel_at && !s.ended_at && !BITTI.has(s.status),
         guncelleme: new Date().toISOString(),
       },
       { onConflict: "user_id" },
     );
+  // 23503: the user deleted their account (Settings > Delete account); nothing to write, no retry.
+  if (error?.code === "23503") return `atlandı: ${s.id} kullanıcısı silinmiş`;
   if (error) throw new Error("abonelikler yazılamadı: " + error.message);
   return `yazıldı: ${s.id} ${s.status} -> ${new Date(bitis * 1000).toISOString()}`;
 }
