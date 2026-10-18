@@ -34,6 +34,8 @@ alter table public.abonelikler add column if not exists donem text;
 alter table public.abonelikler add column if not exists durum text;
 alter table public.abonelikler add column if not exists guncelleme timestamptz not null default now();
 create unique index if not exists abonelikler_stripe_musteri on public.abonelikler (stripe_musteri) where stripe_musteri is not null;
+-- Stripe webhook'u satırı gizli anahtarla (service_role) yazar; bu projede service_role'ün yeni tablolara varsayılan yetkisi yok.
+grant select, insert, update on table public.abonelikler to service_role;
 
 -- ============ 2) Servis kayıtları ============
 -- Yazma izni: aboneliği süren ya da hesabı 3 günden yeni (deneme) kullanıcı.
