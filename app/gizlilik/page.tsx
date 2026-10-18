@@ -24,7 +24,7 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["Kısaca", [[
     "Servis kayıtların (müşteri bilgileri, raporlar, fotoğraflar, imzalar ve firma bilgilerin) hesabında saklanır: altyapı sağlayıcımız Supabase'in Almanya'daki (Frankfurt) sunucularında.",
-    "Bu kayıtları yalnızca hesabına giriş yapanlar görür. Biz onlara yalnızca sen destek istediğinde ya da yasal bir zorunluluk olduğunda bakarız.",
+    "Bu kayıtları yalnızca hesabına ve Firma paketinde ekibine katılan teknisyenlerin görür. Biz onlara yalnızca sen destek istediğinde ya da yasal bir zorunluluk olduğunda bakarız.",
     "Hesabın için ayrıca e-posta adresin, giriş bilgilerin ve deneme ya da abonelik durumun tutulur.",
     "Verilerini satmayız ve reklam için kullanmayız. Sitede reklam ya da takip çerezi yoktur.",
   ]]],
@@ -32,6 +32,7 @@ const BOLUMLER: Bolum[] = [
     "Hesap bilgileri: e-posta adresin ve şifren. Şifren açık hâliyle saklanmaz; giriş altyapımız onu geri çözülemeyecek biçimde (hash) tutar.",
     "Google ile giriş: Google ile girmeyi seçersen Google bize adını, e-posta adresini ve profil fotoğrafının bağlantısını iletir. Google hesabının şifresini hiçbir zaman görmeyiz.",
     "Deneme ve abonelik: hesabının oluşturulma tarihi, deneme ya da abonelik bitiş tarihi ve abonelikle ilgili kısa notlar.",
+    "Ekip: Firma paketinde bir firmanın ekibine katılırsan e-posta adresin, ekipte görünen adın, katılma tarihin ve hangi raporu ilk senin yazdığın; bu bilgileri firma sahibi görür. Davet bağlantıları 7 gün sonra geçersiz olur.",
     "Teknik kayıtlar: giriş ve güvenlik için altyapı sağlayıcılarımız IP adresi, tarayıcı bilgisi ve giriş zamanı gibi kayıtları sınırlı bir süre tutar.",
     "Servis kayıtları: uygulamaya girdiğin firma bilgileri ve logon, müşteri adları, telefonları ve adresleri, cihaz bilgileri, servis raporları, önce ve sonra fotoğrafları, müşteri imzaları ve kendi şablonların.",
     `Yazışmalar: ${E} adresine yazarsan e-posta adresin ve yazdıkların.`,
@@ -126,7 +127,7 @@ const BOLUMLER_EN: Bolum[] = [
   ]],
   ["In short", [[
     "Your service records (customer details, reports, photos, signatures and your company details) are stored in your account: on the servers of our infrastructure provider Supabase in Germany (Frankfurt).",
-    "Only people who sign in to your account can see these records. We look at them only when you ask for support or when the law requires it.",
+    "Only people who sign in to your account, and on the Team plan the technicians who join your team, can see these records. We look at them only when you ask for support or when the law requires it.",
     "For your account we also keep your email address, your sign-in details and your trial or subscription status.",
     "We don't sell your data or use it for advertising. The site has no advertising or tracking cookies.",
   ]]],
@@ -134,6 +135,7 @@ const BOLUMLER_EN: Bolum[] = [
     "Account details: your email address and password. Your password is not stored in plain form; our sign-in infrastructure keeps it in a form that cannot be reversed (a hash).",
     "Google sign-in: if you choose to sign in with Google, Google sends us your name, email address and a link to your profile photo. We never see your Google password.",
     "Trial and subscription: the date your account was created, the end date of your trial or subscription and short notes about the subscription.",
+    "Team: if you join a company's team on the Team plan, your email address, the name shown in the team, the date you joined and which reports you first wrote; the owner of the company account can see this. Invite links stop working after 7 days.",
     "Technical logs: for sign-in and security, our infrastructure providers keep records such as IP address, browser details and sign-in time for a limited period.",
     "Service records: the company details and logo you enter in the app, customer names, phone numbers and addresses, appliance details, service reports, before and after photos, customer signatures and your own templates.",
     `Correspondence: if you write to ${E}, your email address and what you write.`,

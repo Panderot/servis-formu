@@ -25,7 +25,8 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["Hesap", [[
     "Hesap açarken gerçek ve sana ait bir e-posta adresi kullanırsın.",
-    "Firma hesabını kendi teknisyenlerinle kullanabilirsin (Usta paketinde bir teknisyen, Firma paketinde sınırsız). Hesabı kullanan herkes aynı kayıtları görür; şifreni bunların dışında kimseyle paylaşmazsın.",
+    "Usta paketinde hesabı yalnızca sen kullanırsın. Firma paketinde teknisyenlerini davet bağlantısıyla ekibine eklersin; her teknisyen kendi e-postası ve şifresiyle girer, firmanın kayıtlarını görür, rapor yazar ve düzenler. Rapor silme, firma bilgileri, şablonlar, abonelik ve ekip yönetimi hesabın sahibi olarak sende kalır.",
+    "Şifreni kimseyle paylaşmazsın. Ekipten çıkardığın teknisyenin firmanın kayıtlarına erişimi hemen biter; yazdığı raporlar firmada kalır.",
     "Hesabında yapılan işlemlerden sen sorumlusun.",
     `Hesabının izinsiz kullanıldığını düşünürsen hemen ${E} adresine yaz.`,
   ]]],
@@ -96,7 +97,8 @@ const BOLUMLER_EN: Bolum[] = [
   ]],
   ["Your account", [[
     "You open your account with a real email address that belongs to you.",
-    "You may use your company account with your own technicians (one technician on the Solo plan, unlimited on the Team plan). Everyone using the account sees the same records; you don't share your password with anyone else.",
+    "On the Solo plan only you use the account. On the Team plan you add your technicians to your team with an invite link; each technician signs in with their own email and password, sees the company's records and writes and edits reports. Deleting reports, company details, templates, the subscription and managing the team stay with you as the owner of the account.",
+    "You don't share your password with anyone. A technician you remove from the team loses access to the company's records at once; the reports they wrote stay with the company.",
     "You are responsible for what is done in your account.",
     `If you think your account has been used without permission, write to ${E} straight away.`,
   ]]],

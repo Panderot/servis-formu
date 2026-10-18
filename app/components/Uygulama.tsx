@@ -7,6 +7,8 @@ import Olcekli from "./Olcekli";
 import ImzaPad from "./ImzaPad";
 import Ikon, { Isaret } from "./Ikon";
 import { useDepo, type Mod } from "./depo";
+import { useEkip, teknisyenAnahtar } from "./ekip";
+import EkipKarti from "./EkipKarti";
 import { DilDugmesi } from "./Dil";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
@@ -59,9 +61,22 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     window.clearTimeout(mesajZaman.current);
     mesajZaman.current = window.setTimeout(() => setMesaj(""), ms);
   };
-  const depo = useDepo(mod, flash, dil);
-  const { hazir, firma, raporlar, ozelSablon } = depo;
   const bulut = mod === "bulut";
+  // Team: a technician works on the owner's firm account; no report deletion, no firm settings.
+  const ekip = useEkip();
+  const teknisyen = bulut && ekip?.rol === "teknisyen";
+  const depo = useDepo(mod, flash, dil, bulut && ekip ? { id: ekip.hesapId, sahip: !teknisyen } : null);
+  const { hazir, firma, raporlar, ozelSablon } = depo;
+  // A technician's own name for new reports stays on this device (the firm's default is the owner's).
+  const [tekAd, setTekAd] = useState(() => {
+    if (!teknisyen || !ekip) return "";
+    try { return localStorage.getItem(teknisyenAnahtar(ekip.uid)) || ""; } catch { return ""; }
+  });
+  const tekAdKaydet = (ad: string) => {
+    setTekAd(ad);
+    if (ekip) { try { localStorage.setItem(teknisyenAnahtar(ekip.uid), ad); } catch {} }
+  };
+  const formFirma = teknisyen ? { ...firma, teknisyen: tekAd } : firma;
   const [gor, setGor] = useState<Gorunum>("raporlar");
   const [secili, setSecili] = useState<string>("");
   const [mobilDetay, setMobilDetay] = useState(false);
@@ -117,7 +132,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     yeniAcildi.current = true;
     const q = new URLSearchParams(window.location.search);
     if (q.get("yeni") === "1") {
-      setTaslak(bosRapor(firma, raporlar, new Date(), dil));
+      setTaslak(bosRapor(formFirma, raporlar, new Date(), dil));
       setGor("form");
       // drop ?yeni=1 so a refresh or the browser's address suggestion does not reopen the form
       q.delete("yeni");
@@ -143,7 +158,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const git = (g: Gorunum) => { if (g === "ayarlar") setAf(firma); setGor(g); setMobilDetay(false); setMusteriSec(""); window.scrollTo(0, 0); };
 
   function yeniForm(onDolu?: Partial<Rapor>) {
-    const r = { ...bosRapor(firma, raporlar, new Date(), dil), ...onDolu };
+    const r = { ...bosRapor(formFirma, raporlar, new Date(), dil), ...onDolu };
     setTaslak(r); setAdim(0); setDuzenle(false); setGor("form"); window.scrollTo(0, 0);
   }
   const duzenleAc = async (r: Rapor) => { const t = await depo.duzenlemeHazirla(r); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
@@ -154,7 +169,10 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     if (e.length) { flash(c("Eksik: ", "Missing: ") + e.join(", ")); return; }
     const r = { ...taslak, imzalayan: taslak.imzalayan || taslak.musteri.ad };
     if (!depo.raporKaydet(r)) return;
-    if (r.teknisyen && r.teknisyen !== firma.teknisyen) kaydetFirma({ ...firma, teknisyen: r.teknisyen });
+    if (r.teknisyen && r.teknisyen !== formFirma.teknisyen) {
+      if (teknisyen) tekAdKaydet(r.teknisyen);
+      else kaydetFirma({ ...firma, teknisyen: r.teknisyen });
+    }
     setTaslak(null); setSecili(r.id); setGor("raporlar"); setMobilDetay(true); setQ(""); setFiltre("");
     window.scrollTo(0, 0);
     flash(duzenle ? c("Rapor güncellendi", "Report updated") : c(`Rapor ${r.no} kaydedildi`, `Report ${r.no} saved`));
@@ -193,11 +211,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const d = depo.durum;
   const durumYazi = !d ? "" : d.hata ? d.hata : d.cevrimdisi ? (d.bekleyen ? c(`İnternet yok: ${d.bekleyen} kayıt telefonda bekliyor`, `Offline: ${d.bekleyen} records waiting on this phone`) : c("İnternet yok", "Offline")) : d.bekleyen ? c(`${d.bekleyen} kayıt gönderiliyor`, `Sending ${d.bekleyen} records`) : c("Tüm kayıtlar hesabında", "All records are in your account");
   const durumRenk = !d ? "" : d.hata ? "var(--bad)" : d.cevrimdisi || d.bekleyen ? "var(--warn)" : "var(--ok)";
-  // Greeting with the company name: one account is shared by every technician of the firm.
+  // Greeting with the company name: the owner and every technician of the team see the firm account.
   const firmaAd = (firma.ad || "").trim().replace(/\.+$/, "");
   const saatNow = new Date().getHours();
   const selam = saatNow < 12 ? c("Günaydın", "Good morning") : saatNow < 18 ? c("İyi günler", "Good afternoon") : c("İyi akşamlar", "Good evening");
-  const NAV = [["raporlar", c("Raporlar", "Reports"), "belge", raporlar.length], ["musteriler", c("Müşteriler", "Customers"), "kisiler", mList.length], ["ayarlar", c("Firma ve şablonlar", "Company and templates"), "ayar", null]] as const;
+  const NAV = [["raporlar", c("Raporlar", "Reports"), "belge", raporlar.length], ["musteriler", c("Müşteriler", "Customers"), "kisiler", mList.length], ["ayarlar", teknisyen ? c("Ayarlar", "Settings") : c("Firma ve şablonlar", "Company and templates"), "ayar", null]] as const;
 
   // ================= ARAYÜZ =================
   return (
@@ -476,11 +494,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                       <button className="btn btn-wa" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} /><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">{c("WhatsApp'la gönder", "Send on WhatsApp")}</span></button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap" style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
+                  <div className={teknisyen ? "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-3 sm:flex sm:flex-wrap" : "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap"} style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
                     <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />{c("Düzenle", "Edit")}</button>
                     <button className="chip eylem" aria-label={c("Bu müşteriye yeni form", "New form for this customer")} onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">{c("Yeni form", "New form")}</span><span className="hidden sm:inline">{c("Bu müşteriye yeni form", "New form for this customer")}</span></button>
                     <button className="chip eylem" aria-label={c("Müşteri geçmişi", "Customer history")} onClick={() => { setMusteriSec(musteriAnahtar(r.musteri)); setGor("musteriler"); }}><Ikon ad="saat" boy={14} /><span className="sm:hidden">{c("Geçmiş", "History")}</span><span className="hidden sm:inline">{c("Müşteri geçmişi", "Customer history")}</span></button>
-                    <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />{c("Sil", "Delete")}</button>
+                    {!teknisyen && <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />{c("Sil", "Delete")}</button>}
                   </div>
                 </div>
                 <div style={{ background: "var(--tile)", border: "1px solid var(--line)", borderRadius: 16, padding: 12 }}>
@@ -829,7 +847,33 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   }
 
   // ================= AYARLAR =================
+  // A technician's settings: team, own name, app language.
+  function TeknisyenAyarlar() {
+    return (
+      <div style={{ padding: "20px 16px 0", maxWidth: 900 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{c("Ayarlar", "Settings")}</h1>
+        <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, margin: "2px 0 14px" }}>{c("Ekip, adın ve uygulama dili", "Team, your name and app language")}</div>
+        <EkipKarti dil={dil} />
+        <div className="card" data-teknisyen-ad style={{ padding: 16, marginTop: 14 }}>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Adın", "Your name")}</h2>
+          <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>{c("Yeni raporlarda teknisyen olarak bu ad yazılır. Sadece bu telefonda saklanır.", "New reports show this name as the technician. It's kept on this phone only.")}</div>
+          <label className="lbl" htmlFor="t-ad">{c("Teknisyen adı", "Technician name")}</label>
+          <input id="t-ad" className="field" value={tekAd} maxLength={80} onChange={(e) => setTekAd(e.target.value)} onBlur={(e) => tekAdKaydet(e.target.value.trim())} />
+          <button className="btn" style={{ marginTop: 12 }} onClick={() => { tekAdKaydet(tekAd.trim()); flash(c("Adın kaydedildi", "Your name was saved")); }}>{c("Kaydet", "Save")}</button>
+        </div>
+        <div className="card" style={{ padding: 16, marginTop: 14 }}>
+          <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Uygulama dili", "App language")}</h2>
+          <div style={{ fontSize: 14, color: "var(--muted)", marginBottom: 12 }}>{c("Sadece bu telefonda değişir. Raporların dili ve para birimi firma sahibinin ayarıdır.", "Only changes on this phone. The report language and currency are the owner's setting.")}</div>
+          <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+            {(["tr", "en"] as const).map((d) => <button key={d} data-uygulama-dili={d} lang={d} className={`chip ${dil === d ? "on" : ""}`} aria-pressed={dil === d} onClick={() => dilSec(d)}>{d === "en" ? "English" : "Türkçe"}</button>)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function AyarlarGorunum() {
+    if (teknisyen) return TeknisyenAyarlar();
     const f = af;
     const setF = setAf;
     const alan = (k: keyof Firma, etiket: string, ph = "") => (
@@ -925,6 +969,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
           <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
         </div>
+
+        {bulut && <EkipKarti dil={dil} />}
 
         <div className="card" style={{ padding: 16, marginTop: 14 }}>
           <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 4px" }}>{c("Kontrol listesi şablonları", "Checklist templates")}</h2>

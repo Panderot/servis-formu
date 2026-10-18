@@ -12,7 +12,7 @@ import { ODEME_ACIK, PAKET, type Donem, type Plan } from "../lib/paket";
 // Reachable from the trial bar and the lock screen in /app (app/components/HesapKapisi.tsx).
 const dolar = (n: number, dil: string) => `$${Number.isInteger(n) ? n : dil === "en" ? n.toFixed(2) : n.toFixed(2).replace(".", ",")}`;
 
-type Hal = { tur: "yukleniyor" } | { tur: "hazir"; eposta: string; suruyor: boolean };
+type Hal = { tur: "yukleniyor" } | { tur: "hazir"; eposta: string; suruyor: boolean; teknisyen: boolean };
 
 export default function AbonelikSecimi() {
   const dil = useDil();
@@ -43,12 +43,19 @@ export default function AbonelikSecimi() {
         window.location.replace("/giris?sonra=%2Fabonelik");
         return;
       }
+      // A technician of a team does not pay: the subscription is the owner's.
+      const { data: ed } = await sb.rpc("ekip_durumu").retry(false);
+      if (bitti) return;
+      if ((ed as { rol?: string } | null)?.rol === "teknisyen") {
+        setHal({ tur: "hazir", eposta: k.email ?? "", suruyor: false, teknisyen: true });
+        return;
+      }
       let suruyor = false;
       if (ODEME_ACIK) {
         const { data: s } = await sb.from("abonelikler").select("bitis, stripe_abonelik, durum").eq("user_id", k.id).maybeSingle();
         suruyor = !!(s?.stripe_abonelik && ["active", "trialing", "past_due"].includes(s.durum ?? "") && new Date(s.bitis).getTime() > Date.now());
       }
-      if (!bitti) setHal({ tur: "hazir", eposta: k.email ?? "", suruyor });
+      if (!bitti) setHal({ tur: "hazir", eposta: k.email ?? "", suruyor, teknisyen: false });
     })();
     return () => {
       bitti = true;
@@ -85,9 +92,15 @@ export default function AbonelikSecimi() {
       <DilDugmesi style={{ position: "absolute", top: 14, right: 14 }} />
       <Link href="/app" style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 18, letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</Link>
 
-      <div data-abonelik={hal.tur === "hazir" ? (hal.suruyor ? "suruyor" : "secim") : "yukleniyor"} className="card" style={{ width: "100%", maxWidth: 520, marginTop: 22, borderRadius: 20, padding: "clamp(22px, 5vw, 30px)", boxShadow: "var(--shadow-md)" }}>
+      <div data-abonelik={hal.tur === "hazir" ? (hal.teknisyen ? "teknisyen" : hal.suruyor ? "suruyor" : "secim") : "yukleniyor"} className="card" style={{ width: "100%", maxWidth: 520, marginTop: 22, borderRadius: 20, padding: "clamp(22px, 5vw, 30px)", boxShadow: "var(--shadow-md)" }}>
         {hal.tur === "yukleniyor" ? (
           <div style={{ minHeight: 260 }} />
+        ) : hal.teknisyen ? (
+          <div style={{ textAlign: "center" }}>
+            <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{c("Abonelik firma sahibinde", "The subscription is the owner's")}</h1>
+            <p style={{ fontSize: 14.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.6, margin: "8px 0 20px" }}>{c("Bir firmanın ekibindesin; aboneliği firma sahibi yönetir. Senin ödeme yapmana gerek yok.", "You're in a company's team; the owner manages the subscription. You don't need to pay.")}</p>
+            <Link href="/app" className="btn" style={{ width: "100%" }}>{c("Uygulamaya dön", "Back to the app")}</Link>
+          </div>
         ) : !ODEME_ACIK ? (
           <div style={{ textAlign: "center" }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{c("Aboneliğe geç", "Subscribe")}</h1>

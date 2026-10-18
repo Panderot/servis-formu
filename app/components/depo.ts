@@ -14,8 +14,12 @@ const c = (tr: string, en: string) => (aktifDil() === "en" ? en : tr);
 // bulut: the signed-in account in Supabase (tables firmalar, raporlar; bucket rapor-dosyalari). /app
 //        Every change goes into an outbox in localStorage first, so a report saved without
 //        internet waits on the phone and is sent when the connection is back.
+//        Records belong to the firm account (hesap): the owner's id; a technician of the team
+//        (app/components/ekip.ts) reads and writes the owner's records but never deletes reports,
+//        files or changes the firm settings. Local keys (outbox, cache) stay per signed-in user.
 
 export type Mod = "demo" | "bulut";
+export type Hesap = { id: string; sahip: boolean }; // firm account of the signed-in user
 export type DepoDurum = { bekleyen: number; cevrimdisi: boolean; gonderiliyor: boolean; hata: string };
 export type Yedek = { firma?: Firma; raporlar: Rapor[]; sablonlar?: Sablon[] };
 export type Aktarim = { rapor: number; firma: boolean; sablon: number };
@@ -190,6 +194,8 @@ type Islem =
 class BulutMotor {
   sb: SupabaseClient;
   uid: string;
+  hesap: string; // firm account id: records, files and numbering
+  sahip: boolean; // false for a technician of the team
   bildir: (m: string, ms?: number) => void;
   sunucuFirma: Firma | null = null;
   sunucuSablon: Sablon[] = [];
@@ -217,9 +223,11 @@ class BulutMotor {
   gFirma: Firma = BOS_FIRMA;
   gSablon: Sablon[] = [];
 
-  constructor(sb: SupabaseClient, kullanici: string, bildir: (m: string, ms?: number) => void) {
+  constructor(sb: SupabaseClient, kullanici: string, hesap: Hesap, bildir: (m: string, ms?: number) => void) {
     this.sb = sb;
     this.uid = kullanici;
+    this.hesap = hesap.id;
+    this.sahip = hesap.sahip;
     this.bildir = bildir;
   }
 
@@ -311,8 +319,13 @@ class BulutMotor {
 
   // ---------- cache (so the list opens fast and offline) ----------
   onbellekOku() {
-    const o = oku<{ firma: Firma | null; sablonlar: Sablon[]; raporlar: Rapor[] } | null>(this.kO, null);
+    const o = oku<{ hesap?: string; firma: Firma | null; sablonlar: Sablon[]; raporlar: Rapor[] } | null>(this.kO, null);
     if (!o) return false;
+    // A cache of another firm account (left or removed from a team) is dropped, never shown.
+    if ((o.hesap ?? this.uid) !== this.hesap) {
+      try { localStorage.removeItem(this.kO); } catch {}
+      return false;
+    }
     this.sunucuFirma = o.firma;
     this.sunucuSablon = o.sablonlar || [];
     this.sunucuRapor = new Map((o.raporlar || []).map((r) => [r.id, normal(r)]));
@@ -320,7 +333,7 @@ class BulutMotor {
   }
   onbellekYaz() {
     try {
-      localStorage.setItem(this.kO, JSON.stringify({ firma: this.sunucuFirma, sablonlar: this.sunucuSablon, raporlar: [...this.sunucuRapor.values()] }));
+      localStorage.setItem(this.kO, JSON.stringify({ hesap: this.hesap, firma: this.sunucuFirma, sablonlar: this.sunucuSablon, raporlar: [...this.sunucuRapor.values()] }));
     } catch {
       try { localStorage.removeItem(this.kO); } catch {}
     }
@@ -363,11 +376,11 @@ class BulutMotor {
   async sunucudanYukle() {
     try {
       if (!navigator.onLine) throw new Error("Failed to fetch");
-      const f = await this.sb.from("firmalar").select("firma, sablonlar").eq("user_id", this.uid).retry(false).maybeSingle();
+      const f = await this.sb.from("firmalar").select("firma, sablonlar").eq("user_id", this.hesap).retry(false).maybeSingle();
       if (f.error) throw f.error;
       const liste: { r: Rapor; z: string }[] = [];
       for (let i = 0; ; i += SAYFA) {
-        const { data, error } = await this.sb.from("raporlar").select("id, no, veri, olusturma").eq("user_id", this.uid).order("id").range(i, i + SAYFA - 1).retry(false);
+        const { data, error } = await this.sb.from("raporlar").select("id, no, veri, olusturma").eq("user_id", this.hesap).order("id").range(i, i + SAYFA - 1).retry(false);
         if (error) throw error;
         for (const s of data || []) liste.push({ r: normal({ ...(s.veri as Rapor), id: s.id as string, no: s.no as string }), z: String(s.olusturma || "") });
         if (!data || data.length < SAYFA) break;
@@ -418,7 +431,7 @@ class BulutMotor {
             } catch (e) {
               const t = hataTuru(e);
               if (t === "ag") { this.cevrimdisi = true; break; }
-              if (t === "izin") { this.hata = c("Deneme ya da abonelik süren bittiği için kayıtlar buluta gönderilemiyor.", "Your trial or subscription has ended, so records can't be sent to the cloud."); break; }
+              if (t === "izin") { this.hata = this.sahip ? c("Deneme ya da abonelik süren bittiği için kayıtlar buluta gönderilemiyor.", "Your trial or subscription has ended, so records can't be sent to the cloud.") : c("Firmanın ekibi kapalı ya da aboneliği bitti; kayıtlar telefonda bekliyor. Firma sahibine haber ver.", "The company's team is off or its subscription has ended; your records are waiting on this phone. Let the owner know."); break; }
               if (t === "oturum") { this.hata = c("Oturumun kapanmış. Çıkış yapıp yeniden giriş yap; kayıtların telefonda bekliyor.", "Your session has ended. Sign out and sign in again; your records are waiting on this phone."); break; }
               atla.add(op.k);
               kalici = String((e as { message?: string })?.message || e).slice(0, 140);
@@ -447,7 +460,8 @@ class BulutMotor {
     this.urller.set(yol, { url: src, bitis: Date.now() + 3500 * 1000 }); // keep showing the local copy, no flicker
   }
   async klasorTemizle(id: string, kullanilan: Set<string>) {
-    const yol = `${this.uid}/${id}`;
+    if (!this.sahip) return; // only the owner deletes files; a technician leaves unused ones
+    const yol = `${this.hesap}/${id}`;
     const { data, error } = await this.sb.storage.from(KOVA).list(yol, { limit: 1000 });
     if (error) throw error;
     const sil = (data || []).map((o) => `${yol}/${o.name}`).filter((p) => !kullanilan.has(p));
@@ -459,7 +473,7 @@ class BulutMotor {
   async bosNo(r: Rapor): Promise<string> {
     const nolar: { no: string }[] = [];
     for (let i = 0; ; i += SAYFA) {
-      const { data, error } = await this.sb.from("raporlar").select("no").eq("user_id", this.uid).order("no").range(i, i + SAYFA - 1).retry(false);
+      const { data, error } = await this.sb.from("raporlar").select("no").eq("user_id", this.hesap).order("no").range(i, i + SAYFA - 1).retry(false);
       if (error) throw error;
       nolar.push(...((data || []) as { no: string }[]));
       if (!data || data.length < SAYFA) break;
@@ -473,14 +487,16 @@ class BulutMotor {
 
   async uygula(op: Islem) {
     if (op.t === "f") {
-      const { error } = await this.sb.from("firmalar").upsert({ user_id: this.uid, firma: op.firma, sablonlar: op.sablonlar }, { onConflict: "user_id" });
+      if (!this.sahip) return; // firm settings are the owner's
+      const { error } = await this.sb.from("firmalar").upsert({ user_id: this.hesap, firma: op.firma, sablonlar: op.sablonlar }, { onConflict: "user_id" });
       if (error) throw error;
       this.sunucuFirma = op.firma;
       this.sunucuSablon = op.sablonlar;
       return;
     }
     if (op.t === "s") {
-      const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.uid).eq("id", op.id);
+      if (!this.sahip) return; // only the owner deletes reports
+      const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.hesap).eq("id", op.id);
       if (error) throw error;
       await this.klasorTemizle(op.id, new Set());
       this.sunucuRapor.delete(op.id);
@@ -492,21 +508,21 @@ class BulutMotor {
     let yuklendi = false;
     for (const f of r.fotolar) {
       if (f.src.startsWith("data:")) {
-        const yol = `${this.uid}/${r.id}/${f.id}.${f.src.startsWith("data:image/png") ? "png" : "jpg"}`;
+        const yol = `${this.hesap}/${r.id}/${f.id}.${f.src.startsWith("data:image/png") ? "png" : "jpg"}`;
         await this.yukle(yol, f.src);
         f.src = "sb:" + yol;
         yuklendi = true;
       }
     }
     if (r.imza.startsWith("data:")) {
-      const yol = `${this.uid}/${r.id}/imza-${uid()}.png`;
+      const yol = `${this.hesap}/${r.id}/imza-${uid()}.png`;
       await this.yukle(yol, r.imza);
       r.imza = "sb:" + yol;
       yuklendi = true;
     }
     if (yuklendi) this.kuyrukDegistir(op.k, { k: op.k, t: "r", r }); // a retry does not upload again
     for (let deneme = 0; ; deneme++) {
-      const { error } = await this.sb.from("raporlar").upsert({ user_id: this.uid, id: r.id, no: r.no, veri: r }, { onConflict: "user_id,id" });
+      const { error } = await this.sb.from("raporlar").upsert({ user_id: this.hesap, id: r.id, no: r.no, veri: r }, { onConflict: "user_id,id" });
       if (!error) break;
       if (error.code === "23505" && /raporlar_no_tekil/.test(error.message || "") && deneme < 3) {
         const eskiNo = r.no;
@@ -593,6 +609,7 @@ class BulutMotor {
 
   // ---------- old local-only records ----------
   aktarimKontrol() {
+    if (!this.sahip) return; // old local records go to the owner's own account only
     try { if (localStorage.getItem(this.kA)) return; } catch { return; }
     const l = oku<Rapor[]>("sf_raporlar", []);
     const raporlar = (Array.isArray(l) ? l : []).filter((r) => r && r.id && !String(r.id).startsWith("demo"));
@@ -681,12 +698,13 @@ class BulutMotor {
     });
   }
   async tumunuSil() {
+    if (!this.sahip) return;
     if (!navigator.onLine) { this.bildir(c("Raporları silmek için internet bağlantısı gerekli.", "You need an internet connection to delete reports.")); return; }
     await this.sirada(async () => {
       try {
-        const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.uid);
+        const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.hesap);
         if (error) throw error;
-        const { data } = await this.sb.storage.from(KOVA).list(this.uid, { limit: 1000 });
+        const { data } = await this.sb.storage.from(KOVA).list(this.hesap, { limit: 1000 });
         for (const k of data || []) await this.klasorTemizle(k.name, new Set());
         this.kuyrukYaz(this.kuyrukOku().filter((o) => o.t === "f"));
         this.sunucuRapor.clear();
@@ -711,7 +729,7 @@ class BulutMotor {
   }
 }
 
-function useBulutDepo(aktif: boolean, bildir: (m: string, ms?: number) => void): Depo {
+function useBulutDepo(aktif: boolean, bildir: (m: string, ms?: number) => void, hesap: Hesap | null): Depo {
   const [motor, setMotor] = useState<BulutMotor | null>(null);
   const [, tik] = useReducer((x: number) => x + 1, 0);
   const bildirRef = useRef(bildir);
@@ -727,13 +745,14 @@ function useBulutDepo(aktif: boolean, bildir: (m: string, ms?: number) => void):
       const { data } = await sb.auth.getSession();
       const kim = data.session?.user.id;
       if (!kim || iptal) return;
-      m = new BulutMotor(sb, kim, (t, ms) => bildirRef.current(t, ms));
+      m = new BulutMotor(sb, kim, hesap ?? { id: kim, sahip: true }, (t, ms) => bildirRef.current(t, ms));
       m.abone(tik);
       setMotor(m);
       await m.baslat();
     })();
     return () => { iptal = true; m?.kapat(); };
-  }, [aktif]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aktif, hesap?.id, hesap?.sahip]);
 
   const m = motor;
   const bos = async () => {};
@@ -761,8 +780,8 @@ function useBulutDepo(aktif: boolean, bildir: (m: string, ms?: number) => void):
   };
 }
 
-export function useDepo(mod: Mod, bildir: (m: string, ms?: number) => void, dil: Dil = "tr"): Depo {
+export function useDepo(mod: Mod, bildir: (m: string, ms?: number) => void, dil: Dil = "tr", hesap: Hesap | null = null): Depo {
   const demo = useDemoDepo(mod === "demo", bildir, dil);
-  const bulut = useBulutDepo(mod === "bulut", bildir);
+  const bulut = useBulutDepo(mod === "bulut", bildir, hesap);
   return mod === "demo" ? demo : bulut;
 }

@@ -7,10 +7,13 @@ import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA, DENEME_GUN, durumHesapla, supabase, type Durum } from "./supabase";
 import { ODEME_ACIK } from "../lib/paket";
 import { aboneligiYonet, odemeHataMetni } from "./odeme";
+import { BEKLEYEN_DAVET, EkipBaglam, ekipCevir, ekipOnbellekOku, ekipOnbellekYaz, tekBasina, type EkipBilgi } from "./ekip";
 
 // Guards /app: no session -> /giris, trial over -> lock screen. Records stay in the account (app/components/depo.ts).
 // With online payment on (ODEME_ACIK) "subscribe" leads to /abonelik; back from the payment page
 // (/app?odeme=tamam) it waits until the Stripe webhook has written the new subscription.
+// Team: a technician sees the owner's firm account (app/components/ekip.ts); the trial and subscription
+// are the firm's, the technician only gets a lock screen to tell the owner.
 const ONBELLEK = "fixnote_abonelik"; // last known subscription end, so a paid user is not locked out offline
 const mailto = (dil: Dil) => `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(dil === "en" ? "Fixnote subscription" : "Fixnote abonelik")}`;
 // Turkish 03.10.2026, English 3 Oct 2026
@@ -62,6 +65,8 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
   const [stripeMusteri, setStripeMusteri] = useState(false); // has a Stripe customer: show "manage subscription"
   const [onay, setOnay] = useState<"" | "bekliyor" | "gecikti">(""); // back from the payment page, subscription not written yet
   const [yonetHata, setYonetHata] = useState("");
+  const [ekip, setEkip] = useState<EkipBilgi | null>(null);
+  const [cikarildi, setCikarildi] = useState<string | null>(null); // removed from a team: that firm's name
   const dil = useDil();
   const c = (tr: string, en: string) => (dil === "en" ? en : tr);
   const MAILTO = mailto(dil);
@@ -86,20 +91,45 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
         return;
       }
       const k = oturum.user;
-      let abonelik = onbellekOku(k.id);
+      // Which firm account: own, or the owner's for a technician. Offline: the last known one.
+      const onceki = ekipOnbellekOku(k.id);
+      let e = onceki ?? tekBasina(k.id, k.created_at);
+      if (navigator.onLine) {
+        const { data: ed, error: ee } = await sb.rpc("ekip_durumu").retry(false);
+        if (bitti) return;
+        if (!ee) {
+          e = ekipCevir(ed, k.id, k.created_at);
+          ekipOnbellekYaz(k.id, e);
+          if (onceki?.rol === "teknisyen" && e.rol === "sahip") setCikarildi(onceki.firmaAd);
+        } else if (ee.code === "PGRST202") e = tekBasina(k.id, k.created_at); // team functions not installed yet
+      }
+      // An invite opened before signing in (Google may return to another page): finish joining.
+      try {
+        const bekleyen = localStorage.getItem(BEKLEYEN_DAVET);
+        if (bekleyen) {
+          localStorage.removeItem(BEKLEYEN_DAVET);
+          if (e.rol === "sahip" && /^[0-9a-f]{32,80}$/i.test(bekleyen)) {
+            window.location.replace(`/katil?kod=${bekleyen}`);
+            return;
+          }
+        }
+      } catch {}
+      setEkip({ ...e, uid: k.id });
+      const olusturma = e.rol === "teknisyen" ? e.sahipOlusturma : k.created_at;
+      let abonelik = onbellekOku(e.hesapId);
       // Without internet the last known subscription is used at once (no retries, no waiting).
       const oku = async () => {
-        const { data: satir, error } = await sb.from("abonelikler").select(ODEME_ACIK ? "bitis, stripe_musteri" : "bitis").eq("user_id", k.id).retry(false).maybeSingle();
+        const { data: satir, error } = await sb.from("abonelikler").select(ODEME_ACIK ? "bitis, stripe_musteri" : "bitis").eq("user_id", e.hesapId).retry(false).maybeSingle();
         if (error) return false;
         const s = satir as { bitis?: string; stripe_musteri?: string | null } | null;
         abonelik = s?.bitis ?? null;
-        onbellekYaz(k.id, abonelik);
+        onbellekYaz(e.hesapId, abonelik);
         setStripeMusteri(!!s?.stripe_musteri);
         return true;
       };
       if (navigator.onLine) await oku();
       if (bitti) return;
-      let d = durumHesapla(k.email ?? "", k.created_at, abonelik);
+      let d = durumHesapla(k.email ?? "", olusturma, abonelik);
       setDurum(d);
 
       const q = new URLSearchParams(window.location.search);
@@ -118,7 +148,7 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
         await bekle(2000);
         if (bitti) return;
         if (!(await oku())) continue;
-        d = durumHesapla(k.email ?? "", k.created_at, abonelik);
+        d = durumHesapla(k.email ?? "", olusturma, abonelik);
         if (d.tur === "aktif") {
           setDurum(d);
           setOnay("");
@@ -153,6 +183,31 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       </Ekran>
     );
 
+  if (cikarildi !== null)
+    return (
+      <Ekran ikon="kisiler" baslik={c("Ekipten çıkarıldın", "You were removed from the team")} metin={cikarildi ? c(`${cikarildi} ekibinden çıkarıldın. Firmanın kayıtları bu hesapta artık görünmez.`, `You were removed from the ${cikarildi} team. The company's records are no longer visible in this account.`) : c("Firma ekibinden çıkarıldın. Firmanın kayıtları bu hesapta artık görünmez.", "You were removed from the company team. The company's records are no longer visible in this account.")} alt={<>{c("Giriş yapılan hesap:", "Signed in as:")} {durum.eposta}</>}>
+        <button className="btn" onClick={() => setCikarildi(null)}>{c("Kendi hesabımla devam et", "Continue with my own account")}</button>
+        <button className="btn btn-ghost" onClick={cikis}>{c("Çıkış yap", "Sign out")}</button>
+      </Ekran>
+    );
+
+  // A technician cannot subscribe: the firm's trial or subscription ended, or the firm has no team plan.
+  const teknisyen = ekip?.rol === "teknisyen";
+  const firmaAdi = ekip?.firmaAd || c("Firma", "Company");
+  if (teknisyen && (durum.tur === "bitti" || ((durum.tur === "aktif" || durum.tur === "deneme") && !ekip?.ekipAcik)))
+    return (
+      <Ekran
+        ikon="saat"
+        baslik={durum.tur === "bitti" ? c("Firmanın aboneliği sona erdi", "The company's subscription has ended") : c("Ekip girişi kapalı", "Team access is off")}
+        metin={durum.tur === "bitti"
+          ? c(`${firmaAdi} hesabının deneme süresi ya da aboneliği bitti. Devam etmek için firma sahibine haber ver; kayıtlar hesapta saklanıyor.`, `The trial or subscription of the ${firmaAdi} account has ended. Let the owner know to carry on; the records are kept in the account.`)
+          : c(`${firmaAdi} hesabı şu an teknisyen ekibi olmayan bir pakette. Firma sahibi Firma paketine geçince kaldığın yerden devam edersin.`, `The ${firmaAdi} account is on a plan without a technician team right now. Once the owner moves to the Team plan, you carry on where you left off.`)}
+        alt={<>{c("Giriş yapılan hesap:", "Signed in as:")} {durum.eposta}</>}
+      >
+        <button className="btn btn-ghost" onClick={cikis}>{c("Çıkış yap", "Sign out")}</button>
+      </Ekran>
+    );
+
   // Back from the payment page with the app still locked: wait for the subscription here.
   if (onay && durum.tur === "bitti")
     return onay === "bekliyor" ? (
@@ -184,19 +239,21 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <div className="no-print" data-hesap={durum.tur} style={{ background: "var(--ink)", color: "rgba(255,255,255,.72)", fontSize: 12.5, fontWeight: 600 }}>
+      <div className="no-print" data-hesap={durum.tur} data-rol={ekip?.rol ?? "sahip"} style={{ background: "var(--ink)", color: "rgba(255,255,255,.72)", fontSize: 12.5, fontWeight: 600 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "7px 16px" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 7, minWidth: 0 }}>
             {/* very narrow phones (under 380 px) get a shorter text and no clock icon so the bar stays on one line */}
             <Ikon ad="saat" boy={14} className="hidden min-[380px]:block" style={{ color: "#7cc4d6", flex: "none" }} />
-            {durum.tur === "deneme" ? (
+            {teknisyen ? (
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><b data-ekip-serit style={{ color: "#fff" }}>{c(`${firmaAdi} ekibi`, `${firmaAdi} team`)}</b></span>
+            ) : durum.tur === "deneme" ? (
               <span><span className="hidden min-[380px]:inline">{c("Ücretsiz deneme: ", "Free trial: ")}</span><span className="min-[380px]:hidden">{c("Deneme: ", "Trial: ")}</span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{dil === "en" ? `${durum.kalanGun} ${durum.kalanGun === 1 ? "day" : "days"} left` : `${durum.kalanGun} gün kaldı`}</b></span>
             ) : (
               <span><span className="hidden min-[380px]:inline">{dil === "en" ? `Subscription active · until ${tarih(durum.bitis, dil)}` : `Aboneliğin aktif · ${tarih(durum.bitis, dil)} tarihine kadar`}</span><span className="min-[380px]:hidden">{dil === "en" ? `Active · ends ${tarih(durum.bitis, dil)}` : `Abonelik aktif · bitiş ${tarih(durum.bitis, dil)}`}</span></span>
             )}
           </span>
-          {durum.tur === "deneme" && <a href={ODEME_ACIK ? "/abonelik" : MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
-          {durum.tur === "aktif" && ODEME_ACIK && stripeMusteri && (
+          {!teknisyen && durum.tur === "deneme" && <a href={ODEME_ACIK ? "/abonelik" : MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
+          {!teknisyen && durum.tur === "aktif" && ODEME_ACIK && stripeMusteri && (
             <button
               data-abonelik-yonet
               onClick={async () => {
@@ -222,7 +279,7 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
           {onay === "bekliyor" ? c("Ödemen alındı, aboneliğin açılıyor…", "Payment received, activating your subscription…") : c(`Ödemen alındı; aboneliğin birkaç dakika içinde açılacak. Sorun sürerse ${ABONELIK_EPOSTA} adresine yaz.`, `Payment received; your subscription will be active within a few minutes. If it isn't, write to ${ABONELIK_EPOSTA}.`)}
         </div>
       )}
-      {children}
+      <EkipBaglam.Provider value={ekip}>{children}</EkipBaglam.Provider>
     </>
   );
 }

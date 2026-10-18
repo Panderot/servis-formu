@@ -11,6 +11,7 @@ const BASLIK_EN: Record<string, string> = {
   "/kosullar": "Terms of use · Fixnote",
   "/gizlilik": "Privacy policy · Fixnote",
   "/abonelik": "Choose your plan · Fixnote",
+  "/katil": "Join the team · Fixnote",
 };
 
 // Mounted once in app/layout.tsx: shows the page again once it renders in the chosen language,
