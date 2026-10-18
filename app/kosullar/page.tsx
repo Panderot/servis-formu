@@ -46,7 +46,19 @@ const BOLUMLER: Bolum[] = [
     "Kayıtlarını korumak için gereken özeni gösteririz. Yine de Ayarlar'dan ara sıra yedek indirmeni öneririz.",
   ]],
   ["Raporların içeriği ve müşteri bilgileri", [
-    "Raporlara yazdığın bilgilerin doğruluğundan ve müşterilerinin kişisel verilerini KVKK'ya uygun işlemekten sen sorumlusun. Müşteri onayı bölümünü yalnızca müşterinin kendisi imzalar.",
+    "Raporlara yazdığın bilgilerin doğruluğundan sen sorumlusun. Müşteri onayı bölümünü yalnızca müşterinin kendisi imzalar.",
+  ]],
+  ["Kişisel veriler: senin ve bizim rolümüz", [
+    "Fixnote'a girdiğin müşteri bilgileri (ad, telefon, adres, fotoğraf, imza) bakımından KVKK'ya göre veri sorumlusu sensin. Biz bu bilgileri yalnızca senin adına ve hizmeti sunmak için işleyen veri işleyeniz. Bu bölüm, bu konudaki karşılıklı yükümlülüklerimizi düzenler.",
+    [
+      "Müşterilerini KVKK'ya göre bilgilendirmek (aydınlatmak), gereken durumlarda açık rızalarını almak ve onlardan gelen başvuruları yanıtlamak senin yükümlülüğündür.",
+      "Bu bilgileri yalnızca hizmeti sunmak için ve senin talimatınla işleriz; başka bir amaçla kullanmaz, satmaz ve reklam için kullanmayız.",
+      "Bilgilere erişebilen kişileri ve sistemleri hizmetin çalışması için gerekenlerle sınırlar, gizlilik yükümlülüğüne tabi tutarız; verileri korumak için uygun teknik ve idari tedbirleri alırız.",
+      "Hizmeti sunmak için altyapı sağlayıcılarıyla çalışırız (Supabase: veritabanı ve dosya depolama, Almanya; Vercel: sitenin sunulması; Google: yalnızca Google ile girişte). Bu listeyi değiştirirsek Gizlilik politikasında duyururuz.",
+      "Bilgilerin yetkisiz kişilerce ele geçirildiğini öğrenirsek seni gecikmeden bilgilendiririz.",
+      "Bir müşterin bilgileriyle ilgili olarak bize başvurursa başvuruyu sana iletir, yanıtlaman için gereken desteği veririz.",
+      "Hesabın kapanınca bu bilgiler Gizlilik politikasında yazan sürelerle silinir; kapatmadan önce Ayarlar'dan yedek indirebilirsin.",
+    ],
   ]],
   ["Kabul edilmeyen kullanım", [
     "Fixnote'u yasa dışı amaçlarla, yanıltıcı ya da sahte rapor hazırlamak için, başkası adına imza atmak için, hizmeti bozmaya ya da başkalarının hesaplarına erişmeye çalışmak için kullanamazsın. Bu durumlarda hesabını askıya alabilir ya da kapatabiliriz.",
@@ -105,7 +117,19 @@ const BOLUMLER_EN: Bolum[] = [
     "We take due care to protect your records. Even so, we recommend downloading a backup from Settings from time to time.",
   ]],
   ["Report content and customer details", [
-    "You are responsible for the accuracy of what you write in reports and for processing your customers' personal data lawfully, including under KVKK (Turkey's Personal Data Protection Law). Only the customer signs the customer sign-off section.",
+    "You are responsible for the accuracy of what you write in reports. Only the customer signs the customer sign-off section.",
+  ]],
+  ["Personal data: your role and ours", [
+    "For the customer details you enter in Fixnote (name, phone, address, photos, signature), you are the data controller under KVKK (Turkey's Personal Data Protection Law). We are the data processor that processes this information only on your behalf and to provide the service. This section sets out our obligations to each other.",
+    [
+      "Informing your customers under KVKK, obtaining their explicit consent where required and answering their requests are your obligations.",
+      "We process this information only to provide the service and on your instructions; we do not use it for any other purpose, sell it or use it for advertising.",
+      "We limit access to the people and systems needed to run the service, keep them bound by confidentiality, and take appropriate technical and organisational measures to protect the data.",
+      "We work with infrastructure providers to run the service (Supabase: database and file storage, Germany; Vercel: serving the site; Google: only for Google sign-in). If we change this list, we announce it in the Privacy policy.",
+      "If we learn that the information has been obtained by unauthorised persons, we will inform you without delay.",
+      "If one of your customers contacts us about their data, we pass the request to you and give you the support you need to answer it.",
+      "When your account is closed, this information is deleted within the periods set out in the Privacy policy; you can download a backup from Settings before closing it.",
+    ],
   ]],
   ["Unacceptable use", [
     "You may not use Fixnote for illegal purposes, to prepare misleading or fake reports, to sign on someone else's behalf, or to try to disrupt the service or access other people's accounts. In these cases we may suspend or close your account.",
@@ -133,13 +157,13 @@ export default function Kosullar() {
       metin={{
         tr: {
           baslik: "Kullanım koşulları",
-          tarih: "17 Ekim 2026",
+          tarih: "18 Ekim 2026",
           giris: "Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikası sayfasındadır.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Terms of use",
-          tarih: "17 October 2026",
+          tarih: "18 October 2026",
           giris: "By opening a Fixnote account or using Fixnote, you accept these terms. Details about your personal data are on the Privacy policy page.",
           bolumler: BOLUMLER_EN,
         },
