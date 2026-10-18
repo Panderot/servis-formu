@@ -14,10 +14,49 @@ export const DENEME_GUN = 3;
 export const ABONELIK_EPOSTA = "info@motiqai.com";
 const GUN = 86_400_000;
 
+// "Beni hatırla": on (the default) the session is kept in localStorage and survives closing the
+// browser; off, it is kept in sessionStorage and ends when the tab is closed. The choice is made on
+// the sign-in page and saved in fx_hatirla before signing in, so a Google redirect keeps it too.
+const HATIRLA = "fx_hatirla";
+export function hatirlaniyor(): boolean {
+  try {
+    return localStorage.getItem(HATIRLA) !== "0";
+  } catch {
+    return true;
+  }
+}
+export function hatirlaAyarla(acik: boolean) {
+  try {
+    localStorage.setItem(HATIRLA, acik ? "1" : "0");
+  } catch {}
+}
+const oturumDeposu = {
+  getItem: (k: string) => {
+    try {
+      return sessionStorage.getItem(k) ?? localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  setItem: (k: string, v: string) => {
+    try {
+      const [yaz, sil] = hatirlaniyor() ? [localStorage, sessionStorage] : [sessionStorage, localStorage];
+      yaz.setItem(k, v);
+      sil.removeItem(k);
+    } catch {}
+  },
+  removeItem: (k: string) => {
+    try {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    } catch {}
+  },
+};
+
 let tek: SupabaseClient | null = null;
 export function supabase(): SupabaseClient | null {
   if (!hesapAyarli || typeof window === "undefined") return null;
-  if (!tek) tek = createClient(SB_URL, SB_ANAHTAR, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  if (!tek) tek = createClient(SB_URL, SB_ANAHTAR, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: oturumDeposu } });
   return tek;
 }
 

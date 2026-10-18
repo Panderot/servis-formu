@@ -4,7 +4,7 @@ import Link from "next/link";
 import Ikon, { Isaret } from "../components/Ikon";
 import { DilDugmesi } from "../components/Dil";
 import { aktifDil, useDil } from "../lib/dil";
-import { DENEME_GUN, guvenliSonra, hataMetni, hesapAyarli, supabase } from "../components/supabase";
+import { DENEME_GUN, guvenliSonra, hataMetni, hatirlaAyarla, hatirlaniyor, hesapAyarli, supabase } from "../components/supabase";
 
 type Mod = "giris" | "kayit" | "unuttum" | "yenile" | "gonderildi";
 
@@ -29,6 +29,7 @@ export default function GirisFormu() {
   const [eposta, setEposta] = useState("");
   const [sifre, setSifre] = useState("");
   const [goster, setGoster] = useState(false);
+  const [hatirla, setHatirla] = useState(true); // "Beni hatırla", read from this browser on load
   const [hata, setHata] = useState("");
   const [bekle, setBekle] = useState(false);
   const [gonderilen, setGonderilen] = useState<"kayit" | "sifre">("kayit");
@@ -38,6 +39,7 @@ export default function GirisFormu() {
 
   // Read ?sonra= and ?yenile=1 on the client; an existing session goes straight to the app.
   useEffect(() => {
+    setHatirla(hatirlaniyor());
     const q = new URLSearchParams(window.location.search);
     const hedef = guvenliSonra(q.get("sonra"));
     setSonra(hedef);
@@ -113,6 +115,7 @@ export default function GirisFormu() {
       return;
     }
     setBekle(true);
+    if (mod === "giris" || mod === "kayit") hatirlaAyarla(hatirla);
     try {
       if (mod === "giris") {
         const { error } = await sb.auth.signInWithPassword({ email: eposta.trim(), password: sifre });
@@ -165,6 +168,7 @@ export default function GirisFormu() {
     if (!sb || bekle) return;
     setHata("");
     setBekle(true);
+    hatirlaAyarla(hatirla);
     const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + sonra } });
     if (error) {
       setHata(hataMetni(error.message));
@@ -275,6 +279,12 @@ export default function GirisFormu() {
                         <button type="button" onClick={() => setGoster(!goster)} aria-label={goster ? c("Şifreyi gizle", "Hide password") : c("Şifreyi göster", "Show password")} className="gr-goster">{goster ? c("Gizle", "Hide") : c("Göster", "Show")}</button>
                       </div>
                     </div>
+                  )}
+                  {(mod === "giris" || mod === "kayit") && (
+                    <label className="gr-hatirla">
+                      <input type="checkbox" checked={hatirla} onChange={(e) => setHatirla(e.target.checked)} />
+                      {c("Beni hatırla", "Remember me")}
+                    </label>
                   )}
                   {hata && <div role="alert" className="gr-hata">{hata}</div>}
                   <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? c("Bekle...", "Please wait...") : dugme}</button>
