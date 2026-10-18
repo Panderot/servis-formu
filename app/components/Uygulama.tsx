@@ -30,7 +30,7 @@ const PARA_AD: Record<ParaBirimi, string> = { TL: "TL", USD: "$ USD", EUR: "€ 
 // Tax rate label: Turkish %20, English 20%
 const oran = (k: number, dil: Dil) => (dil === "en" ? `${k}%` : `%${k}`);
 const MAX_FOTO = 6;
-const KAYIT_LINKI = "/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1";
+const KAYIT_LINKI = "/giris?kayit=1";
 
 // Waits until the images inside el have loaded (or failed), at most ms.
 function gorsellerYuklensin(el: Element | null, ms = 8000) {
@@ -89,6 +89,26 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   // money on a report: the report's own currency; totals across reports: the firm's currency
   const rp = (n: number, x: Rapor) => para(n, raporPara(x), dil);
   const fp = (n: number) => para(n, ayar.para, dil);
+
+  // Desktop side menu: sticky at the top, as tall as the visible part of the window. A bar above the
+  // panel (trial or demo) pushes it down until the page scrolls, so its height follows the scroll and
+  // the bottom block (sync status, language) never falls below the window.
+  const asideRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const a = asideRef.current;
+    if (!hazir || !a) return;
+    const ayarla = () => {
+      const ust = (a.parentElement?.getBoundingClientRect().top ?? 0) + window.scrollY; // bars above the panel
+      a.style.height = `calc(100dvh - ${Math.max(0, ust - window.scrollY)}px)`;
+    };
+    ayarla();
+    window.addEventListener("scroll", ayarla, { passive: true });
+    window.addEventListener("resize", ayarla);
+    return () => {
+      window.removeEventListener("scroll", ayarla);
+      window.removeEventListener("resize", ayarla);
+    };
+  }, [hazir]);
 
   // ---- yükleme: /app?yeni=1 opens a new form once the records are loaded ----
   const yeniAcildi = useRef(false);
@@ -173,7 +193,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const d = depo.durum;
   const durumYazi = !d ? "" : d.hata ? d.hata : d.cevrimdisi ? (d.bekleyen ? c(`İnternet yok: ${d.bekleyen} kayıt telefonda bekliyor`, `Offline: ${d.bekleyen} records waiting on this phone`) : c("İnternet yok", "Offline")) : d.bekleyen ? c(`${d.bekleyen} kayıt gönderiliyor`, `Sending ${d.bekleyen} records`) : c("Tüm kayıtlar hesabında", "All records are in your account");
   const durumRenk = !d ? "" : d.hata ? "var(--bad)" : d.cevrimdisi || d.bekleyen ? "var(--warn)" : "var(--ok)";
-  const ilkAd = (firma.teknisyen || "").trim().split(" ")[0];
+  // Greeting with the company name: one account is shared by every technician of the firm.
+  const firmaAd = (firma.ad || "").trim().replace(/\.+$/, "");
   const saatNow = new Date().getHours();
   const selam = saatNow < 12 ? c("Günaydın", "Good morning") : saatNow < 18 ? c("İyi günler", "Good afternoon") : c("İyi akşamlar", "Good evening");
   const NAV = [["raporlar", c("Raporlar", "Reports"), "belge", raporlar.length], ["musteriler", c("Müşteriler", "Customers"), "kisiler", mList.length], ["ayarlar", c("Firma ve şablonlar", "Company and templates"), "ayar", null]] as const;
@@ -192,7 +213,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         )}
         <div className="lg:grid" style={{ gridTemplateColumns: "232px 1fr", minHeight: "100vh" }}>
           {/* Masaüstü yan menü (referans maketindeki beyaz ince menü) */}
-          <aside className="hidden lg:flex" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100vh" }}>
+          <aside ref={asideRef} className="hidden lg:flex" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100dvh", overflowY: "auto" }}>
             <Link href="/" style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
               <Isaret boy={22} />Fixnote
             </Link>
@@ -317,7 +338,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           )}
           <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{selam}{ilkAd ? `${dil === "en" ? "," : ""} ${ilkAd}` : ""}.</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.035em", margin: 0 }}>{selam}{firmaAd ? `, ${firmaAd}` : ""}.</h1>
               <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>{tarihUzun(bg, dil)} · {c(`bu ay ${oz.adet} rapor`, `${oz.adet} ${oz.adet === 1 ? "report" : "reports"} this month`)}</div>
             </div>
             <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>
@@ -389,7 +410,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   <Ikon ad="ara" boy={16} style={{ position: "absolute", left: 12, top: 14, color: "var(--faint)" }} />
                   <input className="field" style={{ paddingLeft: 36 }} placeholder={c("Müşteri, telefon, rapor no, seri no", "Customer, phone, report no, serial no")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={c("Raporlarda ara", "Search reports")} />
                 </div>
-                <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
+                <div className="filtre-sira" style={{ display: "flex", gap: 6, paddingBottom: 2 }}>
                   <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>{c("Tümü", "All")}</button>
                   {sablonlar.map((s) => (
                     <button key={s.id} className={`chip ${filtre === s.id ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flex: "none" }} onClick={() => setFiltre(s.id)}>{s.ad}</button>
@@ -851,7 +872,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         <div className="card" style={{ padding: 16 }}>
           <h2 className="font-display" style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px" }}>{c("Rapor başlığı", "Report header")}</h2>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-            {f.logo ? <img src={f.logo} alt="Logo" style={{ height: 52, maxWidth: 140, objectFit: "contain", border: "1px solid var(--line)", borderRadius: 6, padding: 4 }} /> : <div style={{ width: 52, height: 52, borderRadius: 6, background: "var(--ink)", color: "var(--accent)", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24 }} className="font-display">{buyukHarf(f.ad.trim()[0] || "S", dil)}</div>}
+            {f.logo ? <img src={f.logo} alt="Logo" style={{ height: 52, maxWidth: 140, objectFit: "contain", border: "1px solid var(--line)", borderRadius: 6, padding: 4 }} /> : <div style={{ width: 52, height: 52, borderRadius: 6, background: "var(--ink)", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24 }} className="font-display">{buyukHarf(f.ad.trim()[0] || "S", dil)}</div>}
             <label className="chip" style={{ cursor: "pointer" }}>
               {f.logo ? c("Logoyu değiştir", "Change logo") : c("Logo yükle", "Upload logo")}
               <input type="file" accept="image/*" hidden onChange={async (e) => { const fl = e.target.files?.[0]; if (fl) { const src = await kucult(fl, 400, 0.9, "image/png"); setF({ ...f, logo: src }); } e.target.value = ""; }} />

@@ -95,7 +95,7 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/app" className="hidden sm:inline" style={{ fontSize: 13.5, fontWeight: 700 }}>{c("Uygulamayı aç", "Open the app")}</Link>
             <DilDugmesi />
-            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ padding: "9px 14px", fontSize: 13, borderRadius: 11 }}>{c("İlk raporu oluştur", "Start free")}</a>
+            <a href="/giris?kayit=1" className="btn" style={{ padding: "9px 14px", fontSize: 13, borderRadius: 11 }}>{c("İlk raporu oluştur", "Start free")}</a>
           </div>
         </nav>
       </div>
@@ -115,7 +115,7 @@ export default function Home() {
             {c("Formu telefonda doldur, müşteriye ekranda imzalat. Firma başlıklı A4 rapor anında hazır; PDF olarak kaydet, WhatsApp'tan gönder.", "Fill in the form on your phone and get the customer to sign on screen. A branded A4 report is ready instantly; save it as a PDF and send it on WhatsApp.")}
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2.5 hero-rise">
-            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
+            <a href="/giris?kayit=1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
             <a href="#rapor" className="btn btn-ghost" style={{ minWidth: 190 }}>{c("Örnek raporları gör", "See sample reports")}</a>
           </div>
         </div>
@@ -202,7 +202,7 @@ export default function Home() {
             </ul>
             <div style={{ marginTop: 18, fontSize: 13.5, fontWeight: 600, color: "var(--muted)" }}>
               {c("Kurulum yok, kart yok.", "No setup, no card.")}{" "}
-              <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" style={{ color: "var(--accent)", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>{c("İlk raporu 2 dakikada oluştur", "Create your first report in 2 minutes")}<Ikon ad="ok" boy={14} /></a>
+              <a href="/giris?kayit=1" style={{ color: "var(--accent)", fontWeight: 800, display: "inline-flex", alignItems: "center", gap: 4 }}>{c("İlk raporu 2 dakikada oluştur", "Create your first report in 2 minutes")}<Ikon ad="ok" boy={14} /></a>
             </div>
           </GorununceOynat>
           <SureHesap />
@@ -303,7 +303,7 @@ export default function Home() {
             </div>
           </GorununceOynat>
           <div className="mt-12 flex flex-wrap justify-center gap-2.5">
-            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
+            <a href="/giris?kayit=1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
             <a href="#rapor" className="btn btn-ghost" style={{ minWidth: 190 }}>{c("Örnek raporları gör", "See sample reports")}</a>
           </div>
         </div>
@@ -339,7 +339,7 @@ export default function Home() {
           </div>
           <SablonEditoru />
           <div className="mt-10 flex flex-wrap justify-center gap-2.5">
-            <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
+            <a href="/giris?kayit=1" className="btn" style={{ minWidth: 190 }}>{c("İlk raporu oluştur", "Create your first report")}</a>
             <Link href="/app" className="btn btn-ghost" style={{ minWidth: 190 }}>{c("Uygulamayı aç", "Open the app")}</Link>
           </div>
         </div>
@@ -417,7 +417,7 @@ export default function Home() {
           <span className="eyebrow">{c("3 gün ücretsiz dene", "Try free for 3 days")}</span>
           <h2 className="h2 mt-4">{c("Bir sonraki servisi", "Hand over your next job")}<br />{c("kağıtsız teslim et.", "without paper.")}</h2>
           <p className="sub mt-3">{c("Telefonunun tarayıcısında aç, ilk raporunu hemen oluştur. Kurulum gerekmez, kredi kartı istenmez.", "Open it in your phone's browser and create your first report straight away. No setup, no credit card.")}</p>
-          <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>{c("İlk raporu oluştur", "Create your first report")}</a>
+          <a href="/giris?kayit=1" className="btn mt-7" style={{ minWidth: 200, padding: "14px 22px" }}>{c("İlk raporu oluştur", "Create your first report")}</a>
         </div>
       </section>
 

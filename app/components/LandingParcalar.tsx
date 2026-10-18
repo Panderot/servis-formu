@@ -857,7 +857,7 @@ export function WhatsAppBolum() {
           ))}
         </div>
         <div className="mt-7 flex flex-wrap gap-2.5">
-          <a href="/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1" className="btn">{en ? "Create your first report" : "İlk raporu oluştur"}</a>
+          <a href="/giris?kayit=1" className="btn">{en ? "Create your first report" : "İlk raporu oluştur"}</a>
           <a href="#rapor" className="btn btn-ghost">{en ? "See sample reports" : "Örnek raporları gör"}</a>
         </div>
       </div>
@@ -923,7 +923,7 @@ export function IsDongu() {
 // ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Sitede sadece ABD doları görünür. ----------
 // $, KDV hariç. ay: aylık ödeme; yil: yıllık peşin (aylığın %20 altı, 12'ye tam bölünür).
 const PAKET = { usta: { ay: 10, yil: 96 }, firma: { ay: 25, yil: 240 } };
-const KAYIT = "/giris?kayit=1&sonra=%2Fapp%3Fyeni%3D1";
+const KAYIT = "/giris?kayit=1";
 const sent = (usd: number) => Math.round(usd * 100); // amounts are compared and shown in whole cents
 const dolar = (c: number, dil: Dil = "tr") => `$${c % 100 === 0 ? c / 100 : dil === "en" ? (c / 100).toFixed(2) : (c / 100).toFixed(2).replace(".", ",")}`;
 // Texts of the pricing section. In English the packages are called Solo (Usta) and Team (Firma).

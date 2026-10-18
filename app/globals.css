@@ -31,6 +31,9 @@
 }
 * { -webkit-font-smoothing: antialiased; box-sizing: border-box; }
 html, body { overflow-x: hidden; }
+/* clip cuts sideways overflow like hidden but does not turn the page into its own scroll box,
+   so position: sticky (landing nav, panel side menu, form buttons) sticks to the window. */
+@supports (overflow: clip) { html, body { overflow-x: clip; } }
 /* English page switching from the Turkish server render: stay hidden for that moment (app/lib/dil.ts) */
 html.dil-bekle body { visibility: hidden; }
 html { scroll-behavior: smooth; }
@@ -485,3 +488,9 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .gr-tekrar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; column-gap: 4px; margin-top: 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
 .gr-tekrar .gr-baglanti { font-size: 13px; }
 .gr-baglanti:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+
+/* Template filter chips in the report list: one swipeable row without a visible scrollbar on phones
+   and tablets; on wide screens the chips wrap onto more lines so every chip stays reachable with a mouse. */
+.filtre-sira { overflow-x: auto; scrollbar-width: none; }
+.filtre-sira::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { .filtre-sira { flex-wrap: wrap; overflow-x: visible; } }
