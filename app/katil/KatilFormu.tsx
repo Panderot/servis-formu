@@ -116,7 +116,15 @@ export default function KatilFormu() {
       ) : hal.tur === "hata" ? (
         kart("kisiler", c("Ekibe katılınamadı", "Couldn't join the team"), hal.metin, <Link href="/app" className="btn btn-ghost">{c("Uygulamaya git", "Go to the app")}</Link>)
       ) : hal.tur === "kendi" ? (
-        kart("kisiler", c("Bu senin davet bağlantın", "This is your own invite link"), c("Bağlantıyı teknisyenine gönder; o kendi hesabıyla açıp ekibe katılsın.", "Send the link to your technician so they open it with their own account and join."), <Link href="/app" className="btn">{c("Uygulamaya dön", "Back to the app")}</Link>)
+        kart(
+          "kisiler",
+          c("Bu senin davet bağlantın", "This is your own invite link"),
+          c("Bağlantıyı teknisyenine gönder; o kendi hesabıyla açıp ekibe katılsın. Bu telefonda teknisyen olarak katılacaksan başka hesapla gir.", "Send the link to your technician so they open it with their own account and join. To join as a technician on this phone, use another account."),
+          <>
+            <Link href="/app" className="btn">{c("Uygulamaya dön", "Back to the app")}</Link>
+            <button className="btn btn-ghost" data-baska-hesap onClick={baskaHesap}>{c("Başka hesapla gir", "Use another account")}</button>
+          </>,
+        )
       ) : hal.tur === "uye" ? (
         kart("tik", c("Zaten ekiptesin", "You're already in the team"), hal.firma ? c(`${hal.firma} ekibindesin.`, `You're in the ${hal.firma} team.`) : c("Bu firmanın ekibindesin.", "You're in this company's team."), <Link href="/app" className="btn">{c("Uygulamaya git", "Go to the app")}</Link>)
       ) : (

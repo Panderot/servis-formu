@@ -59,8 +59,12 @@ export const BEKLEYEN_DAVET = "fx_davet";
 // The technician's own name for new reports (the firm's "default technician" belongs to the owner).
 export const teknisyenAnahtar = (uid: string) => `fx_teknisyen_${uid}`;
 
+// Invite links always use the public site address. A Vercel deployment address (fixnote-xxxx.vercel.app)
+// can be protected and is not in the sign-in redirect list. Change ASIL_SITE when the domain changes.
+export const ASIL_SITE = "https://fixnotee.vercel.app";
 export function davetLinki(kod: string) {
-  return `${window.location.origin}/katil?kod=${encodeURIComponent(kod)}`;
+  const kok = window.location.hostname.endsWith(".vercel.app") ? ASIL_SITE : window.location.origin;
+  return `${kok}/katil?kod=${encodeURIComponent(kod)}`;
 }
 
 // Database errors are short codes (raise exception '<kod>').
