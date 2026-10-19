@@ -23,6 +23,7 @@ export default function AbonelikSecimi() {
   const [gidiyor, setGidiyor] = useState(false);
   const [hata, setHata] = useState("");
   const [iptal, setIptal] = useState(false);
+  const [isletme, setIsletme] = useState(false); // "I use Fixnote for my business" (Terms: business use only)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -63,6 +64,7 @@ export default function AbonelikSecimi() {
   }, []);
 
   const ode = async () => {
+    if (!isletme) return;
     setHata("");
     setGidiyor(true);
     const kod = await odemeBaslat(plan, donem, dil);
@@ -174,9 +176,18 @@ export default function AbonelikSecimi() {
               {donem === "yillik" ? c("Her yıl aynı gün kendiliğinden yenilenir.", "Renews automatically every year on the same day.") : c("Her ay aynı gün kendiliğinden yenilenir.", "Renews automatically every month on the same day.")}
             </div>
 
+            <label data-isletme-onay style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", borderRadius: 12, border: `1px solid ${isletme ? "var(--accent)" : "var(--line-2)"}`, background: isletme ? "#f1f8fa" : "var(--paper)", cursor: "pointer", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5 }}>
+              <input type="checkbox" checked={isletme} onChange={(e) => setIsletme(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
+              <span>
+                {c("Fixnote'u işim için kullanıyorum ve ", "I use Fixnote for my business and I accept the ")}
+                <Link href="/kosullar" target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Kullanım koşullarını", "Terms of use")}</Link>
+                {c(" kabul ediyorum.", ".")}
+              </span>
+            </label>
+
             {hata && <div role="alert" data-odeme-hata style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: "var(--bad-soft)", color: "var(--bad)", fontSize: 13.5, fontWeight: 700 }}>{hata}</div>}
 
-            <button data-odemeye-gec className="btn" onClick={ode} disabled={gidiyor} style={{ width: "100%", marginTop: 16, padding: "14px 20px" }}>
+            <button data-odemeye-gec className="btn" onClick={ode} disabled={gidiyor || !isletme} style={{ width: "100%", marginTop: 16, padding: "14px 20px" }}>
               {gidiyor ? c("Ödeme sayfası açılıyor…", "Opening the payment page…") : c("Ödemeye geç", "Continue to payment")}
             </button>
             <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, color: "var(--faint)", fontWeight: 600, margin: "10px 0 0", textAlign: "center" }}>

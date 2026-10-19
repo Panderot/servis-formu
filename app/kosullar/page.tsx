@@ -22,6 +22,7 @@ const BOLUMLER: Bolum[] = [
   ["Hizmet", [
     "Fixnote, saha servis ekiplerinin servis raporunu telefondan doldurmasını, müşteriye ekranda imzalatmasını, A4 rapor ve PDF almasını ve raporu WhatsApp ile göndermesini sağlayan bir web uygulamasıdır.",
     "Fixnote bir iş teslim raporu üretir. E-fatura ya da mali belge değildir; faturanı bugünkü yönteminle kesmeye devam edersin.",
+    "Fixnote yalnızca ticari ve mesleki kullanım içindir: işletmelere, esnafa ve serbest çalışanlara işleri için sunulur, tüketicilere satılmaz. Abone olurken Fixnote'u işin için kullandığını beyan edersin.",
   ]],
   ["Hesap", [[
     "Hesap açarken gerçek ve sana ait bir e-posta adresi kullanırsın.",
@@ -94,6 +95,7 @@ const BOLUMLER_EN: Bolum[] = [
   ["The service", [
     "Fixnote is a web app that lets field service teams fill in a service report on a phone, have the customer sign it on screen, get an A4 report and PDF, and send the report on WhatsApp.",
     "Fixnote produces a job completion report. It is not an invoice or a tax document; keep invoicing the way you do today.",
+    "Fixnote is for business and professional use only: it is offered to businesses, tradespeople and self-employed people for their work and is not sold to consumers. When you subscribe, you confirm that you use Fixnote for your business.",
   ]],
   ["Your account", [[
     "You open your account with a real email address that belongs to you.",

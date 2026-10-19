@@ -5,7 +5,7 @@ import { fiyatBul, kullanici, odemeAyarli, satirOku, stripe } from "../../lib/od
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// POST { plan: "usta"|"firma", donem: "aylik"|"yillik", dil: "tr"|"en" } with the user's session
+// POST { plan: "usta"|"firma", donem: "aylik"|"yillik", dil: "tr"|"en", isletme: true } with the user's session
 // token -> { url } of the Stripe payment page. A user whose Stripe subscription is still running
 // gets the billing page instead, so nobody pays twice.
 export async function POST(req: Request) {
@@ -13,8 +13,11 @@ export async function POST(req: Request) {
   try {
     const k = await kullanici(req);
     if (!k) return NextResponse.json({ hata: "oturum" }, { status: 401 });
-    const g = (await req.json().catch(() => ({}))) as { plan?: unknown; donem?: unknown; dil?: unknown };
+    const g = (await req.json().catch(() => ({}))) as { plan?: unknown; donem?: unknown; dil?: unknown; isletme?: unknown };
     if (!planMi(g.plan) || !donemMi(g.donem)) return NextResponse.json({ hata: "paket" }, { status: 400 });
+    // Business use only (Terms > Service): the user must confirm it; the confirmation is kept on the subscription.
+    if (g.isletme !== true) return NextResponse.json({ hata: "isletme" }, { status: 400 });
+    const beyan = { isletme_beyani: "evet", beyan_zamani: new Date().toISOString() };
     const dil = g.dil === "en" ? "en" : "tr";
     const kok = new URL(req.url).origin;
 
@@ -30,8 +33,8 @@ export async function POST(req: Request) {
       mode: "subscription",
       line_items: [{ price: fiyat.id, quantity: 1 }],
       client_reference_id: k.id,
-      metadata: { user_id: k.id },
-      subscription_data: { metadata: { user_id: k.id } },
+      metadata: { user_id: k.id, ...beyan },
+      subscription_data: { metadata: { user_id: k.id, ...beyan } },
       ...(satir?.stripe_musteri ? { customer: satir.stripe_musteri } : k.email ? { customer_email: k.email } : {}),
       locale: dil,
       billing_address_collection: "auto",
