@@ -444,7 +444,7 @@ export default function Home() {
             ))}
           </div>
           <div className="flex flex-col gap-2 md:flex-row md:justify-between" style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 18, fontSize: 12, fontWeight: 600 }}>
-            <span>© 2026 Motiq Automation Ltd · <a href="/gizlilik" className="hover:text-white">{c("Gizlilik", "Privacy")}</a> · <a href="/kosullar" className="hover:text-white">{c("Kullanım koşulları", "Terms of use")}</a></span>
+            <span>© 2026 Motiq Automation Ltd · <a href="/gizlilik" className="hover:text-white">{c("Gizlilik", "Privacy")}</a> · <a href="/kosullar" className="hover:text-white">{c("Kullanım koşulları", "Terms of use")}</a> · <a href="/veri-isleme" className="hover:text-white">{c("Veri işleme", "Data processing")}</a></span>
             <span>{c("Bu bir e-fatura değil, iş teslim raporudur.", "This is not an invoice, it's a job completion report.")}</span>
           </div>
         </div>

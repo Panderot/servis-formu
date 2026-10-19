@@ -97,6 +97,7 @@ const BOLUMLER: Bolum[] = [
   ["Müşterilerinin bilgileri", [
     "Raporlara yazdığın müşteri bilgileri (ad, telefon, adres, fotoğraf, imza) senin işinle ilgili bilgilerdir. Bu bilgiler için veri sorumlusu sensin; biz onları yalnızca senin adına, senin talimatınla ve hizmeti sunmak için işleyen \"veri işleyen\"iz.",
     "Müşterilerini KVKK'ya göre bilgilendirmek (aydınlatmak) ve gereken durumlarda açık rızalarını almak senin yükümlülüğündür.",
+    "Bu bilgiler senin kayıtlarınla aynı yerde, aynı sağlayıcılarda ve aynı güvenlik önlemleriyle saklanır; hesabın silinince onlar da silinir. Karşılıklı yükümlülüklerimiz Veri işleme sözleşmesinde (fixnotee.vercel.app/veri-isleme) yazar.",
     "Bir müşterin bilgileriyle ilgili olarak bize başvurursa, başvuruyu sana iletiriz ve senin talimatına göre yardımcı oluruz.",
   ]],
   ["Birleşik Krallık mevzuatı", [
@@ -200,6 +201,7 @@ const BOLUMLER_EN: Bolum[] = [
   ["Your customers' details", [
     "The customer details you write in reports (name, phone, address, photos, signature) relate to your business. You are the data controller for this information; we are the \"data processor\" that processes it only on your behalf, on your instructions and to provide the service.",
     "Informing your customers under KVKK and obtaining their explicit consent where required are your obligations.",
+    "This information is stored in the same place as your records, with the same providers and the same security measures, and is deleted when your account is deleted. Our obligations to each other are set out in the Data processing agreement (fixnotee.vercel.app/veri-isleme).",
     "If one of your customers contacts us about their data, we pass the request to you and help according to your instructions.",
   ]],
   ["UK law", [

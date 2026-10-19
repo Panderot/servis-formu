@@ -179,8 +179,10 @@ export default function AbonelikSecimi() {
             <label data-isletme-onay style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", borderRadius: 12, border: `1px solid ${isletme ? "var(--accent)" : "var(--line-2)"}`, background: isletme ? "#f1f8fa" : "var(--paper)", cursor: "pointer", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5 }}>
               <input type="checkbox" checked={isletme} onChange={(e) => setIsletme(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
               <span>
-                {c("Fixnote'u işim için kullanıyorum ve ", "I use Fixnote for my business and I accept the ")}
+                {c("Fixnote'u işim için kullanıyorum; ", "I use Fixnote for my business and I accept the ")}
                 <Link href="/kosullar" target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Kullanım koşullarını", "Terms of use")}</Link>
+                {c(" ve ", " and the ")}
+                <Link href="/veri-isleme" target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Veri işleme sözleşmesini", "Data processing agreement")}</Link>
                 {c(" kabul ediyorum.", ".")}
               </span>
             </label>

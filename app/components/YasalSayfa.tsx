@@ -5,7 +5,7 @@ import { DilDugmesi } from "./Dil";
 import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA } from "./supabase";
 
-// Shared layout for the legal pages (/gizlilik, /kosullar). Content is plain data: a string is a
+// Shared layout for the legal pages (/gizlilik, /kosullar, /veri-isleme). Content is plain data: a string is a
 // paragraph, a string[] is a bullet list. The contact e-mail inside any text becomes a mailto link.
 // Each page passes a Turkish and an English text; the English one is a translation.
 export type Bolum = [baslik: string, icerik: (string | string[])[]];
@@ -59,6 +59,7 @@ export default function YasalSayfa({ metin }: { metin: Record<Dil, YasalMetin> }
       <nav className="ys-alt" aria-label={en ? "Legal pages" : "Yasal sayfalar"}>
         <a href="/gizlilik">{en ? "Privacy policy" : "Gizlilik politikası"}</a>
         <a href="/kosullar">{en ? "Terms of use" : "Kullanım koşulları"}</a>
+        <a href="/veri-isleme">{en ? "Data processing agreement" : "Veri işleme sözleşmesi"}</a>
         <Link href="/">{en ? "Home" : "Ana sayfa"}</Link>
       </nav>
     </main>

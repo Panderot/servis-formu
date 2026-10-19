@@ -299,9 +299,9 @@ export default function GirisFormu() {
                   <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? c("Bekle...", "Please wait...") : dugme}</button>
                 </form>
                 {mod === "kayit" && <p className="gr-kayit-not">{dil === "en" ? (
-                  <>Creating an account starts your free {DENEME_GUN}-day trial. Your service records are stored in your account, so you see them on any phone. By creating an account you accept the <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Terms of use</a> and the <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Privacy policy</a>.</>
+                  <>Creating an account starts your free {DENEME_GUN}-day trial. Your service records are stored in your account, so you see them on any phone. By creating an account you accept the <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Terms of use</a>. Your personal data is processed as described in the <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Privacy policy</a>.</>
                 ) : (
-                  <>Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların hesabında saklanır; her telefondan görürsün. Hesap oluşturarak <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Kullanım koşulları</a>nı ve <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Gizlilik politikası</a>nı kabul edersin.</>
+                  <>Hesap oluşturunca {DENEME_GUN} günlük ücretsiz deneme başlar. Servis kayıtların hesabında saklanır; her telefondan görürsün. Hesap oluşturarak <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Kullanım koşulları</a>nı kabul edersin. Kişisel verilerin <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Gizlilik politikası</a>nda anlatıldığı şekilde işlenir.</>
                 )}</p>}
                 {(mod === "unuttum" || mod === "yenile") && (
                   <button type="button" onClick={() => degistir("giris")} className="gr-baglanti gr-geri">{c("Girişe dön", "Back to sign in")}</button>

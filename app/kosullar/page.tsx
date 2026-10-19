@@ -61,6 +61,7 @@ const BOLUMLER: Bolum[] = [
       "Bir müşterin bilgileriyle ilgili olarak bize başvurursa başvuruyu sana iletir, yanıtlaman için gereken desteği veririz.",
       "Hesabın kapanınca bu bilgiler Gizlilik politikasında yazan sürelerle silinir; kapatmadan önce Ayarlar'dan yedek indirebilirsin.",
     ],
+    "Ayrıntılar Veri işleme sözleşmesindedir (fixnotee.vercel.app/veri-isleme); bu sözleşme Kullanım koşullarının parçasıdır ve müşteri bilgileri konusunda önceliklidir.",
   ]],
   ["Kabul edilmeyen kullanım", [
     "Fixnote'u yasa dışı amaçlarla, yanıltıcı ya da sahte rapor hazırlamak için, başkası adına imza atmak için, hizmeti bozmaya ya da başkalarının hesaplarına erişmeye çalışmak için kullanamazsın. Bu durumlarda hesabını askıya alabilir ya da kapatabiliriz.",
@@ -134,6 +135,7 @@ const BOLUMLER_EN: Bolum[] = [
       "If one of your customers contacts us about their data, we pass the request to you and give you the support you need to answer it.",
       "When your account is closed, this information is deleted within the periods set out in the Privacy policy; you can download a backup from Settings before closing it.",
     ],
+    "The details are in the Data processing agreement (fixnotee.vercel.app/veri-isleme); it forms part of these Terms of use and takes precedence on customer details.",
   ]],
   ["Unacceptable use", [
     "You may not use Fixnote for illegal purposes, to prepare misleading or fake reports, to sign on someone else's behalf, or to try to disrupt the service or access other people's accounts. In these cases we may suspend or close your account.",
