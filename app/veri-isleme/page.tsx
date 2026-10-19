@@ -73,7 +73,7 @@ const BOLUMLER: Bolum[] = [
     "Bu sözleşmeye uyduğumuzu göstermek için makul taleplerini yazılı olarak yanıtlarız. Kişisel veri etki değerlendirmesi ya da yetkili bir kurumun sorusu gibi durumlarda elimizdeki bilgileri veririz.",
   ]],
   ["Senin yükümlülüklerin", [[
-    "Müşterilerini bilgilendirmek (aydınlatmak), gereken durumlarda açık rızalarını almak ve başvurularını yanıtlamak senin yükümlülüğündür.",
+    "Müşterilerini bilgilendirmek (aydınlatmak), gereken durumlarda açık rızalarını almak ve başvurularını yanıtlamak senin yükümlülüğündür. Uygulamada Firma ve şablonlar > Müşteri bilgilendirmesi'nde hazır bir metin taslağı ve raporun altına eklenebilen kısa bir not bulunur.",
     "Fixnote'a yalnızca servis için gereken bilgileri girersin.",
     "Ekibine katılan teknisyenlerin bilgileri bu sözleşmeye uygun kullanmasından sen sorumlusun; ayrılan bir teknisyeni ekipten çıkarırsın.",
   ]]],
@@ -146,7 +146,7 @@ const BOLUMLER_EN: Bolum[] = [
     "We will answer your reasonable written requests to show that we comply with this agreement. Where needed, for example for a data protection impact assessment or a question from an authority, we will provide the information we have.",
   ]],
   ["Your obligations", [[
-    "Informing your customers, obtaining their explicit consent where required and answering their requests are your obligations.",
+    "Informing your customers, obtaining their explicit consent where required and answering their requests are your obligations. The app has a draft notice and a short note you can add under reports, in Company and templates > Informing your customers.",
     "You enter in Fixnote only the information needed for the service.",
     "You are responsible for the technicians who join your team using the information in line with this agreement; you remove a technician who leaves.",
   ]]],

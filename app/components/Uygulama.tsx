@@ -10,6 +10,7 @@ import { useDepo, type Mod } from "./depo";
 import { useEkip, teknisyenAnahtar } from "./ekip";
 import EkipKarti from "./EkipKarti";
 import HesapSilKarti from "./HesapSilKarti";
+import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { DilDugmesi } from "./Dil";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
@@ -938,6 +939,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     };
     const fAyar = raporAyari(f, dil);
     const firmaKaydetDugme = () => { if (kaydetFirma({ ...f, onek: (f.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR", raporDili: fAyar.dil, paraBirimi: fAyar.para })) flash(c("Firma bilgileri kaydedildi", "Company details saved")); };
+    // The privacy note switch saves at once (with the rest of the company form, as "Kaydet" would).
+    const kvkkNotDegis = (acik: boolean) => {
+      const y = { ...f, kvkkNot: acik };
+      setF(y);
+      if (kaydetFirma({ ...y, onek: (y.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR", raporDili: fAyar.dil, paraBirimi: fAyar.para })) flash(acik ? c("Raporların altına KVKK notu eklendi", "Privacy note added under reports") : c("KVKK notu kaldırıldı", "Privacy note removed"));
+    };
     return (
       <div style={{ padding: "20px 16px 0", maxWidth: 900 }}>
         <h1 className="p-bas">{c("Firma ve şablonlar", "Company and templates")}</h1>
@@ -976,6 +983,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
           <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
         </div>
+
+        <MusteriBilgiKarti f={f} dil={dil} raporDil={fAyar.dil} onNot={kvkkNotDegis} />
 
         <div className="card" data-dil-ayar style={{ padding: 18, marginTop: 14 }}>
           <div className="p-kbas">

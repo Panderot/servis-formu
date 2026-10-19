@@ -50,6 +50,7 @@ export type Firma = {
   onek: string;
   teknisyen: string;
   altNot: string;
+  kvkkNot?: boolean; // short data protection note under reports (app/lib/kvkk.ts)
   raporDili?: Dil; // language of new reports and WhatsApp messages
   paraBirimi?: ParaBirimi; // currency of new reports
 };

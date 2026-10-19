@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { type Dil, type Firma, type Rapor, hesapla, para, tarihTR, odemeAd, telefonGoster, raporDili, raporPara, buyukHarf, vergiAd } from "../lib/servis";
+import { kvkkNotu } from "../lib/kvkk";
 
 // Labels of the A4 report in the report's own language (a report keeps the language it was created in).
 const ETIKET = {
@@ -185,6 +186,7 @@ export default function RaporSayfa({ r, f }: { r: Rapor; f: Firma }) {
       </div>
 
       {f.altNot && <div style={{ marginTop: 22, paddingTop: 10, borderTop: "1px solid #e6ebf0", fontSize: 10, color: "#5f7284" }}>{f.altNot}</div>}
+      {f.kvkkNot && <div data-kvkk-not style={{ marginTop: f.altNot ? 6 : 22, paddingTop: f.altNot ? 0 : 10, borderTop: f.altNot ? "none" : "1px solid #e6ebf0", fontSize: 9, lineHeight: 1.45, color: "#5f7284" }}>{kvkkNotu(f, dil)}</div>}
     </div>
   );
 }
