@@ -185,16 +185,18 @@ function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void, d
 }
 
 // ======================= BULUT (Supabase account) =======================
-type Islem =
+type Islem = (
   | { k: string; t: "r"; r: Rapor } // save a report (photos may still be data: URLs)
   | { k: string; t: "a"; id: string } // import a report of the old local-only version (read from sf_raporlar)
   | { k: string; t: "s"; id: string } // delete a report
-  | { k: string; t: "f"; firma: Firma; sablonlar: Sablon[] }; // firm settings and own templates
+  | { k: string; t: "f"; firma: Firma; sablonlar: Sablon[] } // firm settings and own templates
+) & { h?: string }; // firm account the change was made for (older changes: see eskiHesap)
 
 class BulutMotor {
   sb: SupabaseClient;
   uid: string;
   hesap: string; // firm account id: records, files and numbering
+  eskiHesap: string; // firm account of waiting changes written before they carried one (h)
   sahip: boolean; // false for a technician of the team
   bildir: (m: string, ms?: number) => void;
   sunucuFirma: Firma | null = null;
@@ -229,6 +231,7 @@ class BulutMotor {
     this.hesap = hesap.id;
     this.sahip = hesap.sahip;
     this.bildir = bildir;
+    this.eskiHesap = oku<{ hesap?: string } | null>(`fx_onbellek_${kullanici}`, null)?.hesap ?? hesap.id;
   }
 
   get kK() { return `fx_kuyruk_${this.uid}`; }
@@ -248,16 +251,27 @@ class BulutMotor {
   }
 
   // ---------- outbox (localStorage) ----------
-  kuyrukOku(): Islem[] {
+  // Every waiting change carries the firm account it was made for. Changes of another firm account
+  // (the user left or was removed from a team and joined another one) stay on this phone: they are
+  // never shown, counted or sent here, and go out only if the user is back in that firm account.
+  islemHesabi(o: Islem) { return o.h ?? this.eskiHesap; }
+  hamKuyruk(): Islem[] | null {
     try {
       const v = JSON.parse(localStorage.getItem(this.kK) || "[]");
       return Array.isArray(v) ? (v as Islem[]) : [];
     } catch {
-      return this.kuyruk;
+      return null;
     }
   }
+  kuyrukOku(): Islem[] {
+    const l = this.hamKuyruk();
+    return l ? l.filter((o) => this.islemHesabi(o) === this.hesap) : this.kuyruk;
+  }
+  baskaHesabin(): Islem[] {
+    return (this.hamKuyruk() ?? []).filter((o) => this.islemHesabi(o) !== this.hesap).map((o) => ({ ...o, h: this.islemHesabi(o) }));
+  }
   kuyrukYaz(l: Islem[]): boolean {
-    const s = JSON.stringify(l);
+    const s = JSON.stringify([...this.baskaHesabin(), ...l.map((o) => ({ ...o, h: o.h ?? this.hesap }))]);
     try {
       localStorage.setItem(this.kK, s);
     } catch {
@@ -279,7 +293,7 @@ class BulutMotor {
       if (op.t === "f") return o.t !== "f";
       return !((o.t === "r" && o.r.id === hedef) || (o.t === "a" && o.id === hedef));
     });
-    l.push(op);
+    l.push({ ...op, h: this.hesap });
     if (!this.kuyrukYaz(l)) return false;
     this.degisti();
     return true;
@@ -288,7 +302,7 @@ class BulutMotor {
   kuyrukDegistir(k: string, yeni: Islem) {
     const l = this.kuyrukOku();
     const i = l.findIndex((o) => o.k === k);
-    if (i >= 0) { l[i] = yeni; this.kuyrukYaz(l); }
+    if (i >= 0) { l[i] = { ...yeni, h: this.hesap }; this.kuyrukYaz(l); }
   }
 
   // ---------- what the panel shows: server state + waiting changes ----------
@@ -342,6 +356,9 @@ class BulutMotor {
   // ---------- start / stop ----------
   async baslat() {
     this.kuyruk = this.kuyrukOku();
+    if (this.hamKuyruk()?.some((o) => !o.h)) this.kuyrukYaz(this.kuyruk); // older changes get their firm account once
+    const baska = this.baskaHesabin().length;
+    if (baska) this.bildir(c(`Bu telefonda başka bir firma hesabına ait gönderilmemiş ${baska} değişiklik var; bu hesaba gönderilmez.`, `This phone has ${baska} unsent change(s) from another company account; they won't be sent to this account.`), 8000);
     if (this.onbellekOku()) { this.yuklendi = true; this.degisti(); }
     await this.sirada(() => this.sunucudanYukle());
     this.aktarimKontrol();

@@ -252,7 +252,7 @@ as $$
     'uye_sayisi', (select count(*) from public.ekip_uyeleri e where e.hesap_id = h.id),
     'bekleyen_davet', (
       select count(*) from public.ekip_davetleri d
-      where d.hesap_id = h.id and d.kullanan is null and d.bitis > now() and h.id = (select auth.uid())
+      where d.hesap_id = h.id and d.kullanma is null and d.bitis > now() and h.id = (select auth.uid())
     )
   )
   from (select public.hesap_id() as id) h
@@ -274,7 +274,7 @@ begin
   if u is null then raise exception 'oturum'; end if;
   if exists (select 1 from public.ekip_uyeleri e where e.user_id = u) then raise exception 'sahip_degil'; end if;
   if not public.ekip_acik(u) then raise exception 'paket'; end if;
-  if (select count(*) from public.ekip_davetleri d where d.hesap_id = u and d.kullanan is null and d.bitis > now()) >= 20 then
+  if (select count(*) from public.ekip_davetleri d where d.hesap_id = u and d.kullanma is null and d.bitis > now()) >= 20 then
     raise exception 'cok_davet';
   end if;
   k := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
@@ -295,7 +295,7 @@ as $$
     when d.kod is null then jsonb_build_object('durum', 'gecersiz')
     else jsonb_build_object(
       'durum', case
-        when d.kullanan is not null then 'kullanildi'
+        when d.kullanma is not null then 'kullanildi'
         when d.bitis <= now() then 'suresi_doldu'
         else 'gecerli'
       end,
@@ -324,7 +324,9 @@ begin
   if u is null then raise exception 'oturum'; end if;
   select * into d from public.ekip_davetleri where kod = p_kod for update;
   if not found then raise exception 'gecersiz'; end if;
-  if d.kullanan is not null then
+  -- kullanma stays set even when the account that used the link is deleted (kullanan becomes null),
+  -- so a used link never works again.
+  if d.kullanma is not null then
     if d.kullanan = u and exists (select 1 from public.ekip_uyeleri e where e.user_id = u and e.hesap_id = d.hesap_id) then
       return jsonb_build_object('hesap_id', d.hesap_id);
     end if;
@@ -382,7 +384,7 @@ set search_path = ''
 as $$
   with silinen as (
     delete from public.ekip_davetleri d
-    where d.hesap_id = (select auth.uid()) and d.kullanan is null
+    where d.hesap_id = (select auth.uid()) and d.kullanma is null
     returning 1
   )
   select count(*)::integer from silinen;
@@ -413,7 +415,8 @@ grant execute on function public.ekip_durumu(), public.davet_olustur(), public.d
 -- Fotoğraf ve imza dosyaları SQL ile silinemez: uygulama önce kendi klasörünü (<user id>/) depodan
 -- boşaltır, klasörde dosya kaldıysa silme reddedilir (dosyalar_var).
 -- Yenilenecek bir Stripe aboneliği varken silinmez (abonelik_aktif): önce Yönet > iptal. İptal edilmiş
--- ve dönem sonunu bekleyen abonelik silmeyi engellemez.
+-- ve dönem sonunu bekleyen abonelik silmeyi engellemez. Bitiş tarihi geçmiş olsa da yenilenecek abonelik
+-- engeldir (ödeme alınamadı ve Stripe hâlâ tahsil etmeye çalışıyor olabilir).
 -- p_kontrol = true: sadece kontrol eder (uygulama dosyaları silmeden önce sorar), hiçbir şey silmez.
 create or replace function public.hesabimi_sil(p_kontrol boolean default false)
 returns void
@@ -432,7 +435,6 @@ begin
       and a.stripe_abonelik is not null
       and coalesce(a.durum, '') in ('active', 'trialing', 'past_due')
       and coalesce(a.yenilenecek, true)
-      and a.bitis > now()
   ) then
     raise exception 'abonelik_aktif';
   end if;

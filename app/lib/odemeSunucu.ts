@@ -78,6 +78,34 @@ export async function fiyatBul(plan: Plan, donem: Donem): Promise<Stripe.Price> 
   return f;
 }
 
+// Before a new Checkout: the user's Stripe customer, any subscription still running there, and
+// payment pages left open. Stripe itself is asked (not public.abonelikler), so a webhook that has
+// not arrived yet, a past_due subscription after the 7-day tolerance or a second browser tab can't
+// lead to a second paid subscription.
+const SURUYOR = new Set<Stripe.Subscription.Status>(["active", "trialing", "past_due"]);
+
+// The same key within 24 hours returns the same customer, so two tabs share one customer.
+export async function musteriBul(k: { id: string; email?: string | null }, satir: AbonelikSatiri | null, s: Stripe = stripe()): Promise<string> {
+  if (satir?.stripe_musteri) return satir.stripe_musteri;
+  const m = await s.customers.create(
+    { ...(k.email ? { email: k.email } : {}), metadata: { user_id: k.id } },
+    { idempotencyKey: `fx-musteri-${k.id}` },
+  );
+  return m.id;
+}
+
+export async function suruyorMu(musteri: string, s: Stripe = stripe()): Promise<boolean> {
+  const l = await s.subscriptions.list({ customer: musteri, status: "all", limit: 20 });
+  return l.data.some((a) => SURUYOR.has(a.status));
+}
+
+// Only the newest payment page can be paid: older open ones (another tab) are closed.
+export async function acikOdemeleriKapat(musteri: string, s: Stripe = stripe()): Promise<number> {
+  const l = await s.checkout.sessions.list({ customer: musteri, status: "open", limit: 20 });
+  for (const o of l.data) await s.checkout.sessions.expire(o.id);
+  return l.data.length;
+}
+
 const AKTIF = new Set<Stripe.Subscription.Status>(["active", "trialing"]);
 const BITTI = new Set<Stripe.Subscription.Status>(["canceled", "unpaid", "incomplete_expired", "paused"]);
 
@@ -99,6 +127,9 @@ export async function aboneligiYaz(abonelikId: string): Promise<string> {
   const donem = donemMi(fiyat?.metadata?.donem) ? fiyat.metadata.donem : null;
   const simdi = Math.floor(Date.now() / 1000);
   const eski = await satirOku(userId);
+  if (eski?.stripe_abonelik && eski.stripe_abonelik !== s.id && SURUYOR.has(s.status) && SURUYOR.has((eski.durum ?? "") as Stripe.Subscription.Status) && new Date(eski.bitis).getTime() > Date.now()) {
+    console.error(`odeme: ${userId} için ikinci abonelik ${s.id} (kayıtlı ${eski.stripe_abonelik}); Stripe'ta kontrol et`);
+  }
 
   let bitis: number;
   if (AKTIF.has(s.status)) {

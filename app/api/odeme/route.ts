@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { donemMi, planMi } from "../../lib/paket";
-import { fiyatBul, kullanici, odemeAyarli, satirOku, stripe } from "../../lib/odemeSunucu";
+import { acikOdemeleriKapat, fiyatBul, kullanici, musteriBul, odemeAyarli, satirOku, stripe, suruyorMu } from "../../lib/odemeSunucu";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // POST { plan: "usta"|"firma", donem: "aylik"|"yillik", dil: "tr"|"en", isletme: true } with the user's session
 // token -> { url } of the Stripe payment page. A user whose Stripe subscription is still running
-// gets the billing page instead, so nobody pays twice.
+// (asked from Stripe, not from public.abonelikler) gets the billing page instead, and older open
+// payment pages are closed first, so nobody pays twice.
 export async function POST(req: Request) {
   if (!odemeAyarli()) return NextResponse.json({ hata: "kapali" }, { status: 503 });
   try {
@@ -22,11 +23,12 @@ export async function POST(req: Request) {
     const kok = new URL(req.url).origin;
 
     const satir = await satirOku(k.id);
-    const suruyor = satir?.stripe_abonelik && ["active", "trialing", "past_due"].includes(satir.durum ?? "") && new Date(satir.bitis).getTime() > Date.now();
-    if (suruyor && satir?.stripe_musteri) {
-      const p = await stripe().billingPortal.sessions.create({ customer: satir.stripe_musteri, return_url: `${kok}/app`, locale: dil });
+    const musteri = await musteriBul(k, satir);
+    if (await suruyorMu(musteri)) {
+      const p = await stripe().billingPortal.sessions.create({ customer: musteri, return_url: `${kok}/app`, locale: dil });
       return NextResponse.json({ url: p.url, yonet: true });
     }
+    await acikOdemeleriKapat(musteri);
 
     const fiyat = await fiyatBul(g.plan, g.donem);
     const oturum = await stripe().checkout.sessions.create({
@@ -35,7 +37,7 @@ export async function POST(req: Request) {
       client_reference_id: k.id,
       metadata: { user_id: k.id, ...beyan },
       subscription_data: { metadata: { user_id: k.id, ...beyan } },
-      ...(satir?.stripe_musteri ? { customer: satir.stripe_musteri } : k.email ? { customer_email: k.email } : {}),
+      customer: musteri,
       locale: dil,
       billing_address_collection: "auto",
       success_url: `${kok}/app?odeme=tamam`,
