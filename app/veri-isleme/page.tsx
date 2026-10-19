@@ -15,7 +15,7 @@ const E = ABONELIK_EPOSTA;
 const BOLUMLER: Bolum[] = [
   ["Taraflar ve kapsam", [
     "Bu sözleşme, Fixnote'u kullanan firma (\"sen\", veri sorumlusu) ile Motiq Automation Ltd (\"biz\", veri işleyen; şirket no 17303276, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Birleşik Krallık) arasındadır.",
-    "Fixnote'a girdiğin müşteri bilgilerinin işlenmesini düzenler. Kullanım koşullarının bir parçasıdır ve hesabın açık olduğu sürece geçerlidir. Kendi hesap bilgilerin için Gizlilik politikası geçerlidir.",
+    "Fixnote'a girdiğin müşteri bilgilerinin işlenmesini düzenler. Kullanım koşullarının bir parçasıdır; Fixnote'u kullanarak ve abone olurken onay kutusunu işaretleyerek kabul edersin. Hesabın açık olduğu sürece geçerlidir. Kendi hesap bilgilerin için Gizlilik politikası geçerlidir.",
     "Bu sözleşme 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) 12. maddesi ve Birleşik Krallık veri koruma mevzuatı (UK GDPR madde 28) kapsamındaki veri işleyen yükümlülüklerimizi karşılamak için hazırlanmıştır.",
   ]],
   ["İşlemenin konusu, amacı ve süresi", [[
@@ -50,7 +50,7 @@ const BOLUMLER: Bolum[] = [
   ["Alt işleyenler", [
     "Hizmeti sunmak için şu sağlayıcılarla çalışırız. Bu sözleşmeyi kabul ederek onları kullanmamıza izin vermiş olursun:",
     [
-      "Supabase: veritabanı, giriş ve dosya depolama. Müşteri bilgileri Almanya'daki (Frankfurt) sunucularda saklanır. Müşteri bilgilerini işleyen tek alt işleyendir.",
+      "Supabase (sözleşme tarafı Supabase Pte. Ltd, Singapur): veritabanı, giriş ve dosya depolama. Müşteri bilgileri Almanya'daki (Frankfurt) sunucularda saklanır. Müşteri bilgilerini işleyen tek alt işleyendir.",
       "Vercel: sitenin sunulması (ABD). Müşteri bilgilerini saklamaz; uygulama bilgileri tarayıcından doğrudan Supabase'e gönderir.",
       "Google (yalnızca Google ile girişte) ve Stripe (yalnızca abonelik ödemesi) müşteri bilgilerine erişmez.",
     ],
@@ -88,7 +88,7 @@ const BOLUMLER: Bolum[] = [
 const BOLUMLER_EN: Bolum[] = [
   ["Parties and scope", [
     "This agreement is between the business using Fixnote (\"you\", the data controller) and Motiq Automation Ltd (\"we\", the data processor; company number 17303276, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom).",
-    "It governs the processing of the customer details you enter in Fixnote. It forms part of the Terms of use and applies while your account is open. The Privacy policy covers your own account details.",
+    "It governs the processing of the customer details you enter in Fixnote. It forms part of the Terms of use; you accept it by using Fixnote and by ticking the box when you subscribe. It applies while your account is open. The Privacy policy covers your own account details.",
     "This agreement is made to meet our obligations as a data processor under Article 12 of Turkey's Personal Data Protection Law No. 6698 (KVKK) and UK data protection law (UK GDPR Article 28).",
   ]],
   ["Subject, purpose and duration", [[
@@ -123,7 +123,7 @@ const BOLUMLER_EN: Bolum[] = [
   ["Sub-processors", [
     "We work with these providers to run the service. By accepting this agreement you authorise us to use them:",
     [
-      "Supabase: database, sign-in and file storage. Customer details are stored on servers in Germany (Frankfurt). It is the only sub-processor that processes customer details.",
+      "Supabase (contracting party Supabase Pte. Ltd, Singapore): database, sign-in and file storage. Customer details are stored on servers in Germany (Frankfurt). It is the only sub-processor that processes customer details.",
       "Vercel: serving the site (USA). It does not store customer details; the app sends them from your browser directly to Supabase.",
       "Google (only for Google sign-in) and Stripe (only for subscription payments) have no access to customer details.",
     ],
