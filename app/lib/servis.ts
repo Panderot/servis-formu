@@ -36,6 +36,8 @@ export type Rapor = {
   sonrakiBakim: string; // YYYY-AA-GG ya da boş
   dil?: Dil; // report language, fixed when the report is created (older reports: Turkish)
   para?: ParaBirimi; // currency, fixed when the report is created (older reports: TL)
+  // Editing only, never saved: the server version the draft of report "id" started from (app/components/depo.ts).
+  surum?: { id: string; b?: string | null };
 };
 
 export type Firma = {

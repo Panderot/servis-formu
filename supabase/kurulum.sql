@@ -511,5 +511,30 @@ as $$
   delete from public.odeme_kilitleri where user_id = p_user and jeton = p_jeton;
 $$;
 
-revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid) to service_role;
+-- Webhook'un abonelik yazımı. Kilit satırı aynı işlemde kilitlenip jeton doğrulanır: süresi dolup başka
+-- isteğe geçmiş jetonla gelen (gecikmiş) yazı reddedilir ('kilit_kaybedildi'), böylece eski bir durum
+-- (active) yenisinin (canceled) üstüne yazılamaz.
+create or replace function public.abonelik_yaz(p_user uuid, p_jeton uuid, p_satir jsonb)
+returns void
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+begin
+  perform 1 from public.odeme_kilitleri where user_id = p_user and jeton = p_jeton for update;
+  if not found then raise exception 'kilit_kaybedildi'; end if;
+  insert into public.abonelikler as a (user_id, bitis, stripe_musteri, stripe_abonelik, plan, donem, durum, yenilenecek, guncelleme)
+  values (
+    p_user, (p_satir->>'bitis')::timestamptz, p_satir->>'stripe_musteri', p_satir->>'stripe_abonelik',
+    p_satir->>'plan', p_satir->>'donem', p_satir->>'durum', (p_satir->>'yenilenecek')::boolean, now()
+  )
+  on conflict (user_id) do update set
+    bitis = excluded.bitis, stripe_musteri = excluded.stripe_musteri, stripe_abonelik = excluded.stripe_abonelik,
+    plan = excluded.plan, donem = excluded.donem, durum = excluded.durum, yenilenecek = excluded.yenilenecek,
+    guncelleme = excluded.guncelleme;
+end;
+$$;
+
+revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) from public, anon, authenticated;
+grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) to service_role;

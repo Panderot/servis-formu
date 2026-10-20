@@ -214,6 +214,7 @@ class BulutMotor {
   sunucuSablon: Sablon[] = [];
   sunucuRapor = new Map<string, Rapor>();
   sunucuSurum = new Map<string, string>(); // report id -> its guncelleme on the server
+  kendi = new Map<string, string>(); // "id version" -> version this phone wrote over it
   kuyruk: Islem[] = [];
   eski: Map<string, Rapor> | null = null;
   yuklendi = false;
@@ -301,12 +302,11 @@ class BulutMotor {
   }
   kuyrukEkle(op: Islem): boolean {
     if (op.t === "r" && !("b" in op)) {
-      // The version this change is made on: that of the waiting change it replaces (the server hasn't
-      // seen that one yet), otherwise the server's.
-      const id = op.r.id;
-      const onceki = this.kuyrukOku().find((o) => o.t === "r" && o.r.id === id && o.k !== this.islemdeki);
-      const b = onceki?.t === "r" ? onceki.b : this.sunucuSurum.get(id) ?? (this.sunucuRapor.has(id) ? undefined : null);
-      if (b !== undefined) op = { ...op, b };
+      // The version this change is made on: the one the edit started from (duzenlemeHazirla; a copy
+      // under a new id doesn't count), otherwise the current one.
+      const { surum, ...r } = op.r;
+      const b = this.kendiYazimi(r.id, surum && surum.id === r.id ? surum.b : this.temelSurum(r.id));
+      op = b === undefined ? { ...op, r } : { ...op, r, b };
     }
     const hedef = op.t === "f" ? "" : op.t === "r" ? op.r.id : op.id;
     // A newer change replaces older waiting changes of the same report (never the one being sent).
@@ -591,7 +591,7 @@ class BulutMotor {
     if (sonuc.s === "cakisma") {
       this.sunucuRapor.set(r.id, normal({ ...(sonuc.veri as Rapor), id: r.id }));
       this.sunucuSurum.set(r.id, sonuc.surum);
-      await this.cakismaKopyasi(r, op.k);
+      await this.cakismaKopyasi({ ...ham, no: r.no }, op.k);
       return;
     }
     this.surumYenile(r.id, b, sonuc.surum, op.k);
@@ -645,10 +645,24 @@ class BulutMotor {
     return { s: "cakisma", veri: data.veri, surum: String(data.guncelleme) };
   }
 
+  // Version of report id the screen shows: that of its waiting change (the server hasn't seen it yet),
+  // otherwise the server's; null = not on the server, undefined = not known (written as before).
+  temelSurum(id: string): string | null | undefined {
+    const o = this.kuyrukOku().filter((x) => x.t === "r" && x.r.id === id).pop(); // the newest one is shown
+    if (o?.t === "r") return o.b;
+    return this.sunucuSurum.get(id) ?? (this.sunucuRapor.has(id) ? undefined : null);
+  }
+  // A version replaced by this phone's own write counts as that write (the edit was opened while it was being sent).
+  kendiYazimi(id: string, b: string | null | undefined): string | null | undefined {
+    for (let i = 0; i < 20 && b !== undefined && this.kendi.has(`${id} ${b}`); i++) b = this.kendi.get(`${id} ${b}`);
+    return b;
+  }
+
   // After a write: other waiting changes of the report made on the same version now build on the new one.
   surumYenile(id: string, eski: string | null | undefined, yeni: string, k: string) {
     this.sunucuSurum.set(id, yeni);
     if (eski === undefined) return;
+    this.kendi.set(`${id} ${eski}`, yeni);
     const l = this.kuyrukOku();
     let degisti = false;
     for (const o of l) if (o.t === "r" && o.k !== k && o.r.id === id && o.b === eski) { o.b = yeni; degisti = true; }
@@ -657,21 +671,29 @@ class BulutMotor {
 
   // Both versions are kept: the server keeps the other device's, this phone's becomes a new report (id
   // from the change key, so a retry finds the same copy). Its files are copied into its own folder.
-  async cakismaKopyasi(r: Rapor, k: string) {
+  // ham: the change as waiting; photos not uploaded yet (data:) go up into the copy's folder.
+  async cakismaKopyasi(ham: Rapor, k: string) {
+    const r = ham;
     const id = "c" + k;
+    let eksik = 0;
     const tasi = async (src: string) => {
       if (!src.startsWith("sb:")) return src;
       const hedef = `${this.hesap}/${id}/${src.split("/").pop()}`;
       const { error } = await this.sb.storage.from(KOVA).copy(src.slice(3), hedef);
-      if (error && !/exist|duplicate/i.test(error.message || "")) {
-        if (hataTuru(error) === "ag") throw error;
-        return ""; // the file is gone (removed with the other version)
+      if (!error) return "sb:" + hedef;
+      const e = error as { code?: string; statusCode?: string; status?: number };
+      const kod = e.code || String(e.statusCode ?? e.status ?? "");
+      if (kod === "ResourceAlreadyExists" || kod === "409") {
+        // Copied by an earlier try: used only if it is really there.
+        const { data: bulundu, error: ve } = await this.sb.storage.from(KOVA).exists(hedef);
+        if (!ve && bulundu) return "sb:" + hedef;
       }
-      return "sb:" + hedef;
+      if (kod === "NoSuchKey" || kod === "404") { eksik++; return ""; } // removed with the other version: counted and told
+      throw error; // anything else: the change stays waiting and is tried again
     };
     const fotolar: Rapor["fotolar"] = [];
     for (const f of r.fotolar) { const src = await tasi(f.src); if (src) fotolar.push({ ...f, src }); }
-    let kopyaR: Rapor = { ...r, id, fotolar, imza: await tasi(r.imza) };
+    let kopyaR: Rapor = await this.dosyalariYukle({ ...r, id, fotolar, imza: await tasi(r.imza) }, k);
     // A retry finds the copy already written: it keeps its number (and is then the same content).
     const { data: mevcut, error: ve } = await this.sb.from("raporlar").select("no").eq("user_id", this.hesap).eq("id", id).retry(false).maybeSingle();
     if (ve) throw ve;
@@ -690,7 +712,8 @@ class BulutMotor {
       }
     }
     this.sunucuRapor = new Map([[id, kopyaR], ...this.sunucuRapor]);
-    this.bildir(c(`${r.no} raporu başka bir cihazda da değiştirilmiş. İki sürüm de saklandı: bu telefondaki değişiklik ${kopyaR.no} numarasıyla ayrı rapor oldu.`, `Report ${r.no} was also changed on another device. Both versions were kept: the change on this phone became a separate report, ${kopyaR.no}.`), 12000);
+    const ek = eksik ? c(` Diğer sürümde silinmiş ${eksik} fotoğraf ya da imza bu rapora alınamadı.`, ` ${eksik} photo(s) or signature removed in the other version couldn't be added to it.`) : "";
+    this.bildir(c(`${r.no} raporu başka bir cihazda da değiştirilmiş. İki sürüm de saklandı: bu telefondaki değişiklik ${kopyaR.no} numarasıyla ayrı rapor oldu.`, `Report ${r.no} was also changed on another device. Both versions were kept: the change on this phone became a separate report, ${kopyaR.no}.`) + ek, 12000);
   }
 
   // ---------- photos and signatures: short-lived private links ----------
@@ -757,6 +780,7 @@ class BulutMotor {
   }
   async duzenlemeHazirla(r: Rapor): Promise<Rapor> {
     const t = kopya(r);
+    t.surum = { id: t.id, b: this.temelSurum(t.id) }; // saved over this version only, whatever is loaded meanwhile
     // The signature pad redraws the old signature on a canvas, so it needs the image itself, not a link.
     if (t.imza.startsWith("sb:")) { try { t.imza = await this.indir(t.imza); } catch {} }
     return t;

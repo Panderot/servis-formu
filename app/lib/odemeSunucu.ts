@@ -105,7 +105,7 @@ export async function suruyorMu(musteri: string, s: Stripe = stripe()): Promise<
 export async function odemeKilidiAl(userId: string, deneme = 12, araMs = 500): Promise<string | null> {
   for (let i = 0; i < deneme; i++) {
     const { data, error } = await yonetici().rpc("odeme_kilidi_al", { p_user: userId });
-    if (error) throw new Error("ödeme kilidi alınamadı: " + error.message);
+    if (error) throw Object.assign(new Error("ödeme kilidi alınamadı: " + error.message), { code: error.code });
     if (data) return data as string;
     if (i < deneme - 1) await new Promise((r) => setTimeout(r, araMs));
   }
@@ -158,7 +158,14 @@ export async function aboneligiYaz(abonelikId: string): Promise<string> {
   // Events of one user run one at a time (the payment lock) and read the subscription again under it,
   // so a slow event that read an older state (active) can't write it over a newer one (canceled).
   // Lock busy or lost: an error, the webhook answers 500 and Stripe sends the event again later.
-  const jeton = await odemeKilidiAl(userId);
+  let jeton: string | null;
+  try {
+    jeton = await odemeKilidiAl(userId);
+  } catch (e) {
+    // 23503: the user deleted their account; nothing to write, no retry.
+    if ((e as { code?: string }).code === "23503") return `atlandı: ${ilk.id} kullanıcısı silinmiş`;
+    throw e;
+  }
   if (!jeton) throw new Error(`ödeme kilidi meşgul (${userId})`);
   try {
     const s = await stripe().subscriptions.retrieve(abonelikId, {}, { timeout: 8000, maxNetworkRetries: 1 });
@@ -193,23 +200,21 @@ async function aboneligiKilitleYaz(s: Stripe.Subscription, musteri: string, user
     return `atlandı: ${s.id} durumu ${s.status}`; // incomplete: first payment not done yet
   }
 
-  if (!(await odemeKilidiTut(userId, jeton))) throw new Error(`ödeme kilidi kaybedildi (${userId})`);
-  const { error } = await yonetici()
-    .from("abonelikler")
-    .upsert(
-      {
-        user_id: userId,
-        bitis: new Date(bitis * 1000).toISOString(),
-        stripe_musteri: musteri,
-        stripe_abonelik: s.id,
-        plan,
-        donem,
-        durum: s.status,
-        yenilenecek: !s.cancel_at_period_end && !s.cancel_at && !s.ended_at && !BITTI.has(s.status),
-        guncelleme: new Date().toISOString(),
-      },
-      { onConflict: "user_id" },
-    );
+  // Written by public.abonelik_yaz (kurulum.sql section 5): the lock token is checked in the same
+  // transaction, so a write delayed past the lock (another event took it over) is refused.
+  const { error } = await yonetici().rpc("abonelik_yaz", {
+    p_user: userId,
+    p_jeton: jeton,
+    p_satir: {
+      bitis: new Date(bitis * 1000).toISOString(),
+      stripe_musteri: musteri,
+      stripe_abonelik: s.id,
+      plan,
+      donem,
+      durum: s.status,
+      yenilenecek: !s.cancel_at_period_end && !s.cancel_at && !s.ended_at && !BITTI.has(s.status),
+    },
+  });
   // 23503: the user deleted their account (Settings > Delete account); nothing to write, no retry.
   if (error?.code === "23503") return `atlandı: ${s.id} kullanıcısı silinmiş`;
   if (error) throw new Error("abonelikler yazılamadı: " + error.message);
