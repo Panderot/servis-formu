@@ -484,6 +484,22 @@ begin
 end;
 $$;
 
+-- Kilit hâlâ bu jetonda mı? Öyleyse süresini yeniler (true); süresi dolup başkasına geçtiyse false.
+-- /api/odeme ödeme sayfasını açmadan önce ve açtıktan sonra sorar; kilidi kaybeden istek kendi
+-- sayfasını kapatır, böylece yavaş kalan istek yeni sahibin yanında ikinci sayfa bırakamaz.
+create or replace function public.odeme_kilidi_tut(p_user uuid, p_jeton uuid)
+returns boolean
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+begin
+  update public.odeme_kilitleri set zaman = now() where user_id = p_user and jeton = p_jeton;
+  return found;
+end;
+$$;
+
 -- Sadece kendi jetonuyla bırakır (süresi dolup başkasına geçmiş kilide dokunmaz).
 create or replace function public.odeme_kilidi_birak(p_user uuid, p_jeton uuid)
 returns void
@@ -495,5 +511,5 @@ as $$
   delete from public.odeme_kilitleri where user_id = p_user and jeton = p_jeton;
 $$;
 
-revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_birak(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_birak(uuid, uuid) to service_role;
+revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid) to service_role;

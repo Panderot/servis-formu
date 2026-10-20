@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { donemMi, planMi } from "../../lib/paket";
-import { acikOdemeleriKapat, fiyatBul, kullanici, musteriBul, odemeAyarli, odemeKilidiAl, odemeKilidiBirak, satirOku, stripe, suruyorMu } from "../../lib/odemeSunucu";
+import { acikOdemeleriKapat, fiyatBul, kullanici, musteriBul, odemeAyarli, odemeKilidiAl, odemeKilidiBirak, odemeKilidiTut, satirOku, stripe, suruyorMu } from "../../lib/odemeSunucu";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +35,10 @@ export async function POST(req: Request) {
       }
       await acikOdemeleriKapat(musteri);
 
+      // The lock lasts 30 s. If it ran out during the calls above, another request may already be
+      // opening its page: stop here. Renewing gives the page creation a full 30 s, and its time is
+      // capped below that (8 s, one retry), so it can't outlive the lock.
+      if (!(await odemeKilidiTut(k.id, jeton))) return NextResponse.json({ hata: "mesgul" }, { status: 409 });
       const oturum = await stripe().checkout.sessions.create({
         mode: "subscription",
         line_items: [{ price: fiyat.id, quantity: 1 }],
@@ -46,7 +50,17 @@ export async function POST(req: Request) {
         billing_address_collection: "auto",
         success_url: `${kok}/app?odeme=tamam`,
         cancel_url: `${kok}/abonelik?iptal=1`,
+      }, { timeout: 8000, maxNetworkRetries: 1 }).catch(async (e) => {
+        // A request that timed out may still have created the page: close what is open while the lock is ours.
+        await acikOdemeleriKapat(musteri).catch(() => {});
+        throw e;
       });
+      // Still ours? Otherwise (this request stalled past the lock) the new holder has opened its own
+      // page after closing the open ones, so this one is closed and never handed out.
+      if (!(await odemeKilidiTut(k.id, jeton))) {
+        await stripe().checkout.sessions.expire(oturum.id).catch(() => {});
+        return NextResponse.json({ hata: "mesgul" }, { status: 409 });
+      }
       if (!oturum.url) throw new Error("Checkout adresi gelmedi");
       return NextResponse.json({ url: oturum.url });
     } finally {

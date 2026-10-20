@@ -112,6 +112,14 @@ export async function odemeKilidiAl(userId: string, deneme = 12, araMs = 500): P
   return null;
 }
 
+// True while the lock is still this request's (and gives it another 30 s); false once it expired and
+// another request took it over. Asked right before and right after opening a payment page.
+export async function odemeKilidiTut(userId: string, jeton: string): Promise<boolean> {
+  const { data, error } = await yonetici().rpc("odeme_kilidi_tut", { p_user: userId, p_jeton: jeton });
+  if (error) throw new Error("ödeme kilidi yenilenemedi: " + error.message);
+  return data === true;
+}
+
 export async function odemeKilidiBirak(userId: string, jeton: string): Promise<void> {
   const { error } = await yonetici().rpc("odeme_kilidi_birak", { p_user: userId, p_jeton: jeton });
   if (error) console.error("odeme: kilit bırakılamadı:", error.message); // it expires by itself after 30 s

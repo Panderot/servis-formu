@@ -350,6 +350,9 @@ class BulutMotor {
     return true;
   }
   onbellekYaz() {
+    // Older changes without h take their firm account from this cache. If giving them one failed (phone
+    // storage full), a cache of this firm account would hand them to it on the next start: not written.
+    if (this.eskiHesap !== this.hesap && this.hamKuyruk()?.some((o) => !o.h)) return;
     try {
       localStorage.setItem(this.kO, JSON.stringify({ hesap: this.hesap, firma: this.sunucuFirma, sablonlar: this.sunucuSablon, raporlar: [...this.sunucuRapor.values()] }));
     } catch {
@@ -360,7 +363,9 @@ class BulutMotor {
   // ---------- start / stop ----------
   async baslat() {
     this.kuyruk = this.kuyrukOku();
-    if (this.hamKuyruk()?.some((o) => !o.h)) this.kuyrukYaz(this.kuyruk); // older changes get their firm account once
+    // Older changes get their firm account once (tried again on every start until it is written).
+    if (this.hamKuyruk()?.some((o) => !o.h) && !this.kuyrukYaz(this.kuyruk))
+      this.bildir(c("Telefonun hafızası dolu; bekleyen eski değişiklikler düzenlenemedi. Biraz yer açıp sayfayı yenile.", "Your phone's storage is full; older waiting changes couldn't be updated. Free up some space and refresh the page."), 10000);
     const baska = this.baskaHesabin();
     const bilinmeyen = baska.filter((o) => o.h === BILINMEYEN).length;
     if (bilinmeyen) this.bildir(c(`Bu telefonda hangi firmaya ait olduğu bilinmeyen ${bilinmeyen} eski değişiklik var; güvenlik için gönderilmedi. Yardım için info@motiqai.com'a yaz.`, `This phone has ${bilinmeyen} older change(s) whose company account is unknown; for safety they weren't sent. Email info@motiqai.com for help.`), 10000);
