@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { donemMi, planMi } from "../../lib/paket";
-import { acikOdemeleriKapat, fiyatBul, kullanici, musteriBul, odemeAyarli, odemeKilidiAl, odemeKilidiBirak, odemeKilidiTut, satirOku, stripe, suruyorMu } from "../../lib/odemeSunucu";
+import { acikOdemeleriKapat, fiyatBul, istegeAitOdemeyiKapat, kullanici, musteriBul, odemeAyarli, odemeKilidiAl, odemeKilidiBirak, odemeKilidiTut, satirOku, stripe, suruyorMu } from "../../lib/odemeSunucu";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,16 +43,17 @@ export async function POST(req: Request) {
         mode: "subscription",
         line_items: [{ price: fiyat.id, quantity: 1 }],
         client_reference_id: k.id,
-        metadata: { user_id: k.id, ...beyan },
+        metadata: { user_id: k.id, istek: jeton, ...beyan },
         subscription_data: { metadata: { user_id: k.id, ...beyan } },
         customer: musteri,
         locale: dil,
         billing_address_collection: "auto",
         success_url: `${kok}/app?odeme=tamam`,
         cancel_url: `${kok}/abonelik?iptal=1`,
-      }, { timeout: 8000, maxNetworkRetries: 1 }).catch(async (e) => {
-        // A request that timed out may still have created the page: close what is open while the lock is ours.
-        await acikOdemeleriKapat(musteri).catch(() => {});
+      }, { timeout: 8000, maxNetworkRetries: 1, idempotencyKey: `fx-odeme-${jeton}` }).catch(async (e) => {
+        // A request that timed out may still have created the page: close only this request's page
+        // (metadata istek), never another one, which may belong to a request that took the lock over.
+        await istegeAitOdemeyiKapat(musteri, jeton).catch(() => {});
         throw e;
       });
       // Still ours? Otherwise (this request stalled past the lock) the new holder has opened its own

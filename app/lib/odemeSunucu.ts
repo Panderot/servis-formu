@@ -132,6 +132,14 @@ export async function acikOdemeleriKapat(musteri: string, s: Stripe = stripe()):
   return l.data.length;
 }
 
+// After a failed or timed-out page creation: closes only the page made by that request (metadata
+// istek = its lock token), so a page of another request is never touched.
+export async function istegeAitOdemeyiKapat(musteri: string, istek: string, s: Stripe = stripe()): Promise<void> {
+  const ayar = { timeout: 8000, maxNetworkRetries: 1 };
+  const l = await s.checkout.sessions.list({ customer: musteri, status: "open", limit: 20 }, ayar);
+  for (const o of l.data) if (o.metadata?.istek === istek) await s.checkout.sessions.expire(o.id, {}, ayar);
+}
+
 const AKTIF = new Set<Stripe.Subscription.Status>(["active", "trialing"]);
 const BITTI = new Set<Stripe.Subscription.Status>(["canceled", "unpaid", "incomplete_expired", "paused"]);
 
