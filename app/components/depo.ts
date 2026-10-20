@@ -83,6 +83,13 @@ function normal(r: Rapor): Rapor {
 }
 
 const refler = (r: Rapor) => [...r.fotolar.map((f) => f.src), r.imza].filter((s) => s.startsWith("sb:")).map((s) => s.slice(3));
+// Same content whatever the key order (jsonb reorders keys).
+const sirali = (x: unknown): unknown =>
+  Array.isArray(x) ? x.map(sirali) : x && typeof x === "object" ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, sirali((x as Record<string, unknown>)[k])])) : x;
+const ayni = (a: unknown, b: unknown) => JSON.stringify(sirali(kopya(a))) === JSON.stringify(sirali(kopya(b)));
+// A file not used by the report it was saved with is removed only after this long: another phone may
+// have just uploaded it and be about to save the report that uses it.
+const DOSYA_BEKLEME = 60 * 60 * 1000;
 
 function dataUrl(b: Blob): Promise<string> {
   return new Promise((coz, red) => {
@@ -188,7 +195,9 @@ function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void, d
 const BILINMEYEN = "?"; // firm account of an older waiting change that can't be known
 
 type Islem = (
-  | { k: string; t: "r"; r: Rapor } // save a report (photos may still be data: URLs)
+  // save a report (photos stay data: URLs until it is written). b = server version (guncelleme) the change
+  // was made on, null = a report not on the server yet, missing = older change without one (written as before).
+  | { k: string; t: "r"; r: Rapor; b?: string | null }
   | { k: string; t: "a"; id: string } // import a report of the old local-only version (read from sf_raporlar)
   | { k: string; t: "s"; id: string } // delete a report
   | { k: string; t: "f"; firma: Firma; sablonlar: Sablon[] } // firm settings and own templates
@@ -204,6 +213,7 @@ class BulutMotor {
   sunucuFirma: Firma | null = null;
   sunucuSablon: Sablon[] = [];
   sunucuRapor = new Map<string, Rapor>();
+  sunucuSurum = new Map<string, string>(); // report id -> its guncelleme on the server
   kuyruk: Islem[] = [];
   eski: Map<string, Rapor> | null = null;
   yuklendi = false;
@@ -290,6 +300,14 @@ class BulutMotor {
     return true;
   }
   kuyrukEkle(op: Islem): boolean {
+    if (op.t === "r" && !("b" in op)) {
+      // The version this change is made on: that of the waiting change it replaces (the server hasn't
+      // seen that one yet), otherwise the server's.
+      const id = op.r.id;
+      const onceki = this.kuyrukOku().find((o) => o.t === "r" && o.r.id === id && o.k !== this.islemdeki);
+      const b = onceki?.t === "r" ? onceki.b : this.sunucuSurum.get(id) ?? (this.sunucuRapor.has(id) ? undefined : null);
+      if (b !== undefined) op = { ...op, b };
+    }
     const hedef = op.t === "f" ? "" : op.t === "r" ? op.r.id : op.id;
     // A newer change replaces older waiting changes of the same report (never the one being sent).
     const l = this.kuyrukOku().filter((o) => {
@@ -337,7 +355,7 @@ class BulutMotor {
 
   // ---------- cache (so the list opens fast and offline) ----------
   onbellekOku() {
-    const o = oku<{ hesap?: string; firma: Firma | null; sablonlar: Sablon[]; raporlar: Rapor[] } | null>(this.kO, null);
+    const o = oku<{ hesap?: string; firma: Firma | null; sablonlar: Sablon[]; raporlar: Rapor[]; surumler?: Record<string, string> } | null>(this.kO, null);
     if (!o) return false;
     // A cache of another firm account (left or removed from a team) is dropped, never shown.
     if ((o.hesap ?? this.uid) !== this.hesap) {
@@ -347,6 +365,7 @@ class BulutMotor {
     this.sunucuFirma = o.firma;
     this.sunucuSablon = o.sablonlar || [];
     this.sunucuRapor = new Map((o.raporlar || []).map((r) => [r.id, normal(r)]));
+    this.sunucuSurum = new Map(Object.entries(o.surumler || {}));
     return true;
   }
   onbellekYaz() {
@@ -354,7 +373,7 @@ class BulutMotor {
     // storage full), a cache of this firm account would hand them to it on the next start: not written.
     if (this.eskiHesap !== this.hesap && this.hamKuyruk()?.some((o) => !o.h)) return;
     try {
-      localStorage.setItem(this.kO, JSON.stringify({ hesap: this.hesap, firma: this.sunucuFirma, sablonlar: this.sunucuSablon, raporlar: [...this.sunucuRapor.values()] }));
+      localStorage.setItem(this.kO, JSON.stringify({ hesap: this.hesap, firma: this.sunucuFirma, sablonlar: this.sunucuSablon, raporlar: [...this.sunucuRapor.values()], surumler: Object.fromEntries(this.sunucuSurum) }));
     } catch {
       try { localStorage.removeItem(this.kO); } catch {}
     }
@@ -406,17 +425,18 @@ class BulutMotor {
       if (!navigator.onLine) throw new Error("Failed to fetch");
       const f = await this.sb.from("firmalar").select("firma, sablonlar").eq("user_id", this.hesap).retry(false).maybeSingle();
       if (f.error) throw f.error;
-      const liste: { r: Rapor; z: string }[] = [];
+      const liste: { r: Rapor; z: string; g: string }[] = [];
       for (let i = 0; ; i += SAYFA) {
-        const { data, error } = await this.sb.from("raporlar").select("id, no, veri, olusturma").eq("user_id", this.hesap).order("id").range(i, i + SAYFA - 1).retry(false);
+        const { data, error } = await this.sb.from("raporlar").select("id, no, veri, olusturma, guncelleme").eq("user_id", this.hesap).order("id").range(i, i + SAYFA - 1).retry(false);
         if (error) throw error;
-        for (const s of data || []) liste.push({ r: normal({ ...(s.veri as Rapor), id: s.id as string, no: s.no as string }), z: String(s.olusturma || "") });
+        for (const s of data || []) liste.push({ r: normal({ ...(s.veri as Rapor), id: s.id as string, no: s.no as string }), z: String(s.olusturma || ""), g: String(s.guncelleme || "") });
         if (!data || data.length < SAYFA) break;
       }
       liste.sort((a, b) => b.z.localeCompare(a.z));
       this.sunucuFirma = f.data ? ({ ...BOS_FIRMA, ...(f.data.firma as Firma) }) : null;
       this.sunucuSablon = f.data && Array.isArray(f.data.sablonlar) ? (f.data.sablonlar as Sablon[]) : [];
       this.sunucuRapor = new Map(liste.map((x) => [x.r.id, x.r]));
+      this.sunucuSurum = new Map(liste.filter((x) => x.g).map((x) => [x.r.id, x.g]));
       this.sonYenileme = Date.now();
       this.cevrimdisi = false;
       this.onbellekYaz();
@@ -487,12 +507,18 @@ class BulutMotor {
     if (error) throw error;
     this.urller.set(yol, { url: src, bitis: Date.now() + 3500 * 1000 }); // keep showing the local copy, no flicker
   }
-  async klasorTemizle(id: string, kullanilan: Set<string>) {
+  // hepsi: the report is deleted, every file goes. Otherwise unused files go only once older than
+  // DOSYA_BEKLEME (a file without a date stays).
+  async klasorTemizle(id: string, kullanilan: Set<string>, hepsi = false) {
     if (!this.sahip) return; // only the owner deletes files; a technician leaves unused ones
     const yol = `${this.hesap}/${id}`;
     const { data, error } = await this.sb.storage.from(KOVA).list(yol, { limit: 1000 });
     if (error) throw error;
-    const sil = (data || []).map((o) => `${yol}/${o.name}`).filter((p) => !kullanilan.has(p));
+    const sinir = Date.now() - DOSYA_BEKLEME;
+    const sil = (data || [])
+      .filter((o) => { const t = Date.parse(o.updated_at || o.created_at || ""); return hepsi || (t > 0 && t < sinir); })
+      .map((o) => `${yol}/${o.name}`)
+      .filter((p) => !kullanilan.has(p));
     if (sil.length) {
       const { error: e } = await this.sb.storage.from(KOVA).remove(sil);
       if (e) throw e;
@@ -526,44 +552,145 @@ class BulutMotor {
       if (!this.sahip) return; // only the owner deletes reports
       const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.hesap).eq("id", op.id);
       if (error) throw error;
-      await this.klasorTemizle(op.id, new Set());
+      await this.klasorTemizle(op.id, new Set(), true);
       this.sunucuRapor.delete(op.id);
+      this.sunucuSurum.delete(op.id);
       return;
     }
     const kaynak = op.t === "r" ? op.r : this.eskiRapor(op.id);
     if (!kaynak) return; // the old local record is gone
-    let r = normal(kopya(kaynak));
-    let yuklendi = false;
+    let ham = normal(kopya(kaynak)); // as waiting: photos stay data: URLs until the report is written
+    let r = await this.dosyalariYukle(ham, op.k);
+    const b = op.t === "r" ? op.b : undefined;
+    let sonuc: Awaited<ReturnType<BulutMotor["raporYaz"]>>;
+    for (let deneme = 0; ; deneme++) {
+      try {
+        sonuc = await this.raporYaz(r, b);
+        break;
+      } catch (error) {
+        const e = error as { code?: string; message?: string };
+        if (e.code === "23505" && /raporlar_no_tekil/.test(e.message || "") && deneme < 3) {
+          const eskiNo = r.no;
+          const no = await this.bosNo(r);
+          r = { ...r, no };
+          ham = { ...ham, no };
+          this.kuyrukDegistir(op.k, op.t === "r" ? { ...op, r: ham } : { k: op.k, t: "r", r: ham });
+          this.bildir(c(`${eskiNo} numarası başka bir telefonda kullanılmış. Bu rapor ${r.no} olarak kaydedildi.`, `Number ${eskiNo} was already used on another phone. This report was saved as ${r.no}.`), 8000);
+          continue;
+        }
+        throw error;
+      }
+    }
+    if (sonuc.s === "silinmis") {
+      // Deleted on another device after this change was made: not brought back.
+      this.sunucuRapor.delete(r.id);
+      this.sunucuSurum.delete(r.id);
+      this.bildir(c(`${r.no} raporu başka bir cihazda silinmiş; bu telefondaki değişiklik onu geri getirmedi.`, `Report ${r.no} was deleted on another device; the change on this phone didn't bring it back.`), 10000);
+      return;
+    }
+    if (sonuc.s === "cakisma") {
+      this.sunucuRapor.set(r.id, normal({ ...(sonuc.veri as Rapor), id: r.id }));
+      this.sunucuSurum.set(r.id, sonuc.surum);
+      await this.cakismaKopyasi(r, op.k);
+      return;
+    }
+    this.surumYenile(r.id, b, sonuc.surum, op.k);
+    await this.klasorTemizle(r.id, new Set(refler(r).map(String)));
+    if (this.sunucuRapor.has(r.id)) this.sunucuRapor.set(r.id, r);
+    else this.sunucuRapor = new Map([[r.id, r], ...this.sunucuRapor]); // new report on top
+  }
+
+  // Photos and the signature go up at fixed paths (photo id, change key) on every try, so the report
+  // never points to a file that a cleanup on another phone removed in the meantime.
+  async dosyalariYukle(ham: Rapor, k: string): Promise<Rapor> {
+    const r = kopya(ham);
     for (const f of r.fotolar) {
       if (f.src.startsWith("data:")) {
         const yol = `${this.hesap}/${r.id}/${f.id}.${f.src.startsWith("data:image/png") ? "png" : "jpg"}`;
         await this.yukle(yol, f.src);
         f.src = "sb:" + yol;
-        yuklendi = true;
       }
     }
     if (r.imza.startsWith("data:")) {
-      const yol = `${this.hesap}/${r.id}/imza-${uid()}.png`;
+      const yol = `${this.hesap}/${r.id}/imza-${k}.png`;
       await this.yukle(yol, r.imza);
       r.imza = "sb:" + yol;
-      yuklendi = true;
     }
-    if (yuklendi) this.kuyrukDegistir(op.k, { k: op.k, t: "r", r }); // a retry does not upload again
-    for (let deneme = 0; ; deneme++) {
-      const { error } = await this.sb.from("raporlar").upsert({ user_id: this.hesap, id: r.id, no: r.no, veri: r }, { onConflict: "user_id,id" });
-      if (!error) break;
-      if (error.code === "23505" && /raporlar_no_tekil/.test(error.message || "") && deneme < 3) {
-        const eskiNo = r.no;
-        r = { ...r, no: await this.bosNo(r) };
-        this.kuyrukDegistir(op.k, { k: op.k, t: "r", r });
-        this.bildir(c(`${eskiNo} numarası başka bir telefonda kullanılmış. Bu rapor ${r.no} olarak kaydedildi.`, `Number ${eskiNo} was already used on another phone. This report was saved as ${r.no}.`), 8000);
-        continue;
+    return r;
+  }
+
+  // Writes the report only over the version the change was made on (b). Not written: "silinmis" (gone
+  // from the server) or "cakisma" (changed on another device; veri/surum = the server's version).
+  async raporYaz(r: Rapor, b: string | null | undefined): Promise<{ s: "tamam"; surum: string } | { s: "silinmis" } | { s: "cakisma"; veri: unknown; surum: string }> {
+    const satir = { user_id: this.hesap, id: r.id, no: r.no, veri: r };
+    if (b === undefined) {
+      const { data, error } = await this.sb.from("raporlar").upsert(satir, { onConflict: "user_id,id" }).select("guncelleme").single();
+      if (error) throw error;
+      return { s: "tamam", surum: String(data.guncelleme) };
+    }
+    if (b === null) {
+      const { data, error } = await this.sb.from("raporlar").insert(satir).select("guncelleme").single();
+      if (!error) return { s: "tamam", surum: String(data.guncelleme) };
+      if (!(error.code === "23505" && /raporlar_pkey/.test(error.message || ""))) throw error;
+    } else {
+      const { data, error } = await this.sb.from("raporlar").update({ no: r.no, veri: r }).eq("user_id", this.hesap).eq("id", r.id).eq("guncelleme", b).select("guncelleme");
+      if (error) throw error;
+      if (data?.length) return { s: "tamam", surum: String(data[0].guncelleme) };
+    }
+    // Not written: changed or deleted since, or this is a retry of a write whose answer was lost.
+    const { data, error } = await this.sb.from("raporlar").select("veri, guncelleme").eq("user_id", this.hesap).eq("id", r.id).retry(false).maybeSingle();
+    if (error) throw error;
+    if (!data) return { s: "silinmis" };
+    if (ayni(data.veri, r)) return { s: "tamam", surum: String(data.guncelleme) };
+    return { s: "cakisma", veri: data.veri, surum: String(data.guncelleme) };
+  }
+
+  // After a write: other waiting changes of the report made on the same version now build on the new one.
+  surumYenile(id: string, eski: string | null | undefined, yeni: string, k: string) {
+    this.sunucuSurum.set(id, yeni);
+    if (eski === undefined) return;
+    const l = this.kuyrukOku();
+    let degisti = false;
+    for (const o of l) if (o.t === "r" && o.k !== k && o.r.id === id && o.b === eski) { o.b = yeni; degisti = true; }
+    if (degisti) this.kuyrukYaz(l);
+  }
+
+  // Both versions are kept: the server keeps the other device's, this phone's becomes a new report (id
+  // from the change key, so a retry finds the same copy). Its files are copied into its own folder.
+  async cakismaKopyasi(r: Rapor, k: string) {
+    const id = "c" + k;
+    const tasi = async (src: string) => {
+      if (!src.startsWith("sb:")) return src;
+      const hedef = `${this.hesap}/${id}/${src.split("/").pop()}`;
+      const { error } = await this.sb.storage.from(KOVA).copy(src.slice(3), hedef);
+      if (error && !/exist|duplicate/i.test(error.message || "")) {
+        if (hataTuru(error) === "ag") throw error;
+        return ""; // the file is gone (removed with the other version)
       }
-      throw error;
+      return "sb:" + hedef;
+    };
+    const fotolar: Rapor["fotolar"] = [];
+    for (const f of r.fotolar) { const src = await tasi(f.src); if (src) fotolar.push({ ...f, src }); }
+    let kopyaR: Rapor = { ...r, id, fotolar, imza: await tasi(r.imza) };
+    // A retry finds the copy already written: it keeps its number (and is then the same content).
+    const { data: mevcut, error: ve } = await this.sb.from("raporlar").select("no").eq("user_id", this.hesap).eq("id", id).retry(false).maybeSingle();
+    if (ve) throw ve;
+    kopyaR = { ...kopyaR, no: mevcut ? String(mevcut.no) : await this.bosNo(kopyaR) };
+    for (let deneme = 0; ; deneme++) {
+      if (deneme) kopyaR = { ...kopyaR, no: await this.bosNo(kopyaR) };
+      try {
+        const s = await this.raporYaz(kopyaR, null);
+        if (s.s !== "tamam") throw new Error("kopya yazılamadı");
+        this.sunucuSurum.set(id, s.surum);
+        break;
+      } catch (error) {
+        const e = error as { code?: string; message?: string };
+        if (e.code === "23505" && /raporlar_no_tekil/.test(e.message || "") && deneme < 3) continue;
+        throw error;
+      }
     }
-    await this.klasorTemizle(r.id, new Set(refler(r).map(String)));
-    if (this.sunucuRapor.has(r.id)) this.sunucuRapor.set(r.id, r);
-    else this.sunucuRapor = new Map([[r.id, r], ...this.sunucuRapor]); // new report on top
+    this.sunucuRapor = new Map([[id, kopyaR], ...this.sunucuRapor]);
+    this.bildir(c(`${r.no} raporu başka bir cihazda da değiştirilmiş. İki sürüm de saklandı: bu telefondaki değişiklik ${kopyaR.no} numarasıyla ayrı rapor oldu.`, `Report ${r.no} was also changed on another device. Both versions were kept: the change on this phone became a separate report, ${kopyaR.no}.`), 12000);
   }
 
   // ---------- photos and signatures: short-lived private links ----------
@@ -733,9 +860,10 @@ class BulutMotor {
         const { error } = await this.sb.from("raporlar").delete().eq("user_id", this.hesap);
         if (error) throw error;
         const { data } = await this.sb.storage.from(KOVA).list(this.hesap, { limit: 1000 });
-        for (const k of data || []) await this.klasorTemizle(k.name, new Set());
+        for (const k of data || []) await this.klasorTemizle(k.name, new Set(), true);
         this.kuyrukYaz(this.kuyrukOku().filter((o) => o.t === "f"));
         this.sunucuRapor.clear();
+        this.sunucuSurum.clear();
         this.onbellekYaz();
         this.bildir(c("Raporlar silindi", "Reports deleted"));
       } catch {

@@ -146,14 +146,29 @@ const BITTI = new Set<Stripe.Subscription.Status>(["canceled", "unpaid", "incomp
 // Reads the subscription from Stripe (never trusts the event body) and writes the user's row.
 // Safe to run any number of times, in any order.
 export async function aboneligiYaz(abonelikId: string): Promise<string> {
-  const s = await stripe().subscriptions.retrieve(abonelikId);
-  const musteri = typeof s.customer === "string" ? s.customer : s.customer.id;
-  let userId = s.metadata?.user_id || null;
+  const ilk = await stripe().subscriptions.retrieve(abonelikId);
+  const musteri = typeof ilk.customer === "string" ? ilk.customer : ilk.customer.id;
+  let userId = ilk.metadata?.user_id || null;
   if (!userId) {
     const { data } = await yonetici().from("abonelikler").select("user_id").eq("stripe_musteri", musteri).maybeSingle();
     userId = (data?.user_id as string | undefined) ?? null;
   }
-  if (!userId) return `atlandı: ${s.id} için kullanıcı bulunamadı`;
+  if (!userId) return `atlandı: ${ilk.id} için kullanıcı bulunamadı`;
+
+  // Events of one user run one at a time (the payment lock) and read the subscription again under it,
+  // so a slow event that read an older state (active) can't write it over a newer one (canceled).
+  // Lock busy or lost: an error, the webhook answers 500 and Stripe sends the event again later.
+  const jeton = await odemeKilidiAl(userId);
+  if (!jeton) throw new Error(`ödeme kilidi meşgul (${userId})`);
+  try {
+    const s = await stripe().subscriptions.retrieve(abonelikId, {}, { timeout: 8000, maxNetworkRetries: 1 });
+    return await aboneligiKilitleYaz(s, musteri, userId, jeton);
+  } finally {
+    await odemeKilidiBirak(userId, jeton);
+  }
+}
+
+async function aboneligiKilitleYaz(s: Stripe.Subscription, musteri: string, userId: string, jeton: string): Promise<string> {
 
   const kalem = s.items.data[0];
   const fiyat = kalem?.price;
@@ -178,6 +193,7 @@ export async function aboneligiYaz(abonelikId: string): Promise<string> {
     return `atlandı: ${s.id} durumu ${s.status}`; // incomplete: first payment not done yet
   }
 
+  if (!(await odemeKilidiTut(userId, jeton))) throw new Error(`ödeme kilidi kaybedildi (${userId})`);
   const { error } = await yonetici()
     .from("abonelikler")
     .upsert(
