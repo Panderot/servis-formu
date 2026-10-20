@@ -6,6 +6,7 @@
 --    ya da abonelik bitince yeni kayıt ve değişiklik sunucuda da engellenir, okuma ve silme serbest kalır.
 -- 3) ekip fonksiyonları: davet, katılma, liste, çıkarma (uygulama bunları rpc ile çağırır).
 -- 4) hesap silme: kullanıcı Ayarlar'dan kendi hesabını ve kayıtlarını siler.
+-- 5) ödeme kilidi: aynı kullanıcı için aynı anda tek ödeme sayfası hazırlanır (sadece sunucu).
 
 -- ============ 1) Abonelikler ============
 create table if not exists public.abonelikler (
@@ -451,3 +452,48 @@ $$;
 
 revoke all on function public.hesabimi_sil(boolean) from public, anon;
 grant execute on function public.hesabimi_sil(boolean) to authenticated;
+
+-- ============ 5) Ödeme kilidi (sadece sunucu, gizli anahtarla rpc) ============
+-- /api/odeme kilidi alır, Stripe'ta süren aboneliğe bakar, eski açık ödeme sayfalarını kapatır, yenisini
+-- açar ve kilidi bırakır. Aynı anda gelen ikinci istek kilit boşalana kadar bekler; böylece iki ödeme
+-- sayfası birlikte açık kalamaz. 30 saniyeden eski kilit (yarıda kalmış istek) geçersiz sayılır.
+create table if not exists public.odeme_kilitleri (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  jeton uuid not null,
+  zaman timestamptz not null default now()
+);
+alter table public.odeme_kilitleri enable row level security;
+revoke all on table public.odeme_kilitleri from anon, authenticated;
+
+-- Kilidi alırsa jeton döner, başka istek tutuyorsa null.
+create or replace function public.odeme_kilidi_al(p_user uuid)
+returns uuid
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  j uuid := gen_random_uuid();
+begin
+  insert into public.odeme_kilitleri as k (user_id, jeton, zaman) values (p_user, j, now())
+  on conflict (user_id) do update set jeton = excluded.jeton, zaman = now()
+    where k.zaman < now() - interval '30 seconds';
+  if found then return j; end if;
+  return null;
+end;
+$$;
+
+-- Sadece kendi jetonuyla bırakır (süresi dolup başkasına geçmiş kilide dokunmaz).
+create or replace function public.odeme_kilidi_birak(p_user uuid, p_jeton uuid)
+returns void
+language sql
+volatile
+security definer
+set search_path = ''
+as $$
+  delete from public.odeme_kilitleri where user_id = p_user and jeton = p_jeton;
+$$;
+
+revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_birak(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_birak(uuid, uuid) to service_role;

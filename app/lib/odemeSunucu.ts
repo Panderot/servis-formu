@@ -99,6 +99,24 @@ export async function suruyorMu(musteri: string, s: Stripe = stripe()): Promise<
   return l.data.some((a) => SURUYOR.has(a.status));
 }
 
+// One payment page at a time per user (public.odeme_kilitleri, supabase/kurulum.sql section 5): two
+// requests arriving together (two tabs, double click) run one after the other, so the second one sees
+// and closes the first one's page. Waits up to about 6 seconds; null means another request still holds it.
+export async function odemeKilidiAl(userId: string, deneme = 12, araMs = 500): Promise<string | null> {
+  for (let i = 0; i < deneme; i++) {
+    const { data, error } = await yonetici().rpc("odeme_kilidi_al", { p_user: userId });
+    if (error) throw new Error("ödeme kilidi alınamadı: " + error.message);
+    if (data) return data as string;
+    if (i < deneme - 1) await new Promise((r) => setTimeout(r, araMs));
+  }
+  return null;
+}
+
+export async function odemeKilidiBirak(userId: string, jeton: string): Promise<void> {
+  const { error } = await yonetici().rpc("odeme_kilidi_birak", { p_user: userId, p_jeton: jeton });
+  if (error) console.error("odeme: kilit bırakılamadı:", error.message); // it expires by itself after 30 s
+}
+
 // Only the newest payment page can be paid: older open ones (another tab) are closed.
 export async function acikOdemeleriKapat(musteri: string, s: Stripe = stripe()): Promise<number> {
   const l = await s.checkout.sessions.list({ customer: musteri, status: "open", limit: 20 });

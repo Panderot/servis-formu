@@ -30,6 +30,7 @@ export function odemeHataMetni(kod: string, dil: Dil): string {
   if (kod === "isletme") return c("Devam etmek için Fixnote'u işin için kullandığını onayla.", "To continue, confirm that you use Fixnote for your business.");
   if (kod === "oturum") return c("Oturumun kapanmış. Tekrar giriş yapıp dene.", "Your session has ended. Sign in again and retry.");
   if (kod === "baglanti") return c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.");
+  if (kod === "mesgul") return c("Ödeme sayfası başka bir sekmede hazırlanıyor. Birkaç saniye sonra tekrar dene.", "A payment page is being prepared in another tab. Try again in a few seconds.");
   if (kod === "kapali") return c("Online ödeme şu an kapalı. Abonelik için bize e-posta ile yaz.", "Online payment is off right now. Email us to subscribe.");
   return c("Ödeme sayfası açılamadı. Biraz sonra tekrar dene.", "The payment page couldn't be opened. Try again shortly.");
 }

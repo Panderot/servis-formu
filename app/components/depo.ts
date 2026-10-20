@@ -185,6 +185,8 @@ function useDemoDepo(aktif: boolean, bildir: (m: string, ms?: number) => void, d
 }
 
 // ======================= BULUT (Supabase account) =======================
+const BILINMEYEN = "?"; // firm account of an older waiting change that can't be known
+
 type Islem = (
   | { k: string; t: "r"; r: Rapor } // save a report (photos may still be data: URLs)
   | { k: string; t: "a"; id: string } // import a report of the old local-only version (read from sf_raporlar)
@@ -196,7 +198,7 @@ class BulutMotor {
   sb: SupabaseClient;
   uid: string;
   hesap: string; // firm account id: records, files and numbering
-  eskiHesap: string; // firm account of waiting changes written before they carried one (h)
+  eskiHesap: string; // firm account of waiting changes written before they carried one (h); "?" = unknown
   sahip: boolean; // false for a technician of the team
   bildir: (m: string, ms?: number) => void;
   sunucuFirma: Firma | null = null;
@@ -231,7 +233,9 @@ class BulutMotor {
     this.hesap = hesap.id;
     this.sahip = hesap.sahip;
     this.bildir = bildir;
-    this.eskiHesap = oku<{ hesap?: string } | null>(`fx_onbellek_${kullanici}`, null)?.hesap ?? hesap.id;
+    // Older changes (no h) belong to the firm account of the list cache. Without a cache their firm can't
+    // be known: they are kept on the phone under "?" and never sent automatically (no guessing).
+    this.eskiHesap = oku<{ hesap?: string } | null>(`fx_onbellek_${kullanici}`, null)?.hesap ?? BILINMEYEN;
   }
 
   get kK() { return `fx_kuyruk_${this.uid}`; }
@@ -357,8 +361,10 @@ class BulutMotor {
   async baslat() {
     this.kuyruk = this.kuyrukOku();
     if (this.hamKuyruk()?.some((o) => !o.h)) this.kuyrukYaz(this.kuyruk); // older changes get their firm account once
-    const baska = this.baskaHesabin().length;
-    if (baska) this.bildir(c(`Bu telefonda başka bir firma hesabına ait gönderilmemiş ${baska} değişiklik var; bu hesaba gönderilmez.`, `This phone has ${baska} unsent change(s) from another company account; they won't be sent to this account.`), 8000);
+    const baska = this.baskaHesabin();
+    const bilinmeyen = baska.filter((o) => o.h === BILINMEYEN).length;
+    if (bilinmeyen) this.bildir(c(`Bu telefonda hangi firmaya ait olduğu bilinmeyen ${bilinmeyen} eski değişiklik var; güvenlik için gönderilmedi. Yardım için info@motiqai.com'a yaz.`, `This phone has ${bilinmeyen} older change(s) whose company account is unknown; for safety they weren't sent. Email info@motiqai.com for help.`), 10000);
+    else if (baska.length) this.bildir(c(`Bu telefonda başka bir firma hesabına ait gönderilmemiş ${baska.length} değişiklik var; bu hesaba gönderilmez.`, `This phone has ${baska.length} unsent change(s) from another company account; they won't be sent to this account.`), 8000);
     if (this.onbellekOku()) { this.yuklendi = true; this.degisti(); }
     await this.sirada(() => this.sunucudanYukle());
     this.aktarimKontrol();
