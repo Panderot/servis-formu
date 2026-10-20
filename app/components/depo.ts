@@ -49,6 +49,10 @@ export type Depo = {
 export const BOS_FIRMA: Firma = { ad: "", telefon: "", eposta: "", adres: "", vergiDairesi: "", vergiNo: "", logo: "", kdv: 20, onek: "SR", teknisyen: "", altNot: "" };
 const KOVA = "rapor-dosyalari";
 const BOS_GORSEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+// A report picture is either in our storage (sb:) or still on the phone (data:image/). Anything else (an
+// outside address written into a report through the API) is never loaded: it would let that site see
+// who opened the report.
+const yerelGorsel = (s: string) => !s || s.startsWith("data:image/");
 const SAYFA = 1000;
 const YENILEME_ARA = 15000;
 const KAPALI_SURE = 30000;
@@ -718,7 +722,7 @@ class BulutMotor {
 
   // ---------- photos and signatures: short-lived private links ----------
   cozSrc(src: string): string {
-    if (!src || !src.startsWith("sb:")) return src;
+    if (!src || !src.startsWith("sb:")) return yerelGorsel(src) ? src : BOS_GORSEL;
     const yol = src.slice(3);
     const u = this.urller.get(yol);
     if (u && u.bitis > Date.now() + 60000) return u.url;
@@ -727,7 +731,7 @@ class BulutMotor {
     return u ? u.url : BOS_GORSEL;
   }
   coz(r: Rapor): Rapor {
-    if (!refler(r).length) return r;
+    if (!refler(r).length && r.fotolar.every((f) => yerelGorsel(f.src)) && yerelGorsel(r.imza)) return r;
     return { ...r, fotolar: r.fotolar.map((f) => ({ ...f, src: this.cozSrc(f.src) })), imza: this.cozSrc(r.imza) };
   }
   urlIste(yol: string) {
@@ -780,6 +784,9 @@ class BulutMotor {
   }
   async duzenlemeHazirla(r: Rapor): Promise<Rapor> {
     const t = kopya(r);
+    // Outside picture addresses are dropped from the draft (never loaded, not saved again).
+    t.fotolar = t.fotolar.filter((f) => f.src.startsWith("sb:") || yerelGorsel(f.src));
+    if (!t.imza.startsWith("sb:") && !yerelGorsel(t.imza)) t.imza = "";
     t.surum = { id: t.id, b: this.temelSurum(t.id) }; // saved over this version only, whatever is loaded meanwhile
     // The signature pad redraws the old signature on a canvas, so it needs the image itself, not a link.
     if (t.imza.startsWith("sb:")) { try { t.imza = await this.indir(t.imza); } catch {} }
