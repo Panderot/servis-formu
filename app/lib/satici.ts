@@ -33,14 +33,18 @@ export function saticiSatirlari(dil: "tr" | "en"): string[] {
       ];
 }
 
-// Legal and contact links shown in the landing footer and under every legal page.
-export const YASAL_LINKLER: [href: string, tr: string, en: string][] = [
+// Footer columns (landing page and every legal page, app/components/YasalAlt.tsx): "Fixnote" and "Yasal".
+export type Baglanti = [href: string, tr: string, en: string];
+export const FIXNOTE_LINKLER: Baglanti[] = [
   ["/hakkimizda", "Hakkımızda", "About us"],
-  ["/teslimat-ve-iade", "Teslimat ve İade", "Delivery and refunds"],
+  ["/hakkimizda#iletisim", "İletişim", "Contact"],
+  ["/#fiyat", "Fiyatlar", "Pricing"],
+];
+export const YASAL_LINKLER: Baglanti[] = [
   ["/gizlilik", "Gizlilik Politikası", "Privacy policy"],
+  ["/kosullar", "Kullanım ve Abonelik Koşulları", "Terms of use and subscription"],
   ["/mesafeli-satis", "Mesafeli Satış Sözleşmesi", "Distance sales agreement"],
   ["/on-bilgilendirme", "Ön Bilgilendirme Formu", "Pre-information form"],
-  ["/kosullar", "Kullanım ve Abonelik Koşulları", "Terms of use and subscription"],
+  ["/teslimat-ve-iade", "Teslimat ve İade", "Delivery and refunds"],
   ["/veri-isleme", "Veri İşleme Sözleşmesi", "Data processing agreement"],
-  ["/hakkimizda#iletisim", "İletişim", "Contact"],
 ];
