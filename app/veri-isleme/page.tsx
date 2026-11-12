@@ -3,20 +3,20 @@ import YasalSayfa, { type Bolum } from "../components/YasalSayfa";
 import { ABONELIK_EPOSTA } from "../components/supabase";
 
 export const metadata: Metadata = {
-  title: "Veri işleme sözleşmesi · Fixnote",
+  title: "Veri İşleme Sözleşmesi · Fixnote",
   description: "Fixnote'a girdiğin müşteri bilgileri için senin (veri sorumlusu) ve Fixnote'un (veri işleyen) yükümlülükleri.",
 };
 
 // Data processing agreement between the business (controller of its customers' details) and
-// Motiq Automation Ltd (processor). Part of the Terms of use (app/kosullar). Draft: not yet reviewed
+// Baret Güngörmezer, MotiqAI (processor; app/lib/satici.ts). Part of the Terms of use (app/kosullar). Draft: not yet reviewed
 // by a lawyer. Keep the provider list in line with app/gizlilik and app/kosullar.
 const E = ABONELIK_EPOSTA;
 
 const BOLUMLER: Bolum[] = [
   ["Taraflar ve kapsam", [
-    "Bu sözleşme, Fixnote'u kullanan firma (\"sen\", veri sorumlusu) ile Motiq Automation Ltd (\"biz\", veri işleyen; şirket no 17303276, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Birleşik Krallık) arasındadır.",
+    "Bu sözleşme, Fixnote'u kullanan firma (\"sen\", veri sorumlusu) ile Baret Güngörmezer (\"biz\", MotiqAI, veri işleyen; şahıs işletmesi, Zincirlikuyu Vergi Dairesi 4380649547, Mecidiyeköy Mah. Selahattin Pınar Aralığı Sk. Hüseyin Özer İş Merkezi No: 3 İç Kapı No: 8, 34387 Şişli / İstanbul) arasındadır.",
     "Fixnote'a girdiğin müşteri bilgilerinin işlenmesini düzenler. Kullanım koşullarının bir parçasıdır; Fixnote'u kullanarak ve abone olurken onay kutusunu işaretleyerek kabul edersin. Hesabın açık olduğu sürece geçerlidir. Kendi hesap bilgilerin için Gizlilik politikası geçerlidir.",
-    "Bu sözleşme 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) 12. maddesi ve Birleşik Krallık veri koruma mevzuatı (UK GDPR madde 28) kapsamındaki veri işleyen yükümlülüklerimizi karşılamak için hazırlanmıştır.",
+    "Bu sözleşme 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) 12. maddesi kapsamındaki veri işleyen yükümlülüklerimizi karşılamak için hazırlanmıştır.",
   ]],
   ["İşlemenin konusu, amacı ve süresi", [[
     "Konu: servis raporlarının ve müşteri kayıtlarının saklanması, senin ve ekibinin cihazlarında gösterilmesi, A4 rapor ve PDF hazırlanması, yedek dosyası oluşturulması.",
@@ -52,18 +52,19 @@ const BOLUMLER: Bolum[] = [
     [
       "Supabase (sözleşme tarafı Supabase Pte. Ltd, Singapur): veritabanı, giriş ve dosya depolama. Müşteri bilgileri Almanya'daki (Frankfurt) sunucularda saklanır. Müşteri bilgilerini işleyen tek alt işleyendir.",
       "Vercel: sitenin sunulması (ABD). Müşteri bilgilerini saklamaz; uygulama bilgileri tarayıcından doğrudan Supabase'e gönderir.",
-      "Google (yalnızca Google ile girişte) ve Stripe (yalnızca abonelik ödemesi) müşteri bilgilerine erişmez.",
+      "Google (yalnızca Google ile girişte) ve iyzico (yalnızca abonelik ödemesi, Türkiye) müşteri bilgilerine erişmez.",
     ],
     "Alt işleyenlerle, bu sözleşmedeki yükümlülüklerden daha az koruyucu olmayan sözleşmeler yaparız. Müşteri bilgilerini işleyecek yeni bir alt işleyen eklersek ya da değiştirirsek, en az 30 gün önce bu sayfada duyurur ve kayıtlı e-posta adresine yazarız. İtiraz edersen ve uzlaşamazsak, değişiklik yürürlüğe girmeden hesabını kapatabilirsin.",
   ]],
   ["Yurt dışına aktarım", [
-    "Şirketimiz Birleşik Krallık'tadır, müşteri bilgileri Almanya'da saklanır ve bazı altyapı hizmetleri ABD'dedir. Bu nedenle Türkiye'den girilen bilgiler yurt dışına aktarılır.",
-    "Bu aktarımın KVKK'nın 9. maddesinde ve Birleşik Krallık mevzuatında öngörülen güvencelerle yapılması için seninle birlikte çalışırız. Gerektiğinde Kişisel Verileri Koruma Kurulu'nun ilan ettiği standart sözleşmeyi seninle imzalar ve bildirim için gereken bilgileri veririz. Alt işleyenlerimizle olan aktarımlar, onların veri işleme sözleşmelerindeki güvencelere dayanır.",
+    "Müşteri bilgileri Almanya'da saklanır ve bazı altyapı hizmetleri ABD'dedir. Bu nedenle Türkiye'den girilen bilgiler yurt dışına aktarılır.",
+    "Bu aktarımın KVKK'nın 9. maddesinde öngörülen güvencelerle yapılması için seninle birlikte çalışırız. Gerektiğinde Kişisel Verileri Koruma Kurulu'nun ilan ettiği standart sözleşmeyi seninle imzalar ve bildirim için gereken bilgileri veririz. Alt işleyenlerimizle olan aktarımlar, onların veri işleme sözleşmelerindeki güvencelere dayanır.",
   ]],
   ["Hesabın kapanması: silme ve iade", [[
     "Hesabını kapatmadan önce Ayarlar'dan bütün kayıtlarını fotoğraf ve imzalarıyla birlikte yedek dosyası olarak indirebilirsin (iade).",
     "Ayarlar > Hesabımı sil ile ya da bize yazarak hesabını kapattığında müşteri bilgileri hemen silinir; altyapı sağlayıcımızın yedeklerinden silinmesi en geç 7 gün içinde tamamlanır.",
     "Tek tek sildiğin raporlar, fotoğrafları ve imzalarıyla birlikte hemen silinir.",
+    "Abonelik sona erdikten sonra veriler 90 gün saklanır; bu sürede yeniden abone olunabilir ya da veriler indirilebilir; sonra silinir.",
   ]]],
   ["Veri ihlali", [
     "Müşteri bilgilerinin yetkisiz kişilerce ele geçirildiğini, kaybolduğunu ya da değiştirildiğini öğrenirsek seni gecikmeden ve en geç 48 saat içinde kayıtlı e-posta adresinden bilgilendiririz. Bildirimde, o anda bildiğimiz kadarıyla ne olduğunu, hangi bilgilerin ve yaklaşık kaç kaydın etkilendiğini, aldığımız önlemleri ve iletişim bilgimizi yazarız; yeni bilgi öğrendikçe tamamlarız. Kurul'a ve müşterilerine yapacağın bildirimler için gereken desteği veririz.",
@@ -87,9 +88,9 @@ const BOLUMLER: Bolum[] = [
 
 const BOLUMLER_EN: Bolum[] = [
   ["Parties and scope", [
-    "This agreement is between the business using Fixnote (\"you\", the data controller) and Motiq Automation Ltd (\"we\", the data processor; company number 17303276, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom).",
+    "This agreement is between the business using Fixnote (\"you\", the data controller) and Baret Güngörmezer (\"we\", MotiqAI, the data processor; sole proprietorship, Zincirlikuyu tax office 4380649547, Mecidiyeköy Mah. Selahattin Pınar Aralığı Sk. Hüseyin Özer İş Merkezi No: 3 İç Kapı No: 8, 34387 Şişli / İstanbul, Türkiye).",
     "It governs the processing of the customer details you enter in Fixnote. It forms part of the Terms of use; you accept it by using Fixnote and by ticking the box when you subscribe. It applies while your account is open. The Privacy policy covers your own account details.",
-    "This agreement is made to meet our obligations as a data processor under Article 12 of Turkey's Personal Data Protection Law No. 6698 (KVKK) and UK data protection law (UK GDPR Article 28).",
+    "This agreement is made to meet our obligations as a data processor under Article 12 of Turkey's Personal Data Protection Law No. 6698 (KVKK).",
   ]],
   ["Subject, purpose and duration", [[
     "Subject: storing service reports and customer records, showing them on your and your team's devices, preparing the A4 report and PDF, and creating backup files.",
@@ -125,18 +126,19 @@ const BOLUMLER_EN: Bolum[] = [
     [
       "Supabase (contracting party Supabase Pte. Ltd, Singapore): database, sign-in and file storage. Customer details are stored on servers in Germany (Frankfurt). It is the only sub-processor that processes customer details.",
       "Vercel: serving the site (USA). It does not store customer details; the app sends them from your browser directly to Supabase.",
-      "Google (only for Google sign-in) and Stripe (only for subscription payments) have no access to customer details.",
+      "Google (only for Google sign-in) and iyzico (only for subscription payments, Turkey) have no access to customer details.",
     ],
     "We bind our sub-processors by contracts no less protective than this agreement. If we add or replace a sub-processor that will process customer details, we will announce it on this page and email your registered address at least 30 days in advance. If you object and we cannot agree, you may close your account before the change takes effect.",
   ]],
   ["Transfers abroad", [
-    "Our company is in the United Kingdom, customer details are stored in Germany and some infrastructure services are in the USA. Information entered from Turkey is therefore transferred abroad.",
-    "We will work with you so that this transfer is made with the safeguards required by Article 9 of KVKK and by UK law. Where needed, we will sign the standard contract published by Turkey's Personal Data Protection Board with you and provide the information needed for the notification. Transfers to our sub-processors rely on the safeguards in their data processing agreements.",
+    "Customer details are stored in Germany and some infrastructure services are in the USA. Information entered from Turkey is therefore transferred abroad.",
+    "We will work with you so that this transfer is made with the safeguards required by Article 9 of KVKK. Where needed, we will sign the standard contract published by Turkey's Personal Data Protection Board with you and provide the information needed for the notification. Transfers to our sub-processors rely on the safeguards in their data processing agreements.",
   ]],
   ["Closing your account: deletion and return", [[
     "Before closing your account you can download all your records, with photos and signatures, as a backup file from Settings (return).",
     "When you close your account with Settings > Delete my account or by writing to us, customer details are deleted at once; deletion from our infrastructure provider's backups is completed within 7 days at most.",
     "Reports you delete one by one are deleted at once, together with their photos and signatures.",
+    "After a subscription ends, the data is kept for 90 days; during that time you can subscribe again or download the data; after that it is deleted.",
   ]]],
   ["Data breaches", [
     "If we learn that customer details have been obtained by unauthorised persons, lost or altered, we will inform you without undue delay and within 48 hours at the latest, at your registered email address. The notice will say, as far as we know at the time, what happened, which information and roughly how many records were affected, what we have done and how to contact us; we will add to it as we learn more. We will give you the support you need for your notifications to the authorities and to your customers.",
@@ -163,14 +165,14 @@ export default function VeriIsleme() {
     <YasalSayfa
       metin={{
         tr: {
-          baslik: "Veri işleme sözleşmesi",
-          tarih: "19 Ekim 2026",
+          baslik: "Veri İşleme Sözleşmesi",
+          tarih: "12 Kasım 2026",
           giris: "Fixnote'a girdiğin müşteri bilgilerinin sorumlusu sensin; biz bu bilgileri yalnızca senin adına saklar ve işleriz. Bu sözleşme ikimizin yükümlülüklerini anlatır ve Kullanım koşullarının parçasıdır.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Data processing agreement",
-          tarih: "19 October 2026",
+          tarih: "12 November 2026",
           giris: "You are responsible for the customer details you enter in Fixnote; we only store and process them on your behalf. This agreement sets out our obligations to each other and forms part of the Terms of use.",
           bolumler: BOLUMLER_EN,
         },

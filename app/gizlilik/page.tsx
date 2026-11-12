@@ -1,29 +1,24 @@
 import type { Metadata } from "next";
 import YasalSayfa, { type Bolum } from "../components/YasalSayfa";
 import { ABONELIK_EPOSTA } from "../components/supabase";
+import { SATICI, saticiSatirlari } from "../lib/satici";
 
 export const metadata: Metadata = {
-  title: "Gizlilik politikası · Fixnote",
+  title: "Gizlilik Politikası · Fixnote",
   description: "Fixnote'ta hangi kişisel verilerin işlendiği, nerede saklandığı ve hakların.",
 };
 
-// Privacy policy for account holders (owners and technicians). Target market: Turkey, so it is
-// written for KVKK; as a UK company we are also under UK GDPR (short section "Birleşik Krallık
-// mevzuatı"). Draft, not yet reviewed by a lawyer. Keep the provider list in line with app/kosullar and
-// app/veri-isleme.
+// Privacy policy for account holders (owners and technicians), written for KVKK (Article 10). Data controller:
+// Baret Güngörmezer (MotiqAI), app/lib/satici.ts. Draft, not yet reviewed by a lawyer. Keep the provider list in line
+// with app/kosullar and app/veri-isleme, and the retention periods in line with app/kosullar and app/teslimat-ve-iade.
 const E = ABONELIK_EPOSTA;
-const ADRES_TR = "71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Birleşik Krallık";
-const ADRES_EN = "71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom";
+const ADRES_TR = SATICI.adres;
+const ADRES_EN = `${SATICI.adres}, Türkiye`;
 
 const BOLUMLER: Bolum[] = [
   ["Veri sorumlusu ve bu politikanın kapsamı", [
-    "Fixnote'u Motiq Automation Ltd sunar. Kişisel verilerin bakımından veri sorumlusu bu şirkettir:",
-    [
-      "Motiq Automation Ltd (İngiltere ve Galler'de kayıtlı özel limited şirket)",
-      "Şirket numarası: 17303276",
-      `Kayıtlı adres: ${ADRES_TR}`,
-      `E-posta: ${E}`,
-    ],
+    "Fixnote'u MotiqAI markasıyla Baret Güngörmezer (şahıs işletmesi) sunar. Kişisel verilerin bakımından veri sorumlusu Baret Güngörmezer'dir:",
+    saticiSatirlari("tr"),
     "Bu politika, Fixnote'u kullanan firma sahiplerinin ve teknisyenlerin (hesap sahiplerinin), bize yazan kişilerin ve Fixnote'u tanıttığımız işletme yetkililerinin verilerini anlatır. Hesap sahiplerinin uygulamaya girdiği müşteri bilgileri bakımından veri sorumlusu o firmadır; biz bu bilgileri yalnızca firma adına saklarız (bkz. \"Müşterilerinin bilgileri\").",
     "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi uyarınca seni bilgilendirmek için hazırlanmıştır.",
   ]],
@@ -39,13 +34,15 @@ const BOLUMLER: Bolum[] = [
     "Firma bilgileri: uygulamaya girdiğin firma adı, telefonu, e-postası, adresi, vergi bilgileri, logon, rapor ayarların ve kendi şablonların.",
     "Ekip: Firma paketinde bir firmanın ekibine katılırsan e-posta adresin, ekipte görünen adın, katılma tarihin ve hangi raporu ilk senin yazdığın; bu bilgileri firma sahibi görür. Davet bağlantıları 7 gün sonra geçersiz olur.",
     "Deneme ve abonelik: hesabının oluşturulma tarihi, deneme ya da abonelik bitiş tarihi ve abonelikle ilgili kısa notlar.",
-    "Online ödeme: abonelik ödemesi Stripe'ın ödeme sayfasında yapılır; kart bilgilerin bize ulaşmaz, yalnızca Stripe'ta işlenir. Biz Stripe müşteri ve abonelik numaranı, paketini, ödeme durumunu ve aboneliğin yenilenip yenilenmeyeceğini saklarız. Abone olurken Fixnote'u işin için kullandığını beyan edersin; bu beyan ve tarihi Stripe'taki aboneliğine kaydedilir.",
+    "Online ödeme: abonelik ödemesi, Türkiye'de yerleşik lisanslı ödeme kuruluşu iyzico'nun ödeme formunda yapılır; kart bilgilerin Fixnote'ta saklanmaz, iyzico'da işlenir. Biz iyzico müşteri ve abonelik numaranı, paketini, ödeme durumunu ve aboneliğin yenilenip yenilenmeyeceğini saklarız.",
+    "Fatura bilgileri: ödeme ve fatura için adın soyadın, cep telefonun ve fatura adresin; kurumsal faturada firma unvanı, vergi dairesi ve vergi numarası. Adın soyadın, e-posta adresin, cep telefonun ve fatura adresin ödeme için iyzico'ya da iletilir.",
+    "Onaylar: abone olurken Fixnote'u işin için kullandığını beyan eder, Ön Bilgilendirme Formu'nu ve Mesafeli Satış Sözleşmesi'ni onaylarsın; onayladığın metnin sürümü ve onay zamanı kaydedilir.",
     "Servis kayıtları: müşteri adları, telefonları ve adresleri, cihaz bilgileri, servis raporları, önce ve sonra fotoğrafları ve müşteri imzaları. Bunlar senin müşterilerinin bilgileridir; sorumlusu sensin (bkz. \"Müşterilerinin bilgileri\").",
     "Teknik kayıtlar: giriş ve güvenlik için altyapı sağlayıcılarımız IP adresi, tarayıcı bilgisi ve giriş zamanı gibi kayıtları sınırlı bir süre tutar.",
     `Yazışmalar: ${E} adresine e-postayla ya da WhatsApp'tan yazarsan e-posta adresin ya da telefon numaran ve yazdıkların.`,
   ]]],
   ["Verileri nasıl topluyoruz", [
-    "Kişisel verilerin elektronik ortamda ve otomatik yollarla toplanır: hesap açarken ve giriş yaparken girdiğin bilgilerden, Google ile girişi seçersen Google'dan, uygulamayı kullanırken doldurduğun formlardan, eklediğin fotoğraflardan ve aldığın imzalardan, ödeme yaptığında Stripe'tan, bize yazdığın e-postalardan ve siteyi kullanırken altyapı sağlayıcılarımızın tuttuğu teknik kayıtlardan.",
+    "Kişisel verilerin elektronik ortamda ve otomatik yollarla toplanır: hesap açarken ve giriş yaparken girdiğin bilgilerden, Google ile girişi seçersen Google'dan, uygulamayı kullanırken doldurduğun formlardan, eklediğin fotoğraflardan ve aldığın imzalardan, ödeme yaptığında iyzico'dan, bize yazdığın e-postalardan ve siteyi kullanırken altyapı sağlayıcılarımızın tuttuğu teknik kayıtlardan.",
   ]],
   ["Cihazında tutulanlar", [
     "İnternet yokken kaydettiğin raporlar, bağlantı gelene kadar telefonundaki tarayıcıda bekler; gönderilince hesabına geçer. Listenin hızlı açılması için kayıtlarının bir kopyası da tarayıcıda tutulur. Çıkış yaptığında bu kopya, hesabını sildiğinde bütün kopyalar temizlenir; henüz gönderilmemiş raporlar gönderilene kadar cihazda kalır.",
@@ -71,18 +68,19 @@ const BOLUMLER: Bolum[] = [
       "Supabase (sözleşme tarafımız Supabase Pte. Ltd, Singapur): hesap, giriş ve servis kayıtlarının (fotoğraflar ve imzalar dahil) saklandığı altyapı. Sunucular Almanya'da (Frankfurt) bulunur.",
       "Vercel: sitenin barındırılması ve sunulması. Merkezi ABD'dedir; site dünya genelindeki sunucularından sunulur.",
       "Google: yalnızca Google ile girişi seçersen, girişin için. Merkezi ABD'dedir.",
-      "Stripe: online abonelik ödemeleri. Kart bilgilerin yalnızca Stripe'ta işlenir. Stripe verileri Birleşik Krallık, Avrupa Birliği ve ABD'deki sistemlerinde işler.",
+      "iyzico: online abonelik ödemeleri. Türkiye'de yerleşik lisanslı ödeme kuruluşudur; kart bilgilerin yalnızca iyzico'da işlenir.",
       "WhatsApp (Meta): yalnızca bize WhatsApp'tan yazarsan, yazışma için. Merkezi ABD'dedir.",
     ],
-    "Şirketimiz Birleşik Krallık'ta, sunucularımız Almanya'da, bazı sağlayıcılarımız ABD'de ve Singapur'dadır. Bu yüzden hesap bilgilerin, servis kayıtların, ödeme bilgilerin ve teknik kayıtlar Türkiye dışına aktarılır. Aktarımın amacı hizmetin barındırılması, sunulması, girişin sağlanması ve ödemenin alınmasıdır.",
+    "Sunucularımız Almanya'da, bazı sağlayıcılarımız ABD'de ve Singapur'dadır. Bu yüzden hesap bilgilerin, fatura bilgilerin, servis kayıtların ve teknik kayıtlar Türkiye dışına aktarılır. Aktarımın amacı hizmetin barındırılması, sunulması ve girişin sağlanmasıdır. Kart bilgilerin Türkiye'de iyzico'da işlenir.",
     "Bu aktarımlar KVKK'nın 9. maddesine tabidir. Sağlayıcılarımızla aramızdaki veri işleme sözleşmeleri, verilerin yalnızca hizmet için ve uygun güvencelerle işlenmesini düzenler. Müşterilerinin bilgileri için yürütülen işlemler Veri işleme sözleşmesinde yazar.",
     "Yasal bir zorunluluk olursa bilgilerini yetkili kurum ve kuruluşlarla da paylaşabiliriz.",
   ]],
   ["Ne kadar saklıyoruz", [[
-    "Hesap bilgilerin, firma bilgilerin ve servis kayıtların: hesabın açık olduğu sürece. Deneme ya da abonelik bitince kayıtların silinmez; abonelik açılınca kaldığın yerden devam edersin.",
+    "Hesap bilgilerin, firma bilgilerin ve servis kayıtların: hesabın açık olduğu sürece. Deneme bitince kayıtların silinmez; abonelik açılınca kaldığın yerden devam edersin.",
+    "Abonelik sona erdikten sonra veriler 90 gün saklanır; bu sürede yeniden abone olabilir ya da verilerini indirebilirsin; sonra silinir.",
     "Sildiğin bir rapor: fotoğrafları ve imzasıyla birlikte hemen silinir.",
     "Hesabını sildiğinde (Ayarlar > Hesabımı sil ya da bize yazarak): kanunen saklamamız gerekenler dışında her şey hemen silinir. Altyapı sağlayıcımızın yedeklerinden silinmesi en geç 7 gün içinde tamamlanır.",
-    "Ödeme ve fatura kayıtları: vergi ve muhasebe mevzuatının öngördüğü süre boyunca (İngiltere'de genel olarak mali yılın bitiminden itibaren 6 yıl) Stripe'ta ve muhasebe kayıtlarımızda. Hesabını silsen de bu süre dolana kadar saklanır.",
+    "Ödeme, fatura ve sözleşme kayıtları (verdiğin onaylar dahil): kanunun öngördüğü süre boyunca (10 yıla kadar) iyzico'da ve muhasebe kayıtlarımızda. Hesabını silsen de bu süre dolana kadar saklanır.",
     "Teknik kayıtlar: sağlayıcıların belirlediği sınırlı sürelerle.",
     "Yazışmalar: talebin sonuçlandıktan sonra, olası bir uyuşmazlık için gereken süre boyunca.",
   ]]],
@@ -119,9 +117,6 @@ const BOLUMLER: Bolum[] = [
     "Bu bilgiler senin kayıtlarınla aynı yerde, aynı sağlayıcılarda ve aynı güvenlik önlemleriyle saklanır; hesabın silinince onlar da silinir. Karşılıklı yükümlülüklerimiz Veri işleme sözleşmesinde (fixnotee.vercel.app/veri-isleme) yazar.",
     "Bir müşterin bilgileriyle ilgili olarak bize başvurursa, başvuruyu sana iletiriz ve senin talimatına göre yardımcı oluruz.",
   ]],
-  ["Birleşik Krallık mevzuatı", [
-    "Şirketimiz Birleşik Krallık'ta kurulu olduğu için kişisel verilerin ayrıca Birleşik Krallık veri koruma mevzuatına (UK GDPR ve 2018 tarihli Data Protection Act) göre de korunur. Bu mevzuattan doğan hakların için de bize yazabilir, Birleşik Krallık'ın veri koruma otoritesi ICO'ya (Information Commissioner's Office, ico.org.uk) şikâyette bulunabilirsin.",
-  ]],
   ["Fixnote'u tanıttığımız kişiler", [
     "Fixnote'u tanıtmak için işletmelerle birebir iletişime geçebiliriz. Bunun için işletme yetkilisinin adını, işletmenin adını ve iş kolunu, telefonunu ya da e-posta adresini ve görüşme notlarımızı; kişinin kendisinden, bir tanıdığın tavsiyesinden ya da herkese açık işletme kayıtlarından (harita ve hizmet platformlarındaki işletme sayfaları gibi) alırız.",
     "Amacımız Fixnote'u tanıtmak ve teklif sunmaktır; hukuki sebebimiz meşru menfaatimizdir (KVKK m. 5/2-f). Toplu tanıtım mesajı göndermeyiz.",
@@ -135,19 +130,14 @@ const BOLUMLER: Bolum[] = [
   ]],
   ["İletişim", [
     `Bu politikayla ilgili her soru ve başvurun için: ${E}`,
-    `Posta adresi: Motiq Automation Ltd, ${ADRES_TR}`,
+    `Posta adresi: ${SATICI.ad} (${SATICI.marka}), ${ADRES_TR}`,
   ]],
 ];
 
 const BOLUMLER_EN: Bolum[] = [
   ["Data controller and scope of this policy", [
-    "Fixnote is provided by Motiq Automation Ltd, which is the data controller for your personal data:",
-    [
-      "Motiq Automation Ltd (a private limited company registered in England and Wales)",
-      "Company number: 17303276",
-      `Registered office: ${ADRES_EN}`,
-      `Email: ${E}`,
-    ],
+    "Fixnote is provided by Baret Güngörmezer (sole proprietorship) under the MotiqAI brand. Baret Güngörmezer is the data controller for your personal data:",
+    saticiSatirlari("en"),
     "This policy covers the data of the company owners and technicians who use Fixnote (account holders), of people who write to us and of the business contacts we introduce Fixnote to. For the customer details that account holders enter in the app, the company is the data controller; we only store that information on the company's behalf (see \"Your customers' details\").",
     "This text is provided to inform you under Article 10 of Turkey's Personal Data Protection Law No. 6698 (KVKK).",
   ]],
@@ -163,13 +153,15 @@ const BOLUMLER_EN: Bolum[] = [
     "Company details: the company name, phone, email, address, tax details, logo, report settings and your own templates that you enter in the app.",
     "Team: if you join a company's team on the Team plan, your email address, the name shown in the team, the date you joined and which reports you first wrote; the owner of the company account can see this. Invite links stop working after 7 days.",
     "Trial and subscription: the date your account was created, the end date of your trial or subscription and short notes about the subscription.",
-    "Online payment: subscriptions are paid on Stripe's payment page; your card details never reach us and are processed only by Stripe. We keep your Stripe customer and subscription numbers, your plan, the payment status and whether the subscription renews. When you subscribe you confirm that you use Fixnote for your business; this confirmation and its date are recorded on your subscription at Stripe.",
+    "Online payment: subscriptions are paid on the payment form of iyzico, a licensed payment institution based in Turkey; your card details are not stored by Fixnote and are processed by iyzico. We keep your iyzico customer and subscription numbers, your plan, the payment status and whether the subscription renews.",
+    "Billing details: for payment and invoicing, your name, mobile number and billing address; for a company invoice, the company name, tax office and tax number. Your name, email address, mobile number and billing address are also passed to iyzico for the payment.",
+    "Confirmations: when you subscribe you confirm that you use Fixnote for your business and accept the Pre-information form and the Distance sales agreement; the version of the text you accepted and the time are recorded.",
     "Service records: customer names, phone numbers and addresses, appliance details, service reports, before and after photos and customer signatures. These are your customers' details and you are responsible for them (see \"Your customers' details\").",
     "Technical logs: for sign-in and security, our infrastructure providers keep records such as IP address, browser details and sign-in time for a limited period.",
     `Correspondence: if you write to ${E} by email or to us on WhatsApp, your email address or phone number and what you write.`,
   ]]],
   ["How we collect data", [
-    "Your personal data is collected electronically and by automated means: from what you enter when you create an account and sign in, from Google if you choose Google sign-in, from the forms you fill in, the photos you add and the signatures you take in the app, from Stripe when you pay, from the emails you send us, and from the technical logs our infrastructure providers keep while you use the site.",
+    "Your personal data is collected electronically and by automated means: from what you enter when you create an account and sign in, from Google if you choose Google sign-in, from the forms you fill in, the photos you add and the signatures you take in the app, from iyzico when you pay, from the emails you send us, and from the technical logs our infrastructure providers keep while you use the site.",
   ]],
   ["What is kept on your device", [
     "Reports you save without internet wait in your phone's browser until it is back online; once sent they move to your account. A copy of your records is also kept in the browser so the list opens quickly. This copy is cleared when you sign out, and all copies when you delete your account; reports not yet sent stay on the device until they are sent.",
@@ -195,18 +187,19 @@ const BOLUMLER_EN: Bolum[] = [
       "Supabase (our contracting party is Supabase Pte. Ltd, Singapore): the infrastructure where accounts, sign-in and service records (including photos and signatures) are stored. The servers are in Germany (Frankfurt).",
       "Vercel: hosting and serving the site. Headquartered in the USA; the site is served from its servers around the world.",
       "Google: only if you choose Google sign-in, to sign you in. Headquartered in the USA.",
-      "Stripe: online subscription payments. Your card details are processed only by Stripe. Stripe processes data on its systems in the United Kingdom, the European Union and the USA.",
+      "iyzico: online subscription payments. A licensed payment institution based in Turkey; your card details are processed only by iyzico.",
       "WhatsApp (Meta): only if you write to us on WhatsApp, for that conversation. Headquartered in the USA.",
     ],
-    "Our company is in the United Kingdom, our servers are in Germany and some of our providers are in the USA and Singapore, so your account details, service records, payment details and technical logs are transferred outside Turkey. The purpose of the transfer is hosting and serving the service, signing you in and taking payment.",
+    "Our servers are in Germany and some of our providers are in the USA and Singapore, so your account details, billing details, service records and technical logs are transferred outside Turkey. The purpose of the transfer is hosting and serving the service and signing you in. Your card details are processed in Turkey by iyzico.",
     "These transfers are subject to Article 9 of KVKK. The data processing agreements with our providers require the data to be processed only for the service and with appropriate safeguards. The steps taken for your customers' details are set out in the Data processing agreement.",
     "If the law requires it, we may also share your information with the competent authorities.",
   ]],
   ["How long we keep it", [[
-    "Account details, company details and service records: while your account is open. When a trial or subscription ends your records are not deleted; once a subscription is active you carry on where you left off.",
+    "Account details, company details and service records: while your account is open. When a trial ends your records are not deleted; once a subscription is active you carry on where you left off.",
+    "After a subscription ends, the data is kept for 90 days; during that time you can subscribe again or download your data; after that it is deleted.",
     "A report you delete: deleted at once, together with its photos and signature.",
     "When you delete your account (Settings > Delete my account, or by writing to us): everything is deleted at once, except what we must keep by law. Deletion from our infrastructure provider's backups is completed within 7 days at most.",
-    "Payment and invoice records: kept by Stripe and in our accounting records for the period required by tax and accounting law (in the UK generally 6 years from the end of the financial year), even if you delete your account.",
+    "Payment, invoice and contract records (including the confirmations you gave): for the period required by law (up to 10 years), at iyzico and in our accounting records, even if you delete your account.",
     "Technical logs: for the limited periods set by the providers.",
     "Correspondence: after your request is resolved, for as long as needed for a possible dispute.",
   ]]],
@@ -243,9 +236,6 @@ const BOLUMLER_EN: Bolum[] = [
     "This information is stored in the same place as your records, with the same providers and the same security measures, and is deleted when your account is deleted. Our obligations to each other are set out in the Data processing agreement (fixnotee.vercel.app/veri-isleme).",
     "If one of your customers contacts us about their data, we pass the request to you and help according to your instructions.",
   ]],
-  ["UK law", [
-    "Because our company is established in the United Kingdom, your personal data is also protected under UK data protection law (the UK GDPR and the Data Protection Act 2018). You can also write to us about your rights under this law and complain to the UK's data protection authority, the ICO (Information Commissioner's Office, ico.org.uk).",
-  ]],
   ["People we introduce Fixnote to", [
     "We may contact businesses one to one to introduce Fixnote. For this we hold the business contact's name, the business name and trade, phone number or email address and our notes of the conversation, obtained from the person, from a recommendation or from public business listings (such as business pages on maps and service platforms).",
     "Our purpose is to introduce Fixnote and make an offer; our legal basis is our legitimate interest (KVKK Art. 5/2-f). We don't send bulk marketing messages.",
@@ -259,7 +249,7 @@ const BOLUMLER_EN: Bolum[] = [
   ]],
   ["Contact", [
     `For any question or request about this policy: ${E}`,
-    `Postal address: Motiq Automation Ltd, ${ADRES_EN}`,
+    `Postal address: ${SATICI.ad} (${SATICI.marka}), ${ADRES_EN}`,
   ]],
 ];
 
@@ -268,14 +258,14 @@ export default function Gizlilik() {
     <YasalSayfa
       metin={{
         tr: {
-          baslik: "Gizlilik politikası",
-          tarih: "19 Ekim 2026",
+          baslik: "Gizlilik Politikası",
+          tarih: "12 Kasım 2026",
           giris: "Bu sayfa, Fixnote'u kullanırken hangi kişisel verilerinin işlendiğini, nerede saklandığını ve hangi haklara sahip olduğunu anlatır. Kısaca: servis kayıtların hesabında, Almanya'daki sunucularda saklanır ve yalnızca hesabına giriş yapanlar görür.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Privacy policy",
-          tarih: "19 October 2026",
+          tarih: "12 November 2026",
           giris: "This page explains which personal data is processed when you use Fixnote, where it is stored and what rights you have. In short: your service records are stored in your account, on servers in Germany, and only people who sign in to your account can see them.",
           bolumler: BOLUMLER_EN,
         },

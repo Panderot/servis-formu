@@ -4,15 +4,20 @@ import Link from "next/link";
 import Ikon, { Isaret } from "../components/Ikon";
 import { DilDugmesi } from "../components/Dil";
 import { useDil } from "../lib/dil";
-import { ABONELIK_EPOSTA, supabase } from "../components/supabase";
+import { ABONELIK_EPOSTA, DENEME_GUN, supabase } from "../components/supabase";
 import { aboneligiYonet, odemeBaslat, odemeHataMetni } from "../components/odeme";
-import { ODEME_ACIK, PAKET, type Donem, type Plan } from "../lib/paket";
+import { OdemeLogolari } from "../components/YasalAlt";
+import { ODEME_ACIK, PAKET, tl, type Donem, type Plan } from "../lib/paket";
 
-// /abonelik: the signed-in user picks a plan and goes to the Stripe payment page.
-// Reachable from the trial bar and the lock screen in /app (app/components/HesapKapisi.tsx).
-const dolar = (n: number, dil: string) => `$${Number.isInteger(n) ? n : dil === "en" ? n.toFixed(2) : n.toFixed(2).replace(".", ",")}`;
-
-type Hal = { tur: "yukleniyor" } | { tur: "hazir"; eposta: string; suruyor: boolean; teknisyen: boolean };
+// /abonelik: the signed-in user picks a plan (prices in TL, VAT included) and goes to payment. With online
+// payment off (ODEME_ACIK) the same choice is sent by email. Reachable from the pricing cards on the landing
+// page (after sign-up), the trial bar and the lock screen in /app (app/components/HesapKapisi.tsx).
+type Hal = { tur: "yukleniyor" } | { tur: "hazir"; eposta: string; suruyor: boolean; teknisyen: boolean; deneme: boolean };
+// Required ticks before payment: business use (Terms: business customers only), pre-information form,
+// distance sales agreement and the immediate start of the service (no right of withdrawal; wording from the
+// pre-information form, section "Cayma hakkı").
+type Onay = "isletme" | "obf" | "mesafeli" | "cayma";
+const ONAYLAR: Onay[] = ["isletme", "obf", "mesafeli", "cayma"];
 
 export default function AbonelikSecimi() {
   const dil = useDil();
@@ -23,7 +28,8 @@ export default function AbonelikSecimi() {
   const [gidiyor, setGidiyor] = useState(false);
   const [hata, setHata] = useState("");
   const [iptal, setIptal] = useState(false);
-  const [isletme, setIsletme] = useState(false); // "I use Fixnote for my business" (Terms: business use only)
+  const [onay, setOnay] = useState<Record<Onay, boolean>>({ isletme: false, obf: false, mesafeli: false, cayma: false });
+  const tamam = ONAYLAR.every((o) => onay[o]);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -48,7 +54,7 @@ export default function AbonelikSecimi() {
       const { data: ed } = await sb.rpc("ekip_durumu").retry(false);
       if (bitti) return;
       if ((ed as { rol?: string } | null)?.rol === "teknisyen") {
-        setHal({ tur: "hazir", eposta: k.email ?? "", suruyor: false, teknisyen: true });
+        setHal({ tur: "hazir", eposta: k.email ?? "", suruyor: false, teknisyen: true, deneme: false });
         return;
       }
       let suruyor = false;
@@ -56,7 +62,9 @@ export default function AbonelikSecimi() {
         const { data: s } = await sb.from("abonelikler").select("bitis, stripe_abonelik, durum").eq("user_id", k.id).maybeSingle();
         suruyor = !!(s?.stripe_abonelik && ["active", "trialing", "past_due"].includes(s.durum ?? "") && new Date(s.bitis).getTime() > Date.now());
       }
-      if (!bitti) setHal({ tur: "hazir", eposta: k.email ?? "", suruyor, teknisyen: false });
+      // Still inside the free trial (account younger than DENEME_GUN days): offer to try first.
+      const deneme = !!k.created_at && new Date(k.created_at).getTime() + DENEME_GUN * 86_400_000 > Date.now();
+      if (!bitti) setHal({ tur: "hazir", eposta: k.email ?? "", suruyor, teknisyen: false, deneme });
     })();
     return () => {
       bitti = true;
@@ -64,7 +72,7 @@ export default function AbonelikSecimi() {
   }, []);
 
   const ode = async () => {
-    if (!isletme) return;
+    if (!tamam) return;
     setHata("");
     setGidiyor(true);
     const kod = await odemeBaslat(plan, donem, dil);
@@ -87,7 +95,21 @@ export default function AbonelikSecimi() {
   const kim = (p: Plan) => (p === "usta" ? c("1 teknisyen", "1 technician") : c("Sınırsız teknisyen", "Unlimited technicians"));
   const aylikGorunen = (p: Plan) => (donem === "yillik" ? PAKET[p].yil / 12 : PAKET[p].ay);
   const odenecek = donem === "yillik" ? PAKET[plan].yil : PAKET[plan].ay;
-  const mailto = `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(c("Fixnote abonelik", "Fixnote subscription"))}`;
+  const donemAd = donem === "yillik" ? c("yıllık", "yearly") : c("aylık", "monthly");
+  const mailto = `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(c("Fixnote abonelik", "Fixnote subscription"))}&body=${encodeURIComponent(
+    c(`Merhaba, Fixnote ${ad(plan)} paketine ${donemAd} (${tl(odenecek)}, KDV dahil) abone olmak istiyorum. Hesabım: `, `Hello, I'd like to subscribe to Fixnote ${ad(plan)}, ${donemAd} (${tl(odenecek, "en")}, VAT included). My account: `) +
+      (hal.tur === "hazir" ? hal.eposta : "")
+  )}`;
+  const baglanti = (href: string, metin: string) => <Link href={href} target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{metin}</Link>;
+  const onayMetni: Record<Onay, React.ReactNode> = {
+    isletme: <>{c("Fixnote'u işim için kullanıyorum; ", "I use Fixnote for my business and I accept the ")}{baglanti("/kosullar", c("Kullanım ve Abonelik Koşullarını", "Terms of use and subscription"))}{c(" ve ", " and the ")}{baglanti("/veri-isleme", c("Veri İşleme Sözleşmesini", "Data processing agreement"))}{c(" kabul ediyorum.", ".")}</>,
+    obf: <>{baglanti("/on-bilgilendirme", c("Ön Bilgilendirme Formu", "Pre-information form"))}{c("'nu okudum.", ": I have read it.")}</>,
+    mesafeli: <>{baglanti("/mesafeli-satis", c("Mesafeli Satış Sözleşmesi", "Distance sales agreement"))}{c("'ni kabul ediyorum.", ": I accept it.")}</>,
+    cayma: c(
+      "Hizmetin ödemenin onaylanmasının ardından hemen başlamasını onaylıyorum; elektronik ortamda anında ifa edilen bu hizmette cayma hakkı kullanılamadığını biliyorum.",
+      "I agree that the service starts immediately after the payment is confirmed, and I understand that the right of withdrawal cannot be used for this service, which is performed electronically at once."
+    ),
+  };
 
   return (
     <main style={{ minHeight: "100dvh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 16px 40px", position: "relative" }}>
@@ -102,12 +124,6 @@ export default function AbonelikSecimi() {
             <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{c("Abonelik firma sahibinde", "The subscription is the owner's")}</h1>
             <p style={{ fontSize: 14.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.6, margin: "8px 0 20px" }}>{c("Bir firmanın ekibindesin; aboneliği firma sahibi yönetir. Senin ödeme yapmana gerek yok.", "You're in a company's team; the owner manages the subscription. You don't need to pay.")}</p>
             <Link href="/app" className="btn" style={{ width: "100%" }}>{c("Uygulamaya dön", "Back to the app")}</Link>
-          </div>
-        ) : !ODEME_ACIK ? (
-          <div style={{ textAlign: "center" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em", margin: 0 }}>{c("Aboneliğe geç", "Subscribe")}</h1>
-            <p style={{ fontSize: 14.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.6, margin: "8px 0 20px" }}>{c(`Abonelik için ${ABONELIK_EPOSTA} adresine yaz; aynı gün açarız.`, `To subscribe, write to ${ABONELIK_EPOSTA}; we'll open it the same day.`)}</p>
-            <a className="btn" href={mailto} style={{ width: "100%" }}>{c("Abonelik için yaz", "Email us to subscribe")}</a>
           </div>
         ) : hal.suruyor ? (
           <div style={{ textAlign: "center" }}>
@@ -159,9 +175,9 @@ export default function AbonelikSecimi() {
                       <span style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600 }}>{kim(p)}</span>
                     </span>
                     <span style={{ textAlign: "right", flex: "none" }}>
-                      <b className="num" style={{ fontSize: 20, letterSpacing: "-0.03em" }}>{dolar(aylikGorunen(p), dil)}</b>
+                      <b className="num" style={{ fontSize: 20, letterSpacing: "-0.03em" }}>{tl(aylikGorunen(p), dil)}</b>
                       <span style={{ fontSize: 12.5, color: "var(--muted)", fontWeight: 700 }}> {c("/ ay", "/ month")}</span>
-                      {donem === "yillik" && <span className="num" style={{ display: "block", fontSize: 12, color: "var(--faint)", fontWeight: 600 }}>{c(`yıllık ${dolar(PAKET[p].yil, dil)}`, `${dolar(PAKET[p].yil, dil)} a year`)}</span>}
+                      {donem === "yillik" && <span className="num" style={{ display: "block", fontSize: 12, color: "var(--faint)", fontWeight: 600 }}>{c(`yıllık ${tl(PAKET[p].yil, dil)}`, `${tl(PAKET[p].yil, dil)} a year`)}</span>}
                     </span>
                   </button>
                 );
@@ -170,31 +186,45 @@ export default function AbonelikSecimi() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)", fontSize: 14, fontWeight: 700 }}>
               <span>{donem === "yillik" ? c("Bugün ödenecek (1 yıl)", "Due today (1 year)") : c("Bugün ödenecek (1 ay)", "Due today (1 month)")}</span>
-              <b className="num" data-odenecek={odenecek} style={{ fontSize: 18 }}>{dolar(odenecek, dil)}</b>
+              <b className="num" data-odenecek={odenecek} style={{ fontSize: 18 }}>{tl(odenecek, dil)}</b>
             </div>
             <div style={{ fontSize: 12.5, color: "var(--faint)", fontWeight: 600, marginTop: 4 }}>
+              {c("KDV dahil. ", "TRY, VAT included. ")}
               {donem === "yillik" ? c("Her yıl aynı gün kendiliğinden yenilenir.", "Renews automatically every year on the same day.") : c("Her ay aynı gün kendiliğinden yenilenir.", "Renews automatically every month on the same day.")}
             </div>
 
-            <label data-isletme-onay style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", borderRadius: 12, border: `1px solid ${isletme ? "var(--accent)" : "var(--line-2)"}`, background: isletme ? "#f1f8fa" : "var(--paper)", cursor: "pointer", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5 }}>
-              <input type="checkbox" checked={isletme} onChange={(e) => setIsletme(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
-              <span>
-                {c("Fixnote'u işim için kullanıyorum; ", "I use Fixnote for my business and I accept the ")}
-                <Link href="/kosullar" target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Kullanım koşullarını", "Terms of use")}</Link>
-                {c(" ve ", " and the ")}
-                <Link href="/veri-isleme" target="_blank" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Veri işleme sözleşmesini", "Data processing agreement")}</Link>
-                {c(" kabul ediyorum.", ".")}
-              </span>
-            </label>
+            <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+              {ONAYLAR.map((o) => (
+                <label key={o} data-onay={o} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "11px 14px", borderRadius: 12, border: `1px solid ${onay[o] ? "var(--accent)" : "var(--line-2)"}`, background: onay[o] ? "#f1f8fa" : "var(--paper)", cursor: "pointer", fontSize: 13.5, fontWeight: 600, lineHeight: 1.5 }}>
+                  <input type="checkbox" checked={onay[o]} onChange={(e) => setOnay((x) => ({ ...x, [o]: e.target.checked }))} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
+                  <span>{onayMetni[o]}</span>
+                </label>
+              ))}
+            </div>
 
             {hata && <div role="alert" data-odeme-hata style={{ marginTop: 14, padding: "10px 12px", borderRadius: 10, background: "var(--bad-soft)", color: "var(--bad)", fontSize: 13.5, fontWeight: 700 }}>{hata}</div>}
 
-            <button data-odemeye-gec className="btn" onClick={ode} disabled={gidiyor || !isletme} style={{ width: "100%", marginTop: 16, padding: "14px 20px" }}>
-              {gidiyor ? c("Ödeme sayfası açılıyor…", "Opening the payment page…") : c("Ödemeye geç", "Continue to payment")}
-            </button>
+            {ODEME_ACIK ? (
+              <button data-odemeye-gec className="btn" onClick={ode} disabled={gidiyor || !tamam} style={{ width: "100%", marginTop: 16, padding: "14px 20px" }}>
+                {gidiyor ? c("Ödeme sayfası açılıyor…", "Opening the payment page…") : c("Ödemeye geç", "Continue to payment")}
+              </button>
+            ) : (
+              <a data-odemeye-gec className="btn" href={tamam ? mailto : undefined} aria-disabled={!tamam} onClick={(e) => { if (!tamam) e.preventDefault(); }} style={{ width: "100%", marginTop: 16, padding: "14px 20px", opacity: tamam ? 1 : 0.5, cursor: tamam ? "pointer" : "not-allowed" }}>
+                {c("E-postayla abone ol", "Subscribe by email")}
+              </a>
+            )}
+            {!ODEME_ACIK && (
+              <p style={{ fontSize: 12.5, color: "var(--faint)", fontWeight: 600, margin: "8px 0 0", textAlign: "center", lineHeight: 1.5 }}>
+                {c(`Seçtiğin paket e-postaya yazılır; aboneliği aynı gün açarız (${ABONELIK_EPOSTA}).`, `Your choice goes into the email; we open the subscription the same day (${ABONELIK_EPOSTA}).`)}
+              </p>
+            )}
             <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12.5, color: "var(--faint)", fontWeight: 600, margin: "10px 0 0", textAlign: "center" }}>
-              <Ikon ad="anahtar" boy={13} />{c("Kartla, güvenli ödeme sayfasında ödersin. Kart bilgilerin bize ulaşmaz.", "You pay by card on a secure payment page. Your card details never reach us.")}
+              <Ikon ad="anahtar" boy={13} />{c("Kart bilgilerin bize ulaşmaz.", "Your card details never reach us.")}
             </p>
+            <div style={{ marginTop: 14 }}><OdemeLogolari yazi /></div>
+            {hal.deneme && (
+              <Link href="/app" data-once-dene className="btn btn-ghost" style={{ width: "100%", marginTop: 16 }}>{c(`Önce ${DENEME_GUN} gün ücretsiz dene`, `Try free for ${DENEME_GUN} days first`)}</Link>
+            )}
           </>
         )}
       </div>

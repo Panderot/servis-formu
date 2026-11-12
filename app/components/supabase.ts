@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { SATICI } from "../lib/satici";
 
 // Current language from <html lang> (kept up to date by app/lib/dil.ts). Read directly so this
 // file stays importable from server pages, which use its constants.
@@ -11,7 +12,7 @@ const SB_ANAHTAR = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ""; // sb
 
 export const hesapAyarli = SB_URL !== "" && SB_ANAHTAR !== "";
 export const DENEME_GUN = 3;
-export const ABONELIK_EPOSTA = "info@motiqai.com";
+export const ABONELIK_EPOSTA = SATICI.eposta;
 const GUN = 86_400_000;
 
 // "Beni hatırla": on (the default) the session is kept in localStorage and survives closing the

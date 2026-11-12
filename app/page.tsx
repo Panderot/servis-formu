@@ -6,6 +6,8 @@ import { SureHesap, OrnekRapor, IsDongu, Fiyat, SablonEditoru, MusteriGecmisi, W
 import GorununceOynat from "./components/GorununceOynat";
 import HeroMaket from "./components/HeroMaket";
 import { DilDugmesi } from "./components/Dil";
+import { OdemeLogolari, SaticiSatiri } from "./components/YasalAlt";
+import { YASAL_LINKLER } from "./lib/satici";
 import { useDil } from "./lib/dil";
 import {
   demoRaporlar, sablonlarDil, telefonGoster, demoFoto, demoImza,
@@ -443,9 +445,13 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col gap-2 md:flex-row md:justify-between" style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 18, fontSize: 12, fontWeight: 600 }}>
-            <span>© 2026 Motiq Automation Ltd · <a href="/gizlilik" className="hover:text-white">{c("Gizlilik", "Privacy")}</a> · <a href="/kosullar" className="hover:text-white">{c("Kullanım koşulları", "Terms of use")}</a> · <a href="/veri-isleme" className="hover:text-white">{c("Veri işleme", "Data processing")}</a></span>
-            <span>{c("Bu bir e-fatura değil, iş teslim raporudur.", "This is not an invoice, it's a job completion report.")}</span>
+          <nav data-yasal-linkler aria-label={c("Yasal sayfalar", "Legal pages")} style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 14, display: "flex", flexWrap: "wrap", gap: "0 18px", fontSize: 12.5, fontWeight: 600 }}>
+            {YASAL_LINKLER.map(([h, tr, en]) => <a key={h} href={h} className="hover:text-white" style={{ display: "inline-flex", alignItems: "center", minHeight: 36 }}>{c(tr, en)}</a>)}
+          </nav>
+          <div style={{ marginTop: 10 }}><SaticiSatiri koyu /></div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between" style={{ marginTop: 22, fontSize: 12, fontWeight: 600 }}>
+            <div className="md:order-2" style={{ width: "100%", maxWidth: 300 }}><OdemeLogolari koyu /></div>
+            <span>© 2026 MotiqAI · {c("Bu bir e-fatura değil, iş teslim raporudur.", "This is not an invoice, it's a job completion report.")}</span>
           </div>
         </div>
       </footer>

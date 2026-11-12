@@ -1,0 +1,46 @@
+// Seller of Fixnote: one place for the legal pages, the footers and the payment page.
+// Never add the owner's national ID number (TC kimlik no) here or anywhere else.
+export const SATICI = {
+  ad: "Baret Güngörmezer",
+  marka: "MotiqAI",
+  adres: "Mecidiyeköy Mah. Selahattin Pınar Aralığı Sk. Hüseyin Özer İş Merkezi No: 3 İç Kapı No: 8, 34387 Şişli / İstanbul",
+  vergiDairesi: "Zincirlikuyu",
+  vkn: "4380649547",
+  eposta: "info@motiqai.com",
+  telefon: "+44 7476 196133",
+  web: "https://www.motiqai.com",
+} as const;
+
+// The seller block used on the legal pages (a bullet list).
+export function saticiSatirlari(dil: "tr" | "en"): string[] {
+  const s = SATICI;
+  return dil === "en"
+    ? [
+        `Seller: ${s.ad} (sole proprietorship), brand: ${s.marka}`,
+        `Address: ${s.adres}, Türkiye`,
+        `Tax office / tax number: ${s.vergiDairesi} / ${s.vkn}`,
+        `Email: ${s.eposta}`,
+        `Phone / WhatsApp: ${s.telefon}`,
+        `Website: ${s.web}`,
+      ]
+    : [
+        `Satıcı: ${s.ad} (şahıs işletmesi), marka: ${s.marka}`,
+        `Adres: ${s.adres}`,
+        `Vergi dairesi / VKN: ${s.vergiDairesi} / ${s.vkn}`,
+        `E-posta: ${s.eposta}`,
+        `Telefon / WhatsApp: ${s.telefon}`,
+        `Web: ${s.web}`,
+      ];
+}
+
+// Legal and contact links shown in the landing footer and under every legal page.
+export const YASAL_LINKLER: [href: string, tr: string, en: string][] = [
+  ["/hakkimizda", "Hakkımızda", "About us"],
+  ["/teslimat-ve-iade", "Teslimat ve İade", "Delivery and refunds"],
+  ["/gizlilik", "Gizlilik Politikası", "Privacy policy"],
+  ["/mesafeli-satis", "Mesafeli Satış Sözleşmesi", "Distance sales agreement"],
+  ["/on-bilgilendirme", "Ön Bilgilendirme Formu", "Pre-information form"],
+  ["/kosullar", "Kullanım ve Abonelik Koşulları", "Terms of use and subscription"],
+  ["/veri-isleme", "Veri İşleme Sözleşmesi", "Data processing agreement"],
+  ["/hakkimizda#iletisim", "İletişim", "Contact"],
+];

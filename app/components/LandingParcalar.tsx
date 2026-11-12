@@ -6,7 +6,8 @@ import Ikon from "./Ikon";
 import { type Dil, demoFirma, demoRaporlar, sablonlarDil, gecmis, hesapla, musteriler, tarihTR, telefonGoster, para, raporPara, waMetin } from "../lib/servis";
 import { useDil } from "../lib/dil";
 import { raporEtiket } from "./RaporSayfa";
-import { PAKET } from "../lib/paket";
+import { PAKET, type Plan, tlSayi } from "../lib/paket";
+import { OdemeLogolari } from "./YasalAlt";
 
 // ---------- Süre hesaplayıcı (referanstaki "kaç saat" kaydırıcıları) ----------
 const YENI_DK = 2; // Fixnote ile rapor başına varsayılan süre (dakika): açıkça yazılı varsayım
@@ -921,24 +922,25 @@ export function IsDongu() {
   );
 }
 
-// ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Sitede sadece ABD doları görünür. ----------
+// ---------- Fiyat: iki paket (Usta: 1 teknisyen, Firma: sınırsız). Türk lirası, KDV dahil; iki dilde aynı TL fiyat. ----------
 // Tutarlar app/lib/paket.ts içinde (PAKET); ödeme sayfası ve ödeme API'si de oradan okur.
-const KAYIT = "/giris?kayit=1";
-const sent = (usd: number) => Math.round(usd * 100); // amounts are compared and shown in whole cents
-const dolar = (c: number, dil: Dil = "tr") => `$${c % 100 === 0 ? c / 100 : dil === "en" ? (c / 100).toFixed(2) : (c / 100).toFixed(2).replace(".", ",")}`;
+// "Paketi seç": kayıt / giriş, sonra seçilen paketle /abonelik (orada ödemeye geçer ya da önce 3 gün ücretsiz dener).
+const secimAdresi = (p: Plan, yillik: boolean) => `/giris?kayit=1&sonra=${encodeURIComponent(`/abonelik?paket=${p}&donem=${yillik ? "yillik" : "aylik"}`)}`;
+const kurus = (tl: number) => Math.round(tl * 100); // amounts are compared and shown in whole kuruş
+const fiyat = (k: number, dil: Dil = "tr") => `${tlSayi(k / 100, dil)} TL`;
 // Texts of the pricing section. In English the packages are called Solo (Usta) and Team (Firma).
 const FT = {
   tr: {
-    donem: "Ödeme dönemi", aylik: "Aylık", yillik: "Yıllık", indirim: "%20 indirim", ay: "/ ay",
-    yillikAlt: (t: string) => `Yıllık ${t} peşin · KDV hariç`, aylikAlt: "Aylık ödeme · KDV hariç",
+    donem: "Ödeme dönemi", aylik: "Aylık", yillik: "Yıllık", indirim: "%20 indirim", ay: "/ ay", tlAy: "TL / ay",
+    yillikAlt: (t: string) => `Yıllık ${t} peşin · KDV dahil`, aylikAlt: "Aylık ödeme · KDV dahil",
     usta: "Usta", ustaRozet: "1 teknisyen", ustaAcik: "Sahaya tek başına çıkan usta için. Raporun cebinde, akşamın sana kalır.",
     ustaMadde: ["1 teknisyen", "Sınırsız servis raporu, rapor başına ücret yok", "Raporların, müşterilerin ve fotoğrafların bulutta", "Ekip kurunca tek mesajla Firma'ya geçersin", "Aşağıdaki her şey dahil"],
     firma: "Firma", firmaRozet: "Sınırsız teknisyen", firmaAcik: "Ekibi olan servis firması için. Ekip kaç kişi olursa olsun tek fiyat.",
     ekip: "Ekibin kaç kişi?", azalt: "Azalt", artir: "Artır", kisiBasi: "Kişi başı",
     ucuz: (t: string) => `Usta paketinden kişi başı ${t} ucuz`, ucuzDegil: "3. teknisyenden itibaren Usta'dan ucuz",
     firmaMadde: ["Sınırsız teknisyen ve cihaz", "Sınırsız servis raporu, rapor başına ücret yok", "Ekibe yeni biri katılınca ek ücret yok", "Bütün ekibin raporları ofiste tek ekranda", "Aşağıdaki her şey dahil"],
-    dene: "3 gün ücretsiz dene",
-    guven: ["Kart istemez", "Sözleşme yok", "Rapor başına ücret yok", "İstediğin ay bırakırsın"],
+    sec: "Paketi seç",
+    guven: ["3 gün ücretsiz deneme", "Deneme için kart istemez", "Rapor başına ücret yok", "İstediğin zaman iptal edersin"],
     dahilBaslik: "İki pakette de dahil, ek ücret yok",
     dahil: [
       "Sınırsız servis raporu: yoğun ayda da aynı fiyat",
@@ -958,16 +960,16 @@ const FT = {
     ],
   },
   en: {
-    donem: "Billing period", aylik: "Monthly", yillik: "Yearly", indirim: "20% off", ay: "/ month",
-    yillikAlt: (t: string) => `${t} billed yearly · excl. VAT`, aylikAlt: "Billed monthly · excl. VAT",
+    donem: "Billing period", aylik: "Monthly", yillik: "Yearly", indirim: "20% off", ay: "/ month", tlAy: "TL / month",
+    yillikAlt: (t: string) => `${t} billed yearly · TRY, VAT included`, aylikAlt: "Billed monthly · TRY, VAT included",
     usta: "Solo", ustaRozet: "1 technician", ustaAcik: "For the technician who works alone. Reports done on site, evenings back to you.",
     ustaMadde: ["1 technician", "Unlimited service reports, no per-report fee", "Your reports, customers and photos in the cloud", "Move to Team with one message when you grow", "Everything below included"],
     firma: "Team", firmaRozet: "Unlimited technicians", firmaAcik: "For service companies with a crew. One price, however big the team.",
     ekip: "How big is your team?", azalt: "Fewer", artir: "More", kisiBasi: "Per person",
     ucuz: (t: string) => `${t} less per person than Solo`, ucuzDegil: "Cheaper than Solo from the 3rd technician",
     firmaMadde: ["Unlimited technicians and devices", "Unlimited service reports, no per-report fee", "No extra cost when someone joins the team", "The whole team's reports on one screen in the office", "Everything below included"],
-    dene: "Try free for 3 days",
-    guven: ["No card needed", "No contract", "No per-report fee", "Cancel any month"],
+    sec: "Choose plan",
+    guven: ["3-day free trial", "No card for the trial", "No per-report fee", "Cancel any time"],
     dahilBaslik: "Included in both plans, no extra fees",
     dahil: [
       "Unlimited service reports: same price in your busiest month",
@@ -1000,16 +1002,16 @@ function Madde({ children, koyu }: { children: React.ReactNode; koyu?: boolean }
 function FiyatSatiri({ p, yillik, koyu, dil }: { p: { ay: number; yil: number }; yillik: boolean; koyu?: boolean; dil: Dil }) {
   const t = FT[dil];
   const soluk = koyu ? "rgba(255,255,255,.62)" : "var(--muted)";
-  const aylik = sent(yillik ? p.yil / 12 : p.ay);
+  const aylik = kurus(yillik ? p.yil / 12 : p.ay);
   return (
     <div data-fiyat-tutar>
       <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", gap: "4px 8px" }}>
-        <span className="num" style={{ fontSize: "clamp(38px, 10vw, 48px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{dolar(aylik, dil)}</span>
-        <span style={{ fontSize: 14, color: soluk, fontWeight: 700 }}>{t.ay}</span>
-        {yillik && <s className="num" style={{ fontSize: 14, color: soluk, fontWeight: 600 }}>{dolar(sent(p.ay), dil)}</s>}
+        <span className="num" style={{ fontSize: "clamp(38px, 10vw, 48px)", fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1 }}>{tlSayi(aylik / 100, dil)}</span>
+        <span style={{ fontSize: 14, color: soluk, fontWeight: 700 }}>{t.tlAy}</span>
+        {yillik && <s className="num" style={{ fontSize: 14, color: soluk, fontWeight: 600 }}>{fiyat(kurus(p.ay), dil)}</s>}
       </div>
       <div style={{ fontSize: 12.5, color: soluk, fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
-        {yillik ? t.yillikAlt(dolar(sent(p.yil), dil)) : t.aylikAlt}
+        {yillik ? t.yillikAlt(fiyat(kurus(p.yil), dil)) : t.aylikAlt}
       </div>
     </div>
   );
@@ -1021,8 +1023,8 @@ export function Fiyat() {
   const [yillik, setYillik] = useState(true);
   const [ekip, setEkip] = useState(4);
   const firmaAylik = yillik ? PAKET.firma.yil / 12 : PAKET.firma.ay;
-  const kisiBasi = sent(firmaAylik / ekip);
-  const ustaAylik = sent(yillik ? PAKET.usta.yil / 12 : PAKET.usta.ay);
+  const kisiBasi = kurus(firmaAylik / ekip);
+  const ustaAylik = kurus(yillik ? PAKET.usta.yil / 12 : PAKET.usta.ay);
   const soluk = "rgba(255,255,255,.62)";
   const cizgi = "rgba(255,255,255,.14)";
   const sayacDugme: React.CSSProperties = { width: 44, height: 44, border: "none", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 19, fontWeight: 700 };
@@ -1050,7 +1052,7 @@ export function Fiyat() {
             {t.ustaMadde.map((x) => <Madde key={x}>{x}</Madde>)}
           </ul>
           <div style={{ marginTop: "auto", paddingTop: 24 }}>
-            <a href={KAYIT} className="btn btn-ghost" style={{ width: "100%", padding: "14px 20px" }}>{t.dene}</a>
+            <a href={secimAdresi("usta", yillik)} data-paket-sec="usta" className="btn btn-ghost" style={{ width: "100%", padding: "14px 20px" }}>{t.sec}</a>
           </div>
         </div>
 
@@ -1074,10 +1076,10 @@ export function Fiyat() {
             </div>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${cizgi}` }}>
               <span style={{ fontSize: 13, color: soluk, fontWeight: 600 }}>{t.kisiBasi}</span>
-              <span><b data-kisi-basi className="num" style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{dolar(kisiBasi, dil)}</b><span style={{ fontSize: 12.5, color: soluk, fontWeight: 600 }}> {t.ay}</span></span>
+              <span><b data-kisi-basi className="num" style={{ fontSize: 20, letterSpacing: "-0.02em" }}>{fiyat(kisiBasi, dil)}</b><span style={{ fontSize: 12.5, color: soluk, fontWeight: 600 }}> {t.ay}</span></span>
             </div>
             <div data-fiyat-kiyas style={{ fontSize: 12.5, color: "#7cc4d6", fontWeight: 700, marginTop: 4, textAlign: "right" }}>
-              {kisiBasi < ustaAylik ? t.ucuz(dolar(ustaAylik - kisiBasi, dil)) : t.ucuzDegil}
+              {kisiBasi < ustaAylik ? t.ucuz(fiyat(ustaAylik - kisiBasi, dil)) : t.ucuzDegil}
             </div>
           </div>
 
@@ -1085,7 +1087,7 @@ export function Fiyat() {
             {t.firmaMadde.map((x) => <Madde key={x} koyu>{x}</Madde>)}
           </ul>
           <div style={{ marginTop: "auto", paddingTop: 24 }}>
-            <a href={KAYIT} className="btn" style={{ width: "100%", padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>{t.dene}</a>
+            <a href={secimAdresi("firma", yillik)} data-paket-sec="firma" className="btn" style={{ width: "100%", padding: "14px 20px", background: "#fff", color: "var(--ink)" }}>{t.sec}</a>
           </div>
         </div>
       </div>
@@ -1095,6 +1097,7 @@ export function Fiyat() {
           <span key={x} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}><Ikon ad="tik" boy={12} kalinlik={3} style={{ color: "var(--accent)" }} />{x}</span>
         ))}
       </div>
+      <div style={{ marginTop: 18 }}><OdemeLogolari yazi /></div>
 
       <div className="card mt-8" style={{ borderRadius: 24, padding: "clamp(22px, 4vw, 30px)", boxShadow: "none" }}>
         <div className="mini" style={{ color: "var(--muted)" }}>{t.dahilBaslik}</div>

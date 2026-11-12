@@ -8,7 +8,7 @@ import { aboneligiYonet, odemeHataMetni } from "./odeme";
 import { ODEME_ACIK } from "../lib/paket";
 import type { Dil } from "../lib/dil";
 
-// Settings card "Hesabımı sil": the user deletes their own account and records (UK GDPR / KVKK
+// Settings card "Hesabımı sil": the user deletes their own account and records (KVKK
 // right to erasure). Database side: public.hesabimi_sil() in supabase/kurulum.sql (section 4).
 // Order: check (subscription) -> owner empties their file folder -> delete the account -> sign out.
 const KOVA = "rapor-dosyalari";
