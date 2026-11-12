@@ -424,27 +424,17 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer style={{ background: "var(--dark)", color: "rgba(255,255,255,.66)", overflow: "hidden" }}>
-        <div className="mx-auto max-w-[900px] px-4 pt-16 pb-10 md:pb-12">
-          <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
-              <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>{c("Saha servis ekipleri için dijital servis raporu: doldur, imzalat, WhatsApp'tan gönder. Kayıtların hesabında saklanır, her telefondan açılır.", "Digital service reports for field service teams: fill in, sign, send on WhatsApp. Your records stay in your account and open on any phone.")}</p>
-              <DilDugmesi koyu style={{ marginTop: 14 }} />
-            </div>
-            {[
-              [c("Ürün", "Product"), [[c("Nasıl çalışır", "How it works"), "#nasil"], [c("Rapor", "Report"), "#rapor"], [c("Şablonlar", "Templates"), "#sablon"], [c("Fiyat", "Pricing"), "#fiyat"]]],
-              [c("Kimler için", "Who it's for"), [[c("Kombi ve klima", "Boilers and air conditioning"), "#sablon"], [c("Beyaz eşya", "Appliances"), "#sablon"], [c("İlaçlama", "Pest control"), "#sablon"], [c("Elektrik", "Electrical"), "#sablon"]]],
-              [c("Daha fazla", "More"), [[c("SSS", "FAQ"), "#sss"], [c("Uygulamayı aç", "Open the app"), "/app"], [c("Yeni form", "New form"), "/app?yeni=1"]]],
-            ].map(([b, l]) => (
-              <div key={b as string}>
-                <div className="mini" style={{ color: "rgba(255,255,255,.45)" }}>{b as string}</div>
-                <ul style={{ listStyle: "none", padding: 0, margin: "12px 0 0", display: "grid", gap: 8, fontSize: 13, fontWeight: 600 }}>
-                  {(l as string[][]).map(([t, h]) => <li key={t}><a href={h} className="hover:text-white">{t}</a></li>)}
-                </ul>
+        <div className="mx-auto max-w-[1120px] px-4 pt-16 pb-10 md:pb-12">
+          <AltBilgi
+            koyu
+            marka={
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#fff", letterSpacing: "-0.03em" }}><Isaret boy={24} />Fixnote</div>
+                <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.6, marginTop: 10, maxWidth: 280 }}>{c("Saha servis ekipleri için dijital servis raporu: doldur, imzalat, WhatsApp'tan gönder. Kayıtların hesabında saklanır, her telefondan açılır.", "Digital service reports for field service teams: fill in, sign, send on WhatsApp. Your records stay in your account and open on any phone.")}</p>
+                <DilDugmesi koyu style={{ marginTop: 14 }} />
               </div>
-            ))}
-          </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 40, paddingTop: 32 }}><AltBilgi koyu /></div>
+            }
+          />
         </div>
       </footer>
     </main>

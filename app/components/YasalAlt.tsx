@@ -25,10 +25,11 @@ export function OdemeLogolari({ koyu, yazi, genislik = 300 }: { koyu?: boolean; 
   );
 }
 
-// Footer block shared by the landing page (dark) and the legal pages (light): three columns (Fixnote, Yasal,
-// Satıcı), then a thin rule with "© 2026 MotiqAI" on the left and the payment logos on the right. On phones the
-// columns stack and the bottom row is centred. anaSayfa: also link back to the home page (legal pages).
-export function AltBilgi({ koyu, anaSayfa }: { koyu?: boolean; anaSayfa?: boolean }) {
+// Footer block shared by the landing page (dark) and the legal pages (light): one row of columns (marka: the
+// landing page's brand column, then Fixnote, Yasal, Satıcı), then a thin rule with "© 2026 MotiqAI" on the left and
+// the payment logos on the right. On phones the columns stack and the bottom row is centred.
+// anaSayfa: also link back to the home page (legal pages).
+export function AltBilgi({ koyu, anaSayfa, marka }: { koyu?: boolean; anaSayfa?: boolean; marka?: React.ReactNode }) {
   const dil = useDil();
   const en = dil === "en";
   const s = SATICI;
@@ -50,7 +51,8 @@ export function AltBilgi({ koyu, anaSayfa }: { koyu?: boolean; anaSayfa?: boolea
   );
   return (
     <div data-alt-bilgi style={{ color: renk.metin }}>
-      <div className="grid gap-9 md:grid-cols-[0.8fr_1.2fr_1.5fr] md:gap-8">
+      <div className={marka ? "grid gap-9 sm:grid-cols-2 lg:grid-cols-[1.3fr_0.9fr_1.2fr_1.4fr] lg:gap-8" : "grid gap-9 md:grid-cols-[0.8fr_1.2fr_1.5fr] md:gap-8"}>
+        {marka}
         {sutun("Fixnote", <nav aria-label="Fixnote">{liste(fixnote)}</nav>)}
         {sutun(en ? "Legal" : "Yasal", <nav aria-label={en ? "Legal pages" : "Yasal sayfalar"}>{liste(YASAL_LINKLER)}</nav>)}
         {sutun(en ? "Seller" : "Satıcı", (

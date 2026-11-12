@@ -36,9 +36,12 @@ export function saticiSatirlari(dil: "tr" | "en"): string[] {
 // Footer columns (landing page and every legal page, app/components/YasalAlt.tsx): "Fixnote" and "Yasal".
 export type Baglanti = [href: string, tr: string, en: string];
 export const FIXNOTE_LINKLER: Baglanti[] = [
+  ["/#nasil", "Nasıl çalışır", "How it works"],
+  ["/#fiyat", "Fiyatlar", "Pricing"],
+  ["/#sss", "SSS", "FAQ"],
   ["/hakkimizda", "Hakkımızda", "About us"],
   ["/hakkimizda#iletisim", "İletişim", "Contact"],
-  ["/#fiyat", "Fiyatlar", "Pricing"],
+  ["/app", "Uygulamayı aç", "Open the app"],
 ];
 export const YASAL_LINKLER: Baglanti[] = [
   ["/gizlilik", "Gizlilik Politikası", "Privacy policy"],
