@@ -48,9 +48,17 @@ export function Liste({ children, className, style }: { children: ReactNode; cla
       kontrol.current?.disable();
       kontrol.current?.destroy?.();
       kontrol.current = null;
-    } else if (!kontrol.current) {
-      kontrol.current = autoAnimate(el, { duration: 200, easing: "ease-out" });
+      return;
     }
+    if (kontrol.current) return;
+    // Set up when the phone is idle: AutoAnimate measures every item once, which should not land on the first paint.
+    const kur = () => { if (!kontrol.current && ref.current) kontrol.current = autoAnimate(ref.current, { duration: 200, easing: "ease-out" }); };
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(kur, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const t = window.setTimeout(kur, 300);
+    return () => window.clearTimeout(t);
   }, [n]);
   useEffect(() => () => { kontrol.current?.destroy?.(); kontrol.current = null; }, []);
   return <div ref={ref} className={className} style={style}>{children}</div>;

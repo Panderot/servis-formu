@@ -221,6 +221,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const navRef = useRef<HTMLElement>(null);
   const [gosterge, setGosterge] = useState<{ y: number; h: number } | null>(null);
   useLayoutEffect(() => {
+    if (!genis) return; // the side menu exists from 1024 px; on phones nothing is measured (no forced layout)
     const nav = navRef.current;
     const b = nav?.querySelector<HTMLElement>(".navlink.on");
     if (!nav || !b) return; // form view: the indicator keeps its place, hidden
