@@ -461,6 +461,13 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
   .panel .chip, .panel .navlink, .panel .row-btn, .p-bakim, .p-adim-no { transition: none; }
 }
 
+/* ---------- panel motion (task 76; app/components/Hareket.tsx). Only transform and opacity. ---------- */
+/* KPI figures (NumberFlow): its fade mask pads the digits by 2 x 0.125em above and below; negative margins
+   give that back so the line keeps the exact height it had as plain text. */
+@property --sayi-lh { syntax: "<length>"; inherits: true; initial-value: 0px; }
+.sayi { --sayi-lh: 1lh; }
+.sayi > number-flow-react { vertical-align: top; margin-block: calc((var(--sayi-lh) - 1em) / 2 - 2 * round(nearest, calc(.25em / 2), 1px)); }
+
 /* ---------- A4 rapor ---------- */
 .a4 {
   width: 794px; min-height: 1123px; background: #fff; color: #1c2735; padding: 46px 50px 40px;

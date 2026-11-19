@@ -13,6 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
+import { Sayi } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -398,7 +399,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <div className="p-genis">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, minHeight: 20 }}><span className="mini">{c("Bu ay rapor", "Reports this month")}</span>{oz.adet > 0 && <span className="pill ok">{c(`%${oz.imzali} imzalı`, `${oz.imzali}% signed`)}</span>}</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginTop: 6 }}>
-                <span className="num" style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}>{oz.adet}</span>
+                <span className="num" style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}><Sayi n={oz.adet} dil={dil} /></span>
                 <div style={{ display: "flex", gap: 5, alignItems: "flex-end", height: 40, flex: 1 }} aria-label={c("Son 7 gün rapor sayısı", "Reports in the last 7 days")}>
                   {gunler.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }} title={c(`${x.g}: ${x.n} rapor`, `${x.g}: ${x.n} reports`)}>
@@ -410,13 +411,13 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
             </div>
             {[
-              ["tutar", c("Bu ay tutar", "This month"), fp(oz.ciro), <span key="k" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c("KDV dahil", "incl. tax")}</span>],
-              ["bekleyen", c("Tahsil bekleyen", "Unpaid"), fp(oz.bekleyen), bekleyenN ? <span key="b" className="pill warn">{c(`${bekleyenN} rapor`, `${bekleyenN} ${bekleyenN === 1 ? "report" : "reports"}`)}</span> : raporlar.length ? <span key="b" className="pill ok">{c("Hepsi tahsil", "All paid")}</span> : null],
-              ["musteri", c("Müşteri", "Customers"), String(mList.length), <span key="m" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c(`${raporlar.length} raporda`, `across ${raporlar.length} reports`)}</span>],
+              ["tutar", c("Bu ay tutar", "This month"), <Sayi key="v" n={oz.ciro} birim={ayar.para} dil={dil} />, <span key="k" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c("KDV dahil", "incl. tax")}</span>],
+              ["bekleyen", c("Tahsil bekleyen", "Unpaid"), <Sayi key="v" n={oz.bekleyen} birim={ayar.para} dil={dil} />, bekleyenN ? <span key="b" className="pill warn">{c(`${bekleyenN} rapor`, `${bekleyenN} ${bekleyenN === 1 ? "report" : "reports"}`)}</span> : raporlar.length ? <span key="b" className="pill ok">{c("Hepsi tahsil", "All paid")}</span> : null],
+              ["musteri", c("Müşteri", "Customers"), <Sayi key="v" n={mList.length} dil={dil} />, <span key="m" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c(`${raporlar.length} raporda`, `across ${raporlar.length} reports`)}</span>],
             ].map(([id, k, v, alt]) => (
               <div key={id as string} className={id === "musteri" ? "hidden lg:block" : ""}>
                 <span className="mini">{k as string}</span>
-                <div className="p-sayi">{v as string}</div>
+                <div className="p-sayi">{v}</div>
                 <div style={{ marginTop: 4, minHeight: 20 }}>{alt}</div>
               </div>
             ))}
