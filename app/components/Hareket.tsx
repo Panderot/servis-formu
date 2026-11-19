@@ -198,3 +198,27 @@ export function Iskelet() {
     </main>
   );
 }
+
+// Save button: after a successful save the label gives way to a tick for a moment (the toast follows).
+// onKaydet returns false when nothing was saved; then nothing moves.
+export function KaydetDugme({ onKaydet, style, children }: { onKaydet: () => boolean; style?: CSSProperties; children: ReactNode }) {
+  const [tik, setTik] = useState(0);
+  const zaman = useRef(0);
+  useEffect(() => () => window.clearTimeout(zaman.current), []);
+  return (
+    <button
+      className="btn kaydet-dugme"
+      style={style}
+      data-tik={tik ? "" : undefined}
+      onClick={() => {
+        if (!onKaydet()) return;
+        setTik((t) => t + 1);
+        window.clearTimeout(zaman.current);
+        zaman.current = window.setTimeout(() => setTik(0), 800);
+      }}
+    >
+      <span className="kaydet-yazi">{children}</span>
+      {tik > 0 && <span key={tik} className="kaydet-tik" aria-hidden="true"><Ikon ad="tik" boy={16} kalinlik={2.6} /></span>}
+    </button>
+  );
+}

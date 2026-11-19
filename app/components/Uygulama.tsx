@@ -13,7 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
-import { Gecis, Iskelet, Liste, NavGosterge, Sayi, TostAlani, kaydirGel, kaydirGit, tostGoster, useGenis } from "./Hareket";
+import { Gecis, Iskelet, KaydetDugme, Liste, NavGosterge, Sayi, TostAlani, kaydirGel, kaydirGit, tostGoster, useGenis } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -446,7 +446,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           {yaklasan.length > 0 && (
             <div style={{ marginTop: 20 }}>
               <div className="p-bolum"><b>{c("Yaklaşan bakımlar", "Upcoming services")}</b>{!saltOkunur && <span>{c("tıkla, aynı müşteriye form aç", "tap to open a form for the same customer")}</span>}</div>
-              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginTop: 10 }}>
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingTop: 2, paddingBottom: 6, marginTop: 8 }}>
                 {yaklasan.map((x, i) => {
                   const f = gunFark(x.sonrakiBakim);
                   return (
@@ -931,7 +931,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
           <label className="lbl" htmlFor="t-ad">{c("Teknisyen adı", "Technician name")}</label>
           <input id="t-ad" className="field" value={tekAd} maxLength={80} onChange={(e) => setTekAd(e.target.value)} onBlur={(e) => tekAdKaydet(e.target.value.trim())} />
-          <button className="btn" style={{ marginTop: 12 }} onClick={() => { tekAdKaydet(tekAd.trim()); flash(c("Adın kaydedildi", "Your name was saved")); }}>{c("Kaydet", "Save")}</button>
+          <KaydetDugme style={{ marginTop: 12 }} onKaydet={() => { tekAdKaydet(tekAd.trim()); flash(c("Adın kaydedildi", "Your name was saved")); return true; }}>{c("Kaydet", "Save")}</KaydetDugme>
         </div>
         <div className="card" style={{ padding: 18, marginTop: 14 }}>
           <div className="p-kbas">
@@ -985,7 +985,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       if (d.firma) setF({ ...firma, ...d.firma });
     };
     const fAyar = raporAyari(f, dil);
-    const firmaKaydetDugme = () => { if (kaydetFirma({ ...f, onek: (f.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR", raporDili: fAyar.dil, paraBirimi: fAyar.para })) flash(c("Firma bilgileri kaydedildi", "Company details saved")); };
+    const firmaKaydetDugme = () => {
+      const tamam = kaydetFirma({ ...f, onek: (f.onek || "SR").toUpperCase().replace(/[^A-Z0-9]/g, "") || "SR", raporDili: fAyar.dil, paraBirimi: fAyar.para });
+      if (tamam) flash(c("Firma bilgileri kaydedildi", "Company details saved"));
+      return tamam;
+    };
     // The privacy note switch saves at once (with the rest of the company form, as "Kaydet" would).
     const kvkkNotDegis = (acik: boolean) => {
       const y = { ...f, kvkkNot: acik };
@@ -1030,7 +1034,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <label className="lbl" htmlFor="f-alt">{c("Rapor alt notu (garanti şartları)", "Report footer (warranty terms)")}</label>
             <textarea id="f-alt" className="field" value={f.altNot} readOnly={saltOkunur} onChange={(e) => setF({ ...f, altNot: e.target.value })} />
           </div>
-          {!saltOkunur && <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>}
+          {!saltOkunur && <KaydetDugme style={{ marginTop: 12 }} onKaydet={firmaKaydetDugme}>{c("Kaydet", "Save")}</KaydetDugme>}
         </div>
 
         <MusteriBilgiKarti f={f} dil={dil} raporDil={fAyar.dil} onNot={kvkkNotDegis} kilitli={saltOkunur} />
@@ -1063,7 +1067,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
             </div>
           </div>
-          {!saltOkunur && <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>}
+          {!saltOkunur && <KaydetDugme style={{ marginTop: 12 }} onKaydet={firmaKaydetDugme}>{c("Kaydet", "Save")}</KaydetDugme>}
         </div>
 
         {bulut && <EkipKarti dil={dil} />}

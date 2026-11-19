@@ -480,6 +480,20 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .iskelet-blok { animation: iskelet-nabiz 1.4s ease-in-out infinite; }
 @keyframes iskelet-gel { from { opacity: 0; } to { opacity: 1; } }
 @keyframes iskelet-nabiz { 50% { opacity: .55; } }
+/* Buttons and cards: primary buttons press in a little; clickable cards lift slightly under a mouse. */
+@media (prefers-reduced-motion: no-preference) {
+  .panel .btn:active:not(:disabled) { transform: scale(.97); }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .panel .p-bakim, .panel [data-firma-eksik] { transition: border-color .15s, background .15s, transform .2s ease-out; }
+  .panel .p-bakim:not(:disabled):hover, .panel [data-firma-eksik]:hover { transform: translateY(-2px); }
+}
+/* Save tick (KaydetDugme): the label fades out, a tick pops in, then the label returns. */
+.kaydet-dugme { position: relative; }
+.kaydet-tik { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; animation: kaydet-tik .7s ease-out both; }
+.kaydet-dugme[data-tik] .kaydet-yazi { animation: kaydet-yazi .7s ease-out both; }
+@keyframes kaydet-tik { 0% { opacity: 0; transform: scale(.6); } 25% { opacity: 1; transform: none; } 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
+@keyframes kaydet-yazi { 0% { opacity: 1; } 20%, 70% { opacity: 0; } 100% { opacity: 1; } }
 /* Toasts (Sonner, unstyled): the card keeps the old look (dark ink, white bold text, petrol tick). Only the
    card takes taps, so the transparent row around it never blocks the list behind. */
 .panel [data-sonner-toaster], .panel [data-sonner-toast] { pointer-events: none; }
@@ -635,5 +649,6 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .filtre-sira::-webkit-scrollbar { display: none; }
 @media (min-width: 1024px) { .filtre-sira { flex-wrap: wrap; overflow-x: visible; } }
 @media (prefers-reduced-motion: reduce) {
-  .alt-sekme svg, .iskelet, .iskelet-blok { animation: none !important; }
+  .alt-sekme svg, .iskelet, .iskelet-blok, .kaydet-dugme[data-tik] .kaydet-yazi { animation: none !important; }
+  .kaydet-tik { display: none; }
 }
