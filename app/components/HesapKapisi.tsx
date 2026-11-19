@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import Ikon, { Isaret } from "./Ikon";
 import { DilDugmesi } from "./Dil";
+import { Iskelet } from "./Hareket";
 import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA, durumHesapla, supabase, type Durum } from "./supabase";
 import { ODEME_ACIK, lisansYazisi } from "../lib/paket";
@@ -174,7 +175,7 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  if (durum.tur === "yukleniyor") return <main style={{ minHeight: "100vh", background: "var(--bg)" }} />;
+  if (durum.tur === "yukleniyor") return <Iskelet />;
 
   if (durum.tur === "ayarsiz")
     return (

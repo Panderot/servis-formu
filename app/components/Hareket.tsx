@@ -143,3 +143,58 @@ export function kaydirGit(el: HTMLElement | null, x: number, sonra: () => void) 
   const a = el.animate([{ transform: "none", opacity: 1 }, { transform: `translateX(${x}px)`, opacity: 0 }], { duration: 160, easing: "ease-out", fill: "forwards" });
   a.finished.catch(() => {}).finally(sonra); // kaydirGel (run when the state has changed) clears the last frame
 }
+
+// First load: grey placeholder blocks in the shape of the panel. They appear only if loading takes longer
+// than 200 ms (the demo loads at once, so it never shows them); the timer is shared, so the account gate and
+// the panel loading one after the other do not blink. The gentle pulse is opacity only and stops with
+// prefers-reduced-motion.
+let iskeletBas = 0;
+const ISKELET_GECIKME = 200;
+function Blok({ w = "100%", h, r = 8, style }: { w?: number | string; h: number; r?: number; style?: CSSProperties }) {
+  return <div className="iskelet-blok" style={{ width: w, height: h, borderRadius: r, ...style }} />;
+}
+export function Iskelet() {
+  const [gor, setGor] = useState(false);
+  useEffect(() => {
+    if (!iskeletBas) iskeletBas = performance.now();
+    const t = window.setTimeout(() => setGor(true), Math.max(0, ISKELET_GECIKME - (performance.now() - iskeletBas)));
+    return () => window.clearTimeout(t);
+  }, []);
+  const satir = (i: number) => (
+    <div key={i} style={{ display: "flex", gap: 11, padding: "13px 14px", borderBottom: "1px solid var(--line)" }}>
+      <Blok w={32} h={32} r={9} />
+      <div style={{ flex: 1, display: "grid", gap: 8, paddingTop: 2 }}><Blok w="55%" h={12} /><Blok w="80%" h={11} /><Blok w="35%" h={14} r={999} /></div>
+    </div>
+  );
+  return (
+    <main aria-busy="true" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      {gor && (
+        <div className="iskelet panel lg:grid" style={{ gridTemplateColumns: "232px 1fr", minHeight: "100vh" }}>
+          <aside className="hidden lg:block" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", padding: "18px 12px" }}>
+            <Blok w={110} h={22} style={{ marginLeft: 6 }} />
+            <Blok h={44} r={12} style={{ marginTop: 28 }} />
+            <div style={{ display: "grid", gap: 10, marginTop: 20 }}><Blok h={30} r={10} /><Blok h={30} r={10} /><Blok h={30} r={10} /></div>
+          </aside>
+          <div style={{ minWidth: 0 }}>
+            <div className="flex lg:hidden" style={{ background: "var(--paper)", borderBottom: "1px solid var(--line)", padding: "16px", justifyContent: "space-between" }}>
+              <Blok w={100} h={22} /><Blok w={60} h={22} r={999} />
+            </div>
+            <div style={{ padding: "22px 16px 0" }}>
+              <Blok w="min(420px, 70%)" h={28} />
+              <Blok w="min(240px, 45%)" h={14} style={{ marginTop: 10 }} />
+              <div className="lg:hidden"><Blok h={64} r={14} style={{ marginTop: 16 }} /></div>
+              <div className="card" style={{ marginTop: 16, height: 116 }} />
+              <div className="lg:grid" style={{ gridTemplateColumns: "minmax(330px, 420px) 1fr", gap: 16, marginTop: 20, alignItems: "start" }}>
+                <div className="card" style={{ overflow: "hidden" }}>
+                  <div style={{ padding: "14px 14px 12px", borderBottom: "1px solid var(--line)", display: "grid", gap: 10 }}><Blok w={120} h={15} /><Blok h={44} r={10} /></div>
+                  {[0, 1, 2, 3].map(satir)}
+                </div>
+                <div className="card hidden lg:block" style={{ height: 420 }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

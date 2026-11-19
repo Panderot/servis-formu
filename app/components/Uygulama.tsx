@@ -13,7 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
-import { Gecis, Liste, NavGosterge, Sayi, TostAlani, kaydirGel, kaydirGit, tostGoster, useGenis } from "./Hareket";
+import { Gecis, Iskelet, Liste, NavGosterge, Sayi, TostAlani, kaydirGel, kaydirGit, tostGoster, useGenis } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -241,7 +241,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   useEffect(() => { oncekiGor.current = gor; }, [gor]);
   const detaydanDon = () => kaydirGit(raporKokRef.current, 24, () => setMobilDetay(false));
 
-  if (!hazir) return <main style={{ minHeight: "100vh", background: "var(--bg)" }} />;
+  if (!hazir) return <Iskelet />;
 
   const demoVar = !bulut;
   const d = depo.durum;

@@ -474,6 +474,12 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 /* Phone bottom bar: the icon of the newly active tab settles in with a short scale. */
 .alt-sekme[data-on="true"] svg { animation: alt-pop .22s ease-out; }
 @keyframes alt-pop { from { transform: scale(.82); } to { transform: none; } }
+/* First-load placeholders (Iskelet): light grey blocks, a gentle opacity pulse while loading. */
+.iskelet-blok { background: var(--tile); }
+.iskelet { animation: iskelet-gel .2s ease-out both; }
+.iskelet-blok { animation: iskelet-nabiz 1.4s ease-in-out infinite; }
+@keyframes iskelet-gel { from { opacity: 0; } to { opacity: 1; } }
+@keyframes iskelet-nabiz { 50% { opacity: .55; } }
 /* Toasts (Sonner, unstyled): the card keeps the old look (dark ink, white bold text, petrol tick). Only the
    card takes taps, so the transparent row around it never blocks the list behind. */
 .panel [data-sonner-toaster], .panel [data-sonner-toast] { pointer-events: none; }
@@ -629,5 +635,5 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .filtre-sira::-webkit-scrollbar { display: none; }
 @media (min-width: 1024px) { .filtre-sira { flex-wrap: wrap; overflow-x: visible; } }
 @media (prefers-reduced-motion: reduce) {
-  .alt-sekme svg { animation: none !important; }
+  .alt-sekme svg, .iskelet, .iskelet-blok { animation: none !important; }
 }
