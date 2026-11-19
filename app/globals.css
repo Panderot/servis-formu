@@ -494,6 +494,11 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .kaydet-dugme[data-tik] .kaydet-yazi { animation: kaydet-yazi .7s ease-out both; }
 @keyframes kaydet-tik { 0% { opacity: 0; transform: scale(.6); } 25% { opacity: 1; transform: none; } 70% { opacity: 1; transform: none; } 100% { opacity: 0; transform: none; } }
 @keyframes kaydet-yazi { 0% { opacity: 1; } 20%, 70% { opacity: 0; } 100% { opacity: 1; } }
+/* Empty states (no reports, no customers, empty search): a soft entrance. */
+@media (prefers-reduced-motion: no-preference) {
+  .panel .p-bos { animation: p-bos-gel .25s ease-out both; }
+}
+@keyframes p-bos-gel { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 /* Toasts (Sonner, unstyled): the card keeps the old look (dark ink, white bold text, petrol tick). Only the
    card takes taps, so the transparent row around it never blocks the list behind. */
 .panel [data-sonner-toaster], .panel [data-sonner-toast] { pointer-events: none; }
