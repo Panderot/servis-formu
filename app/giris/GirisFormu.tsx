@@ -168,19 +168,6 @@ export default function GirisFormu() {
     }
   }
 
-  async function google() {
-    const sb = supabase();
-    if (!sb || bekle) return;
-    setHata("");
-    setBekle(true);
-    hatirlaAyarla(hatirla);
-    const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + sonra } });
-    if (error) {
-      setHata(hataMetni(error.message));
-      setBekle(false);
-    }
-  }
-
   const kapali = !hesapAyarli || bekle;
   const baslik = { giris: c("Tekrar hoş geldin", "Welcome back"), kayit: c(`${DENEME_GUN} gün ücretsiz dene`, `Try free for ${DENEME_GUN} days`), unuttum: c("Şifreni sıfırla", "Reset your password"), yenile: c("Yeni şifre belirle", "Set a new password"), gonderildi: c("E-postanı kontrol et", "Check your email") }[mod];
   const aciklama = {
@@ -261,15 +248,7 @@ export default function GirisFormu() {
               </>
             ) : (
               <>
-                {(mod === "giris" || mod === "kayit") && (
-                  <>
-                    <button type="button" className="btn btn-ghost gr-dugme gr-google" disabled={kapali} onClick={google}><img src="https://developers.google.com/static/identity/images/g-logo.png" alt="" width={18} height={18} style={{ flex: "none", marginRight: 2 }} />{c("Google ile devam et", "Continue with Google")}</button>
-                    <div className="gr-ayrac">
-                      <span />{c("ya da e-posta ile", "or with email")}<span />
-                    </div>
-                  </>
-                )}
-                <form onSubmit={gonder} className={mod === "giris" || mod === "kayit" ? "gr-form" : "gr-form gr-form-tek"}>
+                <form onSubmit={gonder} className="gr-form gr-form-tek">
                   {mod !== "yenile" && (
                     <div>
                       <label className="gr-lbl" htmlFor="g-eposta">{c("E-posta", "Email")}</label>

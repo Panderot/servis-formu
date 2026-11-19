@@ -104,7 +104,6 @@ export function hataMetni(m: string): string {
   if (s.includes("password")) return c("Şifre en az 8 karakter olmalı.", "The password must be at least 8 characters.");
   if (s.includes("rate limit") || s.includes("too many")) return c("Çok fazla deneme yapıldı. Birkaç dakika sonra tekrar dene.", "Too many attempts. Try again in a few minutes.");
   if (s.includes("email")) return c("Geçerli bir e-posta adresi yaz.", "Enter a valid email address.");
-  if (s.includes("provider is not enabled") || s.includes("unsupported provider")) return c("Google ile giriş henüz açılmadı.", "Google sign-in isn't enabled yet.");
   if (s.includes("fetch") || s.includes("network")) return c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.");
   return c("Bir sorun oluştu. Lütfen tekrar dene.", "Something went wrong. Please try again.");
 }

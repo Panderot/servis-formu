@@ -52,7 +52,7 @@ const BOLUMLER: Bolum[] = [
     [
       "Supabase (sözleşme tarafı Supabase Pte. Ltd, Singapur): veritabanı, giriş ve dosya depolama. Müşteri bilgileri Almanya'daki (Frankfurt) sunucularda saklanır. Müşteri bilgilerini işleyen tek alt işleyendir.",
       "Vercel: sitenin sunulması (ABD). Müşteri bilgilerini saklamaz; uygulama bilgileri tarayıcından doğrudan Supabase'e gönderir.",
-      "Google (yalnızca Google ile girişte) ve iyzico (yalnızca abonelik ödemesi, Türkiye) müşteri bilgilerine erişmez.",
+      "iyzico (yalnızca abonelik ödemesi, Türkiye) müşteri bilgilerine erişmez.",
     ],
     "Alt işleyenlerle, bu sözleşmedeki yükümlülüklerden daha az koruyucu olmayan sözleşmeler yaparız. Müşteri bilgilerini işleyecek yeni bir alt işleyen eklersek ya da değiştirirsek, en az 30 gün önce bu sayfada duyurur ve kayıtlı e-posta adresine yazarız. İtiraz edersen ve uzlaşamazsak, değişiklik yürürlüğe girmeden hesabını kapatabilirsin.",
   ]],
@@ -126,7 +126,7 @@ const BOLUMLER_EN: Bolum[] = [
     [
       "Supabase (contracting party Supabase Pte. Ltd, Singapore): database, sign-in and file storage. Customer details are stored on servers in Germany (Frankfurt). It is the only sub-processor that processes customer details.",
       "Vercel: serving the site (USA). It does not store customer details; the app sends them from your browser directly to Supabase.",
-      "Google (only for Google sign-in) and iyzico (only for subscription payments, Turkey) have no access to customer details.",
+      "iyzico (only for subscription payments, Turkey) has no access to customer details.",
     ],
     "We bind our sub-processors by contracts no less protective than this agreement. If we add or replace a sub-processor that will process customer details, we will announce it on this page and email your registered address at least 30 days in advance. If you object and we cannot agree, you may close your account before the change takes effect.",
   ]],
@@ -166,13 +166,13 @@ export default function VeriIsleme() {
       metin={{
         tr: {
           baslik: "Veri İşleme Sözleşmesi",
-          tarih: "12 Kasım 2026",
+          tarih: "19 Kasım 2026",
           giris: "Fixnote'a girdiğin müşteri bilgilerinin sorumlusu sensin; biz bu bilgileri yalnızca senin adına saklar ve işleriz. Bu sözleşme ikimizin yükümlülüklerini anlatır ve Kullanım koşullarının parçasıdır.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Data processing agreement",
-          tarih: "12 November 2026",
+          tarih: "19 November 2026",
           giris: "You are responsible for the customer details you enter in Fixnote; we only store and process them on your behalf. This agreement sets out our obligations to each other and forms part of the Terms of use.",
           bolumler: BOLUMLER_EN,
         },

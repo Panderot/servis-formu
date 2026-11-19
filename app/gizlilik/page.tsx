@@ -30,7 +30,6 @@ const BOLUMLER: Bolum[] = [
   ]]],
   ["Hangi verileri işliyoruz", [[
     "Hesap bilgileri: e-posta adresin ve şifren. Şifren açık hâliyle saklanmaz; giriş altyapımız onu geri çözülemeyecek biçimde (hash) tutar.",
-    "Google ile giriş: Google ile girmeyi seçersen Google bize adını, e-posta adresini ve profil fotoğrafının bağlantısını iletir. Google hesabının şifresini hiçbir zaman görmeyiz.",
     "Firma bilgileri: uygulamaya girdiğin firma adı, telefonu, e-postası, adresi, vergi bilgileri, logon, rapor ayarların ve kendi şablonların.",
     "Ekip: Firma paketinde bir firmanın ekibine katılırsan e-posta adresin, ekipte görünen adın, katılma tarihin ve hangi raporu ilk senin yazdığın; bu bilgileri firma sahibi görür. Davet bağlantıları 7 gün sonra geçersiz olur.",
     "Deneme ve abonelik: hesabının oluşturulma tarihi, deneme ya da abonelik bitiş tarihi ve abonelikle ilgili kısa notlar.",
@@ -42,7 +41,7 @@ const BOLUMLER: Bolum[] = [
     `Yazışmalar: ${E} adresine e-postayla ya da WhatsApp'tan yazarsan e-posta adresin ya da telefon numaran ve yazdıkların.`,
   ]]],
   ["Verileri nasıl topluyoruz", [
-    "Kişisel verilerin elektronik ortamda ve otomatik yollarla toplanır: hesap açarken ve giriş yaparken girdiğin bilgilerden, Google ile girişi seçersen Google'dan, uygulamayı kullanırken doldurduğun formlardan, eklediğin fotoğraflardan ve aldığın imzalardan, ödeme yaptığında iyzico'dan, bize yazdığın e-postalardan ve siteyi kullanırken altyapı sağlayıcılarımızın tuttuğu teknik kayıtlardan.",
+    "Kişisel verilerin elektronik ortamda ve otomatik yollarla toplanır: hesap açarken ve giriş yaparken girdiğin bilgilerden, uygulamayı kullanırken doldurduğun formlardan, eklediğin fotoğraflardan ve aldığın imzalardan, ödeme yaptığında iyzico'dan, bize yazdığın e-postalardan ve siteyi kullanırken altyapı sağlayıcılarımızın tuttuğu teknik kayıtlardan.",
   ]],
   ["Cihazında tutulanlar", [
     "İnternet yokken kaydettiğin raporlar, bağlantı gelene kadar telefonundaki tarayıcıda bekler; gönderilince hesabına geçer. Listenin hızlı açılması için kayıtlarının bir kopyası da tarayıcıda tutulur. Çıkış yaptığında bu kopya, hesabını sildiğinde bütün kopyalar temizlenir; henüz gönderilmemiş raporlar gönderilene kadar cihazda kalır.",
@@ -67,7 +66,6 @@ const BOLUMLER: Bolum[] = [
     [
       "Supabase (sözleşme tarafımız Supabase Pte. Ltd, Singapur): hesap, giriş ve servis kayıtlarının (fotoğraflar ve imzalar dahil) saklandığı altyapı. Sunucular Almanya'da (Frankfurt) bulunur.",
       "Vercel: sitenin barındırılması ve sunulması. Merkezi ABD'dedir; site dünya genelindeki sunucularından sunulur.",
-      "Google: yalnızca Google ile girişi seçersen, girişin için. Merkezi ABD'dedir.",
       "iyzico: online abonelik ödemeleri. Türkiye'de yerleşik lisanslı ödeme kuruluşudur; kart bilgilerin yalnızca iyzico'da işlenir.",
       "WhatsApp (Meta): yalnızca bize WhatsApp'tan yazarsan, yazışma için. Merkezi ABD'dedir.",
     ],
@@ -149,7 +147,6 @@ const BOLUMLER_EN: Bolum[] = [
   ]]],
   ["What data we process", [[
     "Account details: your email address and password. Your password is not stored in plain form; our sign-in infrastructure keeps it in a form that cannot be reversed (a hash).",
-    "Google sign-in: if you choose to sign in with Google, Google sends us your name, email address and a link to your profile photo. We never see your Google password.",
     "Company details: the company name, phone, email, address, tax details, logo, report settings and your own templates that you enter in the app.",
     "Team: if you join a company's team on the Team plan, your email address, the name shown in the team, the date you joined and which reports you first wrote; the owner of the company account can see this. Invite links stop working after 7 days.",
     "Trial and subscription: the date your account was created, the end date of your trial or subscription and short notes about the subscription.",
@@ -161,7 +158,7 @@ const BOLUMLER_EN: Bolum[] = [
     `Correspondence: if you write to ${E} by email or to us on WhatsApp, your email address or phone number and what you write.`,
   ]]],
   ["How we collect data", [
-    "Your personal data is collected electronically and by automated means: from what you enter when you create an account and sign in, from Google if you choose Google sign-in, from the forms you fill in, the photos you add and the signatures you take in the app, from iyzico when you pay, from the emails you send us, and from the technical logs our infrastructure providers keep while you use the site.",
+    "Your personal data is collected electronically and by automated means: from what you enter when you create an account and sign in, from the forms you fill in, the photos you add and the signatures you take in the app, from iyzico when you pay, from the emails you send us, and from the technical logs our infrastructure providers keep while you use the site.",
   ]],
   ["What is kept on your device", [
     "Reports you save without internet wait in your phone's browser until it is back online; once sent they move to your account. A copy of your records is also kept in the browser so the list opens quickly. This copy is cleared when you sign out, and all copies when you delete your account; reports not yet sent stay on the device until they are sent.",
@@ -186,7 +183,6 @@ const BOLUMLER_EN: Bolum[] = [
     [
       "Supabase (our contracting party is Supabase Pte. Ltd, Singapore): the infrastructure where accounts, sign-in and service records (including photos and signatures) are stored. The servers are in Germany (Frankfurt).",
       "Vercel: hosting and serving the site. Headquartered in the USA; the site is served from its servers around the world.",
-      "Google: only if you choose Google sign-in, to sign you in. Headquartered in the USA.",
       "iyzico: online subscription payments. A licensed payment institution based in Turkey; your card details are processed only by iyzico.",
       "WhatsApp (Meta): only if you write to us on WhatsApp, for that conversation. Headquartered in the USA.",
     ],
@@ -259,13 +255,13 @@ export default function Gizlilik() {
       metin={{
         tr: {
           baslik: "Gizlilik Politikası",
-          tarih: "12 Kasım 2026",
+          tarih: "19 Kasım 2026",
           giris: "Bu sayfa, Fixnote'u kullanırken hangi kişisel verilerinin işlendiğini, nerede saklandığını ve hangi haklara sahip olduğunu anlatır. Kısaca: servis kayıtların hesabında, Almanya'daki sunucularda saklanır ve yalnızca hesabına giriş yapanlar görür.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Privacy policy",
-          tarih: "12 November 2026",
+          tarih: "19 November 2026",
           giris: "This page explains which personal data is processed when you use Fixnote, where it is stored and what rights you have. In short: your service records are stored in your account, on servers in Germany, and only people who sign in to your account can see them.",
           bolumler: BOLUMLER_EN,
         },

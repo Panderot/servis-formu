@@ -29,7 +29,7 @@ const BOLUMLER: Bolum[] = [
     "Hesap açmak için 18 yaşını doldurmuş olman ve işletme adına bu koşulları kabul etmeye yetkili olman gerekir.",
   ]],
   ["Hesap ve ekip", [[
-    "Hesap açarken gerçek ve sana ait bir e-posta adresi ya da Google hesabı kullanırsın.",
+    "Hesap açarken gerçek ve sana ait bir e-posta adresi kullanırsın.",
     "Usta paketinde hesabı yalnızca sen kullanırsın. Firma paketinde teknisyenlerini davet bağlantısıyla ekibine eklersin; her teknisyen kendi hesabıyla girer, firmanın kayıtlarını görür, rapor yazar ve düzenler. Rapor silme, firma bilgileri, şablonlar, abonelik ve ekip yönetimi hesabın sahibi olarak sende kalır.",
     "Giriş bilgilerini kimseyle paylaşmazsın. Ekipten çıkardığın teknisyenin firmanın kayıtlarına erişimi hemen biter; yazdığı raporlar firmada kalır.",
     "Hesabında ve ekibinin yaptığı işlemlerden sen sorumlusun.",
@@ -77,7 +77,7 @@ const BOLUMLER: Bolum[] = [
     [
       "Müşterilerini bilgilendirmek (aydınlatmak), gereken durumlarda açık rızalarını almak ve onlardan gelen başvuruları yanıtlamak senin yükümlülüğündür.",
       "Bu bilgileri yalnızca hizmeti sunmak için ve senin talimatınla işleriz; başka bir amaçla kullanmaz, satmaz ve reklam için kullanmayız.",
-      "Hizmeti sunmak için altyapı sağlayıcılarıyla çalışırız (Supabase: veritabanı ve dosya depolama, Almanya; Vercel: sitenin sunulması; Google: yalnızca Google ile girişte; iyzico: yalnızca abonelik ödemesi, Türkiye, müşteri bilgilerine erişmez).",
+      "Hizmeti sunmak için altyapı sağlayıcılarıyla çalışırız (Supabase: veritabanı ve dosya depolama, Almanya; Vercel: sitenin sunulması; iyzico: yalnızca abonelik ödemesi, Türkiye, müşteri bilgilerine erişmez).",
     ],
     "Karşılıklı yükümlülüklerimizin ayrıntıları Veri işleme sözleşmesindedir (fixnotee.vercel.app/veri-isleme). Bu sözleşme Kullanım koşullarının parçasıdır ve müşteri bilgileri konusunda önceliklidir. Kendi kişisel verilerin için Gizlilik politikası geçerlidir.",
   ]],
@@ -137,7 +137,7 @@ const BOLUMLER_EN: Bolum[] = [
     "To open an account you must be at least 18 and authorised to accept these terms on behalf of the business.",
   ]],
   ["Account and team", [[
-    "You open your account with a real email address or Google account that belongs to you.",
+    "You open your account with a real email address that belongs to you.",
     "On the Solo plan only you use the account. On the Team plan you add your technicians to your team with an invite link; each technician signs in with their own account, sees the company's records, and writes and edits reports. Deleting reports, company details, templates, the subscription and team management stay with you as the account owner.",
     "You don't share your sign-in details with anyone. When you remove a technician from the team, their access to the company's records ends at once; the reports they wrote stay with the company.",
     "You are responsible for what is done in your account and by your team.",
@@ -185,7 +185,7 @@ const BOLUMLER_EN: Bolum[] = [
     [
       "Informing your customers, obtaining their explicit consent where required and answering their requests are your obligations.",
       "We process this information only to provide the service and on your instructions; we do not use it for any other purpose, sell it or use it for advertising.",
-      "We work with infrastructure providers to run the service (Supabase: database and file storage, Germany; Vercel: serving the site; Google: only for Google sign-in; iyzico: subscription payments only, Turkey, with no access to customer details).",
+      "We work with infrastructure providers to run the service (Supabase: database and file storage, Germany; Vercel: serving the site; iyzico: subscription payments only, Turkey, with no access to customer details).",
     ],
     "The details of our obligations to each other are in the Data processing agreement (fixnotee.vercel.app/veri-isleme). It forms part of these Terms of use and takes precedence on customer details. The Privacy policy covers your own personal data.",
   ]],
@@ -238,13 +238,13 @@ export default function Kosullar() {
       metin={{
         tr: {
           baslik: "Kullanım ve Abonelik Koşulları",
-          tarih: "12 Kasım 2026",
+          tarih: "19 Kasım 2026",
           giris: "Fixnote'a hesap açarak ya da Fixnote'u kullanarak bu koşulları kabul etmiş olursun. Kişisel verilerinle ilgili ayrıntılar Gizlilik politikasında, müşterilerinin bilgileriyle ilgili ayrıntılar Veri işleme sözleşmesinde yazar.",
           bolumler: BOLUMLER,
         },
         en: {
           baslik: "Terms of use and subscription",
-          tarih: "12 November 2026",
+          tarih: "19 November 2026",
           giris: "By opening a Fixnote account or using Fixnote, you accept these terms. Details about your personal data are in the Privacy policy, and details about your customers' information are in the Data processing agreement.",
           bolumler: BOLUMLER_EN,
         },
