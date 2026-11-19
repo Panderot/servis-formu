@@ -25,18 +25,17 @@ export function OdemeLogolari({ koyu, yazi, genislik = 300 }: { koyu?: boolean; 
   );
 }
 
-// Footer block shared by the landing page (dark) and the legal pages (light): one row of columns (marka: the
-// landing page's brand column, then Fixnote, Yasal, Satıcı), then a thin rule with "© 2026 MotiqAI" on the left and
-// the payment logos on the right. On phones the columns stack and the bottom row is centred.
-// anaSayfa: also link back to the home page (legal pages).
-export function AltBilgi({ koyu, anaSayfa, marka }: { koyu?: boolean; anaSayfa?: boolean; marka?: React.ReactNode }) {
+// Footer block of the legal pages: one row of columns (optional marka column, then Fixnote, Yasal, Satıcı), then a
+// thin rule with "© 2026 MotiqAI" on the left and the payment logos on the right. On phones the columns stack and the
+// bottom row is centred. There is no landing page (task 73), so there is no "Home" link.
+export function AltBilgi({ koyu, marka }: { koyu?: boolean; marka?: React.ReactNode }) {
   const dil = useDil();
   const en = dil === "en";
   const s = SATICI;
   const renk = koyu
     ? { metin: "rgba(255,255,255,.66)", baslik: "rgba(255,255,255,.45)", cizgi: "rgba(255,255,255,.12)", ust: "hover:text-white" }
     : { metin: "var(--muted)", baslik: "var(--faint)", cizgi: "var(--line)", ust: "hover:text-[var(--ink)]" };
-  const fixnote: Baglanti[] = anaSayfa ? [...FIXNOTE_LINKLER, ["/", "Ana sayfa", "Home"]] : FIXNOTE_LINKLER;
+  const fixnote: Baglanti[] = FIXNOTE_LINKLER;
   // The brand name keeps a dotless capital I when the heading is upper-cased ("FIXNOTE", not "FİXNOTE").
   const sutun = (baslik: string, icerik: React.ReactNode) => (
     <div>
@@ -76,7 +75,7 @@ export function AltBilgi({ koyu, anaSayfa, marka }: { koyu?: boolean; anaSayfa?:
 export default function YasalAlt() {
   return (
     <footer className="ys-alt-blok">
-      <AltBilgi anaSayfa />
+      <AltBilgi />
     </footer>
   );
 }

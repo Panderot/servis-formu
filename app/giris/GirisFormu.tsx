@@ -216,7 +216,6 @@ export default function GirisFormu() {
           <Link href="/" className="gr-logo"><Isaret boy={26} />Fixnote</Link>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <DilDugmesi />
-            <Link href="/" className="gr-ana"><Ikon ad="sol" boy={15} />{c("Ana sayfa", "Home")}</Link>
           </span>
         </div>
 

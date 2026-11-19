@@ -172,7 +172,7 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
   if (durum.tur === "ayarsiz")
     return (
       <Ekran ikon="ayar" baslik={c("Giriş henüz yapılandırılmadı", "Sign-in isn't configured yet")} metin={c("Supabase adresi ve anahtarı eklenince uygulama giriş ekranıyla açılır.", "Once the Supabase address and key are added, the app opens with the sign-in screen.")}>
-        <Link href="/" className="btn btn-ghost">{c("Ana sayfaya dön", "Back to home")}</Link>
+        <Link href="/giris" className="btn btn-ghost">{c("Giriş sayfası", "Sign-in page")}</Link>
       </Ekran>
     );
 

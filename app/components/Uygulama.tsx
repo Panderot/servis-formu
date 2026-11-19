@@ -234,7 +234,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         <div className="lg:grid" style={{ gridTemplateColumns: "232px 1fr", minHeight: "100vh" }}>
           {/* Masaüstü yan menü (referans maketindeki beyaz ince menü) */}
           <aside ref={asideRef} className="hidden lg:flex" style={{ background: "var(--paper)", borderRight: "1px solid var(--line)", flexDirection: "column", padding: "18px 12px", position: "sticky", top: 0, height: "100dvh", overflowY: "auto" }}>
-            <Link href="/" style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
+            <Link href={bulut ? "/app" : "/demo"} style={{ fontWeight: 800, fontSize: 17, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "0 6px" }}>
               <Isaret boy={22} />Fixnote
             </Link>
             <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || c("Firma adı girilmedi", "No company name yet")}</div>
@@ -276,7 +276,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           <div style={{ minWidth: 0 }}>
             {/* Mobil üst bar */}
             <header className="flex lg:hidden no-print" style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,255,255,.92)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", borderBottom: "1px solid var(--line)", padding: "10px 16px", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <Link href="/" style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "8px 0", margin: "-8px 0" }}>
+              <Link href={bulut ? "/app" : "/demo"} style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.03em", display: "flex", alignItems: "center", gap: 8, padding: "8px 0", margin: "-8px 0" }}>
                 <Isaret boy={22} />Fixnote
               </Link>
               <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>

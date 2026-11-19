@@ -40,7 +40,7 @@ export default function YasalSayfa({ metin }: { metin: Record<Dil, YasalMetin> }
         <Link href="/" className="ys-logo"><Isaret boy={24} />Fixnote</Link>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <DilDugmesi />
-          <Link href="/" className="ys-ana"><Ikon ad="sol" boy={15} />{en ? "Home" : "Ana sayfa"}</Link>
+          <Link href="/app" className="ys-ana"><Ikon ad="sol" boy={15} />{en ? "Back to the app" : "Uygulamaya dön"}</Link>
         </span>
       </div>
       <article className="ys-metin">
