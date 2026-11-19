@@ -4,6 +4,8 @@
 import { Children, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import NumberFlow from "@number-flow/react";
 import autoAnimate, { type AnimationController } from "@formkit/auto-animate";
+import { Toaster, toast } from "sonner";
+import Ikon from "./Ikon";
 import { para } from "../lib/servis";
 import type { Dil, ParaBirimi } from "../lib/servis";
 
@@ -49,4 +51,46 @@ export function Liste({ children, className, style }: { children: ReactNode; cla
   }, [n]);
   useEffect(() => () => { kontrol.current?.destroy?.(); kontrol.current = null; }, []);
   return <div ref={ref} className={className} style={style}>{children}</div>;
+}
+
+// Desktop layout (side menu) from 1024 px, as Tailwind's lg.
+const GENIS = "(min-width: 1024px)";
+export function useGenis() {
+  const [g, setG] = useState(() => typeof window !== "undefined" && window.matchMedia(GENIS).matches);
+  useEffect(() => {
+    const m = window.matchMedia(GENIS);
+    const d = () => setG(m.matches);
+    d();
+    m.addEventListener("change", d);
+    return () => m.removeEventListener("change", d);
+  }, []);
+  return g;
+}
+
+// Toast messages (Sonner, unstyled): the same dark card as before. Phone and tablet: bottom centre above the
+// bottom menu; desktop: bottom right. Only the enter and leave motion is new.
+export function TostAlani({ etiket }: { etiket: string }) {
+  const genis = useGenis();
+  return (
+    <Toaster
+      position={genis ? "bottom-right" : "bottom-center"}
+      offset={genis ? { bottom: 24, right: 24 } : { bottom: 92 }}
+      mobileOffset={{ bottom: 92, left: 16, right: 16 }}
+      visibleToasts={1}
+      swipeDirections={[]}
+      containerAriaLabel={etiket}
+      toastOptions={{ unstyled: true }}
+      style={{ ["--width" as string]: genis ? "min(560px, calc(100vw - 48px))" : "calc(100vw - 32px)" }}
+    />
+  );
+}
+// One message at a time: a new one replaces the one on screen and starts its own time.
+let sonTost: string | number | undefined;
+export function tostGoster(metin: string, ms: number) {
+  if (sonTost !== undefined) toast.dismiss(sonTost);
+  sonTost = toast.custom(() => (
+    <div className="tost-sar">
+      <div role="status" className="tost"><Ikon ad="tik" boy={16} kalinlik={2.6} style={{ color: "#7cc4d6" }} />{metin}</div>
+    </div>
+  ), { duration: ms });
 }

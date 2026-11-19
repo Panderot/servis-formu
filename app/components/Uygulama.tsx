@@ -13,7 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
-import { Liste, Sayi } from "./Hareket";
+import { Liste, Sayi, TostAlani, tostGoster } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -58,13 +58,7 @@ function OdemePill({ o, dil }: { o: Odeme; dil: Dil }) {
 export default function Uygulama({ mod }: { mod: Mod }) {
   const dil = useDil();
   const c = (tr: string, en: string) => (dil === "en" ? en : tr);
-  const [mesaj, setMesaj] = useState("");
-  const mesajZaman = useRef(0);
-  const flash = (t: string, ms = 2600) => {
-    setMesaj(t);
-    window.clearTimeout(mesajZaman.current);
-    mesajZaman.current = window.setTimeout(() => setMesaj(""), ms);
-  };
+  const flash = (t: string, ms = 2600) => tostGoster(t, ms);
   const bulut = mod === "bulut";
   // Team: a technician works on the owner's firm account; no report deletion, no firm settings.
   const ekip = useEkip();
@@ -332,9 +326,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </nav>
         )}
 
-        {mesaj && (
-          <div role="status" style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: 92, zIndex: 50, background: "var(--ink)", color: "#fff", padding: "12px 18px", borderRadius: 12, fontWeight: 700, fontSize: 14, maxWidth: "calc(100vw - 32px)", boxShadow: "var(--shadow-lg)", display: "flex", gap: 8, alignItems: "center" }}><Ikon ad="tik" boy={16} kalinlik={2.6} style={{ color: "#7cc4d6" }} />{mesaj}</div>
-        )}
+        <TostAlani etiket={c("Bildirimler", "Notifications")} />
       </div>
 
       {/* Yalnızca yazdırırken görünen A4 */}

@@ -467,6 +467,17 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 @property --sayi-lh { syntax: "<length>"; inherits: true; initial-value: 0px; }
 .sayi { --sayi-lh: 1lh; }
 .sayi > number-flow-react { vertical-align: top; margin-block: calc((var(--sayi-lh) - 1em) / 2 - 2 * round(nearest, calc(.25em / 2), 1px)); }
+/* Toasts (Sonner, unstyled): the card keeps the old look (dark ink, white bold text, petrol tick). Only the
+   card takes taps, so the transparent row around it never blocks the list behind. */
+.panel [data-sonner-toaster], .panel [data-sonner-toast] { pointer-events: none; }
+.panel [data-sonner-toast] { touch-action: auto; transition: transform .25s ease-out, opacity .25s ease-out; }
+.tost-sar { display: flex; justify-content: center; }
+[data-x-position="right"] .tost-sar { justify-content: flex-end; }
+.tost {
+  pointer-events: auto; width: fit-content; max-width: 100%; display: flex; gap: 8px; align-items: center;
+  background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: var(--shadow-lg);
+  font-family: var(--font-body), system-ui, sans-serif; font-weight: 700; font-size: 14px; overflow-wrap: normal;
+}
 
 /* ---------- A4 rapor ---------- */
 .a4 {
