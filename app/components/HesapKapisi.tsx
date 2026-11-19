@@ -1,38 +1,42 @@
 "use client";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import Ikon, { Isaret } from "./Ikon";
 import { DilDugmesi } from "./Dil";
 import { useDil, type Dil } from "../lib/dil";
-import { ABONELIK_EPOSTA, DENEME_GUN, durumHesapla, supabase, type Durum } from "./supabase";
-import { ODEME_ACIK } from "../lib/paket";
+import { ABONELIK_EPOSTA, durumHesapla, supabase, type Durum } from "./supabase";
+import { ODEME_ACIK, lisansYazisi } from "../lib/paket";
 import { aboneligiYonet, odemeHataMetni } from "./odeme";
 import { BEKLEYEN_DAVET, EkipBaglam, ekipCevir, ekipOnbellekOku, ekipOnbellekYaz, tekBasina, type EkipBilgi } from "./ekip";
 
-// Guards /app: no session -> /giris, trial over -> lock screen. Records stay in the account (app/components/depo.ts).
+// Guards /app: no session -> /giris. Trial or licence over: the owner gets the app read-only (SaltOkunurBaglam;
+// records can be viewed, sent and backed up, not changed), a technician a lock screen. Records stay in the account (app/components/depo.ts).
 // With online payment on (ODEME_ACIK) "subscribe" leads to /abonelik; back from the payment page
 // (/app?odeme=tamam) it waits until the Stripe webhook has written the new subscription.
 // Team: a technician sees the owner's firm account (app/components/ekip.ts); the trial and subscription
 // are the firm's, the technician only gets a lock screen to tell the owner.
-const ONBELLEK = "fixnote_abonelik"; // last known subscription end, so a paid user is not locked out offline
-const mailto = (dil: Dil) => `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(dil === "en" ? "Fixnote subscription" : "Fixnote abonelik")}`;
-// Turkish 03.10.2026, English 3 Oct 2026
+const ONBELLEK = "fixnote_abonelik"; // last known licence end and type, so a paying user is not locked out offline
 const BEKLE_DENEME = 20; // back from payment: check the subscription every 2 s, up to 40 s
 const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const tarih = (d: Date, dil: Dil) =>
-  dil === "en" ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-function onbellekOku(id: string): string | null {
+// True when the owner's trial or licence is over: the app shows records but offers no new report, edit or delete.
+// (The database refuses those writes anyway: RLS public.erisim_var().)
+export const SaltOkunurBaglam = createContext(false);
+export const useSaltOkunur = () => useContext(SaltOkunurBaglam);
+export const SALT_OKUNUR_UYARI = (dil: Dil) => (dil === "en" ? "You have no licence; your records can only be viewed." : "Lisansın yok; kayıtların sadece görüntülenebilir.");
+
+// Old entries have no donem: they still give the end date.
+function onbellekOku(id: string): { bitis: string | null; donem: string | null } | null {
   try {
     const v = JSON.parse(localStorage.getItem(ONBELLEK) || "null");
-    return v && v.id === id ? v.bitis : null;
+    return v && v.id === id ? { bitis: v.bitis ?? null, donem: v.donem ?? null } : null;
   } catch {
     return null;
   }
 }
-function onbellekYaz(id: string, bitis: string | null) {
+function onbellekYaz(id: string, bitis: string | null, donem: string | null) {
   try {
-    localStorage.setItem(ONBELLEK, JSON.stringify({ id, bitis }));
+    localStorage.setItem(ONBELLEK, JSON.stringify({ id, bitis, donem }));
   } catch {}
 }
 
@@ -67,9 +71,9 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
   const [yonetHata, setYonetHata] = useState("");
   const [ekip, setEkip] = useState<EkipBilgi | null>(null);
   const [cikarildi, setCikarildi] = useState<string | null>(null); // removed from a team: that firm's name
+  const [donem, setDonem] = useState<string | null>(null); // licence type: aylik | yillik | suresiz (public.abonelikler.donem)
   const dil = useDil();
   const c = (tr: string, en: string) => (dil === "en" ? en : tr);
-  const MAILTO = mailto(dil);
 
   useEffect(() => {
     const sb = supabase();
@@ -116,14 +120,17 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       } catch {}
       setEkip({ ...e, uid: k.id });
       const olusturma = e.rol === "teknisyen" ? e.sahipOlusturma : k.created_at;
-      let abonelik = onbellekOku(e.hesapId);
-      // Without internet the last known subscription is used at once (no retries, no waiting).
+      const onb = onbellekOku(e.hesapId);
+      let abonelik = onb?.bitis ?? null;
+      setDonem(onb?.donem ?? null);
+      // Without internet the last known licence is used at once (no retries, no waiting).
       const oku = async () => {
-        const { data: satir, error } = await sb.from("abonelikler").select(ODEME_ACIK ? "bitis, stripe_musteri" : "bitis").eq("user_id", e.hesapId).retry(false).maybeSingle();
+        const { data: satir, error } = await sb.from("abonelikler").select(ODEME_ACIK ? "bitis, donem, stripe_musteri" : "bitis, donem").eq("user_id", e.hesapId).retry(false).maybeSingle();
         if (error) return false;
-        const s = satir as { bitis?: string; stripe_musteri?: string | null } | null;
+        const s = satir as { bitis?: string; donem?: string | null; stripe_musteri?: string | null } | null;
         abonelik = s?.bitis ?? null;
-        onbellekYaz(e.hesapId, abonelik);
+        onbellekYaz(e.hesapId, abonelik, s?.donem ?? null);
+        setDonem(s?.donem ?? null);
         setStripeMusteri(!!s?.stripe_musteri);
         return true;
       };
@@ -218,24 +225,8 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
       </Ekran>
     );
 
-  if (durum.tur === "bitti")
-    return (
-      <Ekran
-        ikon="saat"
-        baslik={durum.abonelik ? c("Aboneliğin sona erdi", "Your subscription has ended") : c("Deneme süren doldu", "Your trial has ended")}
-        metin={dil === "en"
-          ? <>{durum.abonelik ? `Your subscription ended on ${tarih(durum.bitis, dil)}.` : `Your free ${DENEME_GUN}-day trial ended on ${tarih(durum.bitis, dil)}.`} Your records are kept in your account; once your subscription is active you carry on where you left off.</>
-          : <>{durum.abonelik ? `Aboneliğin ${tarih(durum.bitis, dil)} tarihinde sona erdi.` : `${DENEME_GUN} günlük ücretsiz deneme ${tarih(durum.bitis, dil)} tarihinde bitti.`} Kayıtların hesabında saklanıyor; aboneliğin açılınca kaldığın yerden devam edersin.</>}
-        alt={<>{c("Giriş yapılan hesap:", "Signed in as:")} {durum.eposta}</>}
-      >
-        {ODEME_ACIK ? (
-          <Link className="btn" href="/abonelik">{durum.abonelik ? c("Aboneliği yenile", "Renew subscription") : c("Paket seç", "Choose a plan")}</Link>
-        ) : (
-          <a className="btn" href={MAILTO}>{c("Abonelik için yaz", "Email us to subscribe")}</a>
-        )}
-        <button className="btn btn-ghost" onClick={cikis}>{c("Çıkış yap", "Sign out")}</button>
-      </Ekran>
-    );
+  // The owner's trial or licence is over: the app opens read-only (no lock screen).
+  const saltOkunur = durum.tur === "bitti";
 
   return (
     <>
@@ -246,13 +237,15 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
             <Ikon ad="saat" boy={14} className="hidden min-[380px]:block" style={{ color: "#7cc4d6", flex: "none" }} />
             {teknisyen ? (
               <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><b data-ekip-serit style={{ color: "#fff" }}>{c(`${firmaAdi} ekibi`, `${firmaAdi} team`)}</b></span>
+            ) : durum.tur === "bitti" ? (
+              <span data-salt-okunur style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><b style={{ color: "#fff" }}>{durum.abonelik ? c("Lisansın sona erdi", "Your licence has ended") : c("Deneme süren doldu", "Your trial has ended")}</b><span className="hidden min-[380px]:inline">{c(" · kayıtların duruyor", " · your records are kept")}</span></span>
             ) : durum.tur === "deneme" ? (
               <span><span className="hidden min-[380px]:inline">{c("Ücretsiz deneme: ", "Free trial: ")}</span><span className="min-[380px]:hidden">{c("Deneme: ", "Trial: ")}</span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{dil === "en" ? `${durum.kalanGun} ${durum.kalanGun === 1 ? "day" : "days"} left` : `${durum.kalanGun} gün kaldı`}</b></span>
             ) : (
-              <span><span className="hidden min-[380px]:inline">{dil === "en" ? `Subscription active · until ${tarih(durum.bitis, dil)}` : `Aboneliğin aktif · ${tarih(durum.bitis, dil)} tarihine kadar`}</span><span className="min-[380px]:hidden">{dil === "en" ? `Active · ends ${tarih(durum.bitis, dil)}` : `Abonelik aktif · bitiş ${tarih(durum.bitis, dil)}`}</span></span>
+              <span data-lisans={donem ?? ""}><span className="hidden min-[380px]:inline">{lisansYazisi(donem, durum.bitis, dil)}</span><span className="min-[380px]:hidden">{lisansYazisi(donem, durum.bitis, dil, true)}</span></span>
             )}
           </span>
-          {!teknisyen && durum.tur === "deneme" && <a href={ODEME_ACIK ? "/abonelik" : MAILTO} className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Aboneliğe geç", "Subscribe")}</a>}
+          {!teknisyen && (durum.tur === "deneme" || durum.tur === "bitti") && <Link href="/abonelik" data-lisans-al className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Lisans al", "Get a licence")}</Link>}
           {!teknisyen && durum.tur === "aktif" && ODEME_ACIK && stripeMusteri && (
             <button
               data-abonelik-yonet
@@ -279,7 +272,9 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
           {onay === "bekliyor" ? c("Ödemen alındı, aboneliğin açılıyor…", "Payment received, activating your subscription…") : c(`Ödemen alındı; aboneliğin birkaç dakika içinde açılacak. Sorun sürerse ${ABONELIK_EPOSTA} adresine yaz.`, `Payment received; your subscription will be active within a few minutes. If it isn't, write to ${ABONELIK_EPOSTA}.`)}
         </div>
       )}
-      <EkipBaglam.Provider value={ekip}>{children}</EkipBaglam.Provider>
+      <EkipBaglam.Provider value={ekip}>
+        <SaltOkunurBaglam.Provider value={saltOkunur}>{children}</SaltOkunurBaglam.Provider>
+      </EkipBaglam.Provider>
     </>
   );
 }

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import AbonelikSecimi from "./AbonelikSecimi";
 
 export const metadata: Metadata = {
-  title: "Paket seç · Fixnote",
-  description: "Fixnote aboneliğini başlat: Usta ya da Firma, aylık ya da yıllık.",
+  title: "Lisans al · Fixnote",
+  description: "Fixnote lisansı: aylık, yıllık ya da süresiz.",
   robots: { index: false },
 };
 

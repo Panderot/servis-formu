@@ -219,7 +219,7 @@ export default function GirisFormu() {
             {(mod === "giris" || mod === "kayit") && (
               <div role="tablist" aria-label={c("Giriş türü", "Sign-in type")} className="gr-sekmeler">
                 <span className="gr-gosterge" data-sag={mod === "kayit"} aria-hidden="true" />
-                {([["giris", c("Giriş yap", "Sign in")], ["kayit", c("Hesap oluştur", "Create account")]] as const).map(([m, t]) => (
+                {([["giris", c("Giriş yap", "Sign in")], ["kayit", c(`${DENEME_GUN} gün ücretsiz dene`, `Try free for ${DENEME_GUN} days`)]] as const).map(([m, t]) => (
                   <button key={m} type="button" role="tab" aria-selected={mod === m} onClick={() => degistir(m)} className="gr-sekme">{t}</button>
                 ))}
               </div>

@@ -10,6 +10,30 @@ export const planMi = (x: unknown): x is Plan => x === "usta" || x === "firma";
 export const donemMi = (x: unknown): x is Donem => x === "aylik" || x === "yillik";
 export const tutar = (p: Plan, d: Donem) => (d === "aylik" ? PAKET[p].ay : PAKET[p].yil);
 
+// Licences (task 75): one product, three licence types, TL, VAT included. Sold on WhatsApp (LISANS_WHATSAPP);
+// the owner opens the licence by hand in public.abonelikler (donem = the type, plan empty; SQL in CLAUDE.md).
+// PAKET above stays for the legal pages and the payment API.
+export const LISANS = { aylik: 499, yillik: 4790, suresiz: 8990 } as const;
+export type LisansTuru = keyof typeof LISANS;
+export const LISANS_TURLERI: LisansTuru[] = ["aylik", "yillik", "suresiz"];
+export const GUNCELLEME_YILLIK = 690; // optional updates and support after the first year of a lifetime licence
+export const LISANS_WHATSAPP = "905369011714";
+export const lisansMi = (x: unknown): x is LisansTuru => x === "aylik" || x === "yillik" || x === "suresiz";
+
+// Turkish 03.10.2026, English 3 Oct 2026
+export const tarihKisa = (d: Date, dil: "tr" | "en") =>
+  dil === "en" ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric" });
+// Status line of an active licence (top bar and the licence page). kisa: phones under 380 px.
+export function lisansYazisi(donem: string | null | undefined, bitis: Date, dil: "tr" | "en", kisa = false): string {
+  const en = dil === "en";
+  const t = tarihKisa(bitis, dil);
+  if (donem === "suresiz") return en ? "Lifetime licence" : "Süresiz lisans";
+  if (kisa) return en ? `Active · ends ${t}` : `Lisans aktif · bitiş ${t}`;
+  if (donem === "aylik") return en ? `Monthly licence · ends ${t}` : `Aylık lisans · bitiş ${t}`;
+  if (donem === "yillik") return en ? `Yearly licence · ends ${t}` : `Yıllık lisans · bitiş ${t}`;
+  return en ? `Licence active · ends ${t}` : `Lisansın aktif · bitiş ${t}`;
+}
+
 // Lira amount as text, without the currency: Turkish "4.790" / "399,17", English "4,790" / "399.17".
 // Kuruş only when there are any. Written by hand (not toLocaleString) so server and browser always agree.
 export function tlSayi(n: number, dil: "tr" | "en" = "tr"): string {

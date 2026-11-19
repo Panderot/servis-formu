@@ -1,9 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Ikon from "./Ikon";
-import { supabase, ABONELIK_EPOSTA } from "./supabase";
+import { supabase } from "./supabase";
+import { useSaltOkunur } from "./HesapKapisi";
 import { davetLinki, ekipCevir, ekipHataMetni, ekipOnbellekYaz, tekBasina, useEkip } from "./ekip";
-import { ODEME_ACIK } from "../lib/paket";
 import type { Dil } from "../lib/dil";
 
 // Settings card "Ekip". Owner: technicians in the team, invite link (one person, 7 days), remove.
@@ -27,6 +27,7 @@ export default function EkipKarti({ dil }: { dil: Dil }) {
   const [not, setNot] = useState("");
   const [isliyor, setIsliyor] = useState(false);
   const sahip = ekip?.rol !== "teknisyen";
+  const saltOkunur = useSaltOkunur(); // licence over: no new invites
 
   const yukle = useCallback(async () => {
     const sb = supabase();
@@ -132,7 +133,7 @@ export default function EkipKarti({ dil }: { dil: Dil }) {
       setNot(c("Davet bağlantıları iptal edildi", "Invite links cancelled"));
       await yukle();
     });
-  const paketLinki = ODEME_ACIK ? "/abonelik?paket=firma" : `mailto:${ABONELIK_EPOSTA}?subject=${encodeURIComponent(c("Fixnote Firma paketi", "Fixnote Team plan"))}`;
+  const paketLinki = "/abonelik";
 
   return (
     <div className="card" data-ekip-karti="sahip" data-ekip-acik={acik ? "evet" : "hayir"} style={{ padding: 16, marginTop: 14 }}>
@@ -166,7 +167,7 @@ export default function EkipKarti({ dil }: { dil: Dil }) {
 
       {acik ? (
         <>
-          <button className="btn btn-ghost" data-davet-olustur style={{ marginTop: 12 }} onClick={davet} disabled={isliyor}><Ikon ad="arti" boy={14} kalinlik={2.6} />{c("Davet bağlantısı oluştur", "Create an invite link")}</button>
+          {!saltOkunur && <button className="btn btn-ghost" data-davet-olustur style={{ marginTop: 12 }} onClick={davet} disabled={isliyor}><Ikon ad="arti" boy={14} kalinlik={2.6} />{c("Davet bağlantısı oluştur", "Create an invite link")}</button>}
           {link && (
             <div data-davet-link style={{ marginTop: 12, padding: 12, borderRadius: 12, background: "var(--panel)", border: "1px solid var(--line)" }}>
               <label className="lbl" htmlFor="davet-link">{c("Davet bağlantısı", "Invite link")}</label>

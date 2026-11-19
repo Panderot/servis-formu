@@ -11,7 +11,7 @@ const BASLIK_EN: Record<string, string> = {
   "/kosullar": "Terms of use · Fixnote",
   "/gizlilik": "Privacy policy · Fixnote",
   "/veri-isleme": "Data processing agreement · Fixnote",
-  "/abonelik": "Choose your plan · Fixnote",
+  "/abonelik": "Get a licence · Fixnote",
   "/katil": "Join the team · Fixnote",
 };
 

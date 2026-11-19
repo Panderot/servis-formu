@@ -7,7 +7,8 @@ import { kvkkMetni, kvkkNotu } from "../lib/kvkk";
 // Settings card "Müşteri bilgilendirmesi": the business is the controller of its customers' details,
 // so it must inform them. A short note under every report (Firma.kvkkNot) and a full notice to copy.
 // Both texts are in the report language, because they are for the business's customers.
-export default function MusteriBilgiKarti({ f, dil, raporDil, onNot }: { f: Firma; dil: Dil; raporDil: Dil; onNot: (acik: boolean) => void }) {
+// kilitli: the licence is over (read-only app), the note switch cannot be changed.
+export default function MusteriBilgiKarti({ f, dil, raporDil, onNot, kilitli = false }: { f: Firma; dil: Dil; raporDil: Dil; onNot: (acik: boolean) => void; kilitli?: boolean }) {
   const c = (tr: string, en: string) => (dil === "en" ? en : tr);
   const [metinAcik, setMetinAcik] = useState(false);
   const [not, setNot] = useState("");
@@ -30,8 +31,8 @@ export default function MusteriBilgiKarti({ f, dil, raporDil, onNot }: { f: Firm
         </div>
       </div>
 
-      <label data-kvkk-not-ac style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
-        <input type="checkbox" checked={!!f.kvkkNot} onChange={(e) => onNot(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
+      <label data-kvkk-not-ac style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: kilitli ? "default" : "pointer", fontSize: 14, fontWeight: 700 }}>
+        <input type="checkbox" checked={!!f.kvkkNot} disabled={kilitli} onChange={(e) => onNot(e.target.checked)} style={{ width: 18, height: 18, marginTop: 1, flex: "none", accentColor: "var(--accent)" }} />
         <span>{c("Raporun altına kısa KVKK notu ekle", "Add a short privacy note under reports")}</span>
       </label>
       <div lang={raporDil} style={{ marginTop: 8, padding: "10px 12px", borderRadius: 10, background: "var(--panel)", border: "1px solid var(--line)", fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, opacity: f.kvkkNot ? 1 : 0.6 }}>{kvkkNotu(f, raporDil)}</div>

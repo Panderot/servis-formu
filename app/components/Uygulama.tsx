@@ -11,6 +11,7 @@ import { useEkip, teknisyenAnahtar } from "./ekip";
 import EkipKarti from "./EkipKarti";
 import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
+import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
@@ -68,6 +69,15 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const ekip = useEkip();
   const teknisyen = bulut && ekip?.rol === "teknisyen";
   const depo = useDepo(mod, flash, dil, bulut && ekip ? { id: ekip.hesapId, sahip: !teknisyen } : null);
+  // The owner's trial or licence is over (HesapKapisi): records can be viewed, sent as PDF / WhatsApp and backed up,
+  // nothing is created, edited or deleted. The guards below stop an action that is reached anyway.
+  const lisansYok = useSaltOkunur();
+  const saltOkunur = bulut && lisansYok;
+  const engel = () => {
+    if (!saltOkunur) return false;
+    flash(SALT_OKUNUR_UYARI(dil), 3600);
+    return true;
+  };
   const { hazir, firma, raporlar, ozelSablon } = depo;
   // A technician's own name for new reports stays on this device (the firm's default is the owner's).
   const [tekAd, setTekAd] = useState(() => {
@@ -134,8 +144,10 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     yeniAcildi.current = true;
     const q = new URLSearchParams(window.location.search);
     if (q.get("yeni") === "1") {
-      setTaslak(bosRapor(formFirma, raporlar, new Date(), dil));
-      setGor("form");
+      if (!engel()) {
+        setTaslak(bosRapor(formFirma, raporlar, new Date(), dil));
+        setGor("form");
+      }
       // drop ?yeni=1 so a refresh or the browser's address suggestion does not reopen the form
       q.delete("yeni");
       const kalan = q.toString();
@@ -146,8 +158,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
   // A firm keeps the report language and currency it has been using: saving fixes the current values,
   // so naming a new firm later does not switch its reports back to Turkish / TL.
-  const kaydetFirma = (f: Firma) => depo.firmaKaydet({ ...f, raporDili: f.raporDili || ayar.dil, paraBirimi: f.paraBirimi || ayar.para });
-  const kaydetSablon = depo.sablonKaydet;
+  const kaydetFirma = (f: Firma) => (engel() ? false : depo.firmaKaydet({ ...f, raporDili: f.raporDili || ayar.dil, paraBirimi: f.paraBirimi || ayar.para }));
+  const kaydetSablon: typeof depo.sablonKaydet = (l) => { if (!engel()) depo.sablonKaydet(l); };
 
   const liste = useMemo(() => ara(raporlar, q, filtre), [raporlar, q, filtre]);
   const mList = useMemo(() => musteriler(raporlar), [raporlar]);
@@ -160,13 +172,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const git = (g: Gorunum) => { if (g === "ayarlar") setAf(firma); setGor(g); setMobilDetay(false); setMusteriSec(""); window.scrollTo(0, 0); };
 
   function yeniForm(onDolu?: Partial<Rapor>) {
+    if (engel()) return;
     const r = { ...bosRapor(formFirma, raporlar, new Date(), dil), ...onDolu };
     setTaslak(r); setAdim(0); setDuzenle(false); setGor("form"); window.scrollTo(0, 0);
   }
-  const duzenleAc = async (r: Rapor) => { const t = await depo.duzenlemeHazirla(r); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
+  const duzenleAc = async (r: Rapor) => { if (engel()) return; const t = await depo.duzenlemeHazirla(r); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
 
   const tamamla = () => {
-    if (!taslak) return;
+    if (!taslak || engel()) return;
     const e = eksikler(taslak, dil);
     if (e.length) { flash(c("Eksik: ", "Missing: ") + e.join(", ")); return; }
     const r = { ...taslak, imzalayan: taslak.imzalayan || taslak.musteri.ad };
@@ -181,6 +194,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   };
 
   const sil = (r: Rapor) => {
+    if (engel()) return;
     if (!confirm(c(`${r.no} numaralı rapor silinsin mi?`, `Delete report ${r.no}?`))) return;
     depo.raporSil(r.id);
     setSecili(""); setMobilDetay(false);
@@ -238,9 +252,15 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <Isaret boy={22} />Fixnote
             </Link>
             <div style={{ fontSize: 11.5, color: "var(--muted)", fontWeight: 600, padding: "6px 6px 0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{firma.ad || c("Firma adı girilmedi", "No company name yet")}</div>
-            <button className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }} onClick={() => yeniForm()}>
-              <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>{c("Yeni servis formu", "New service form")}
-            </button>
+            {saltOkunur ? (
+              <Link href="/abonelik" data-lisans-al className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }}>
+                <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="anahtar" boy={14} /></span>{c("Lisans al", "Get a licence")}
+              </Link>
+            ) : (
+              <button className="btn" style={{ marginTop: 18, width: "100%", justifyContent: "flex-start" }} onClick={() => yeniForm()}>
+                <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>{c("Yeni servis formu", "New service form")}
+              </button>
+            )}
             <nav style={{ marginTop: 16, display: "grid", gap: 2 }}>
               {NAV.map(([g, t, ik, n]) => (
                 <button key={g} className={`navlink ${gor === g ? "on" : ""}`} onClick={() => git(g)}>
@@ -302,7 +322,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {([["raporlar", c("Raporlar", "Reports"), "belge"], ["musteriler", c("Müşteriler", "Customers"), "kisiler"]] as const).map(([g, t, ik]) => (
               <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
             ))}
-            <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni form", "New form")}</button>
+            {saltOkunur ? (
+              <Link href="/abonelik" data-lisans-al className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }}><Ikon ad="anahtar" boy={15} />{c("Lisans al", "Get a licence")}</Link>
+            ) : (
+              <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni form", "New form")}</button>
+            )}
             <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />{c("Ayarlar", "Settings")}</button>
           </nav>
         )}
@@ -333,7 +357,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     return (
       <div>
         <div className={mobilDetay ? "hidden lg:block" : "block"} style={{ padding: "22px 16px 0" }}>
-          {depo.aktarim && (
+          {depo.aktarim && !saltOkunur && (
             <div data-aktarim className="card" style={{ padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", borderColor: "var(--accent)" }}>
               <span style={{ flex: "none", width: 34, height: 34, borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={17} /></span>
               <div style={{ flex: "1 1 240px", minWidth: 0 }}>
@@ -349,7 +373,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           {d?.hata && (
             <div data-senkron-hata role="alert" style={{ background: "var(--bad-soft)", color: "var(--bad)", borderRadius: 12, padding: "10px 14px", fontSize: 13, fontWeight: 700, marginBottom: 14 }}>{d.hata}</div>
           )}
-          {bulut && hazir && !firma.ad.trim() && (
+          {bulut && hazir && !firma.ad.trim() && !saltOkunur && (
             <button data-firma-eksik onClick={() => git("ayarlar")} className="card" style={{ width: "100%", padding: "12px 14px", marginBottom: 14, display: "flex", gap: 10, alignItems: "center", cursor: "pointer", textAlign: "left", boxShadow: "none" }}>
               <span style={{ flex: "none", width: 30, height: 30, borderRadius: 9, background: "var(--warn-soft)", color: "var(--warn)", display: "grid", placeItems: "center" }}><Ikon ad="ayar" boy={15} /></span>
               <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700 }}>{c("Rapor başlığın boş. Firma adını, telefonunu ve logonu ekle.", "Your report header is empty. Add your company name, phone and logo.")}<span style={{ display: "block", fontSize: 12.5, color: "var(--muted)", fontWeight: 600 }}>{c("Firma ve şablonlar", "Company and templates")}</span></span>
@@ -361,14 +385,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <h1 className="p-bas">{selam}{firmaAd ? `, ${firmaAd}` : ""}.</h1>
               <div className="p-alt num">{tarihUzun(bg, dil)} · {c(`bu ay ${oz.adet} rapor`, `${oz.adet} ${oz.adet === 1 ? "report" : "reports"} this month`)}</div>
             </div>
-            <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>
+            {!saltOkunur && <div className="hidden lg:block"><button className="btn" onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>}
           </div>
 
           {/* Mobil: büyük petrol mavisi kart (referanstaki telefon maketi) */}
-          <div className="lg:hidden"><button onClick={() => yeniForm()} style={{ marginTop: 16, width: "100%", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 14, padding: "16px 16px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, fontWeight: 800, fontSize: 16, cursor: "pointer", textAlign: "left" }}>
+          {!saltOkunur && <div className="lg:hidden"><button onClick={() => yeniForm()} style={{ marginTop: 16, width: "100%", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 14, padding: "16px 16px", minHeight: 64, display: "flex", alignItems: "center", gap: 12, fontWeight: 800, fontSize: 16, cursor: "pointer", textAlign: "left" }}>
             <span style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="belge" boy={18} /></span>
             {c("Yeni servis formu", "New service form")}<Ikon ad="ok" boy={18} style={{ marginLeft: "auto" }} />
-          </button></div>
+          </button></div>}
 
           <div className="card p-serit" style={{ marginTop: 16 }}>
             <div className="p-genis">
@@ -400,12 +424,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           {yaklasan.length > 0 && (
             <div style={{ marginTop: 20 }}>
-              <div className="p-bolum"><b>{c("Yaklaşan bakımlar", "Upcoming services")}</b><span>{c("tıkla, aynı müşteriye form aç", "tap to open a form for the same customer")}</span></div>
+              <div className="p-bolum"><b>{c("Yaklaşan bakımlar", "Upcoming services")}</b>{!saltOkunur && <span>{c("tıkla, aynı müşteriye form aç", "tap to open a form for the same customer")}</span>}</div>
               <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, marginTop: 10 }}>
                 {yaklasan.map((x, i) => {
                   const f = gunFark(x.sonrakiBakim);
                   return (
-                    <button key={x.id} onClick={() => yeniForm({ musteri: { ...x.musteri }, cihaz: { ...x.cihaz } })} className="card p-bakim" style={{ flex: "0 0 auto", minWidth: 228, padding: "10px 14px", display: "flex", gap: 12, alignItems: "stretch", cursor: "pointer", textAlign: "left" }}>
+                    <button key={x.id} disabled={saltOkunur} onClick={() => yeniForm({ musteri: { ...x.musteri }, cihaz: { ...x.cihaz } })} className="card p-bakim" style={{ flex: "0 0 auto", minWidth: 228, padding: "10px 14px", display: "flex", gap: 12, alignItems: "stretch", cursor: saltOkunur ? "default" : "pointer", textAlign: "left", color: "inherit" }}>
                       <div className="num" style={{ fontSize: 14, fontWeight: 800, lineHeight: 1.2, minWidth: 42, color: i === 0 ? "var(--accent-ink)" : "var(--ink)" }}>{tarihGunAy(x.sonrakiBakim, dil)}<div style={{ fontSize: 11, color: "var(--faint)", fontWeight: 700 }}>{x.sonrakiBakim.slice(0, 4)}</div></div>
                       <span style={{ width: 2, borderRadius: 2, background: i === 0 ? "var(--accent)" : "var(--line-2)" }} />
                       <div style={{ minWidth: 0 }}>
@@ -440,9 +464,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               {liste.length === 0 && (
                 <div className="p-bos">
                   <div className="p-bos-ikon"><Ikon ad={raporlar.length ? "ara" : "belge"} boy={20} /></div>
-                  {raporlar.length ? c("Aramaya uyan rapor yok.", "No reports match your search.") : c("Henüz rapor yok. İlk servis formunu oluştur.", "No reports yet. Create your first service form.")}
-                  <div><button className="btn" style={{ marginTop: 14 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>
-                  {bulut && !raporlar.length && <div style={{ marginTop: 14, fontSize: 13 }}>{c("Önce nasıl göründüğüne bakmak istersen:", "Want to see how it looks first?")} <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>{c("Örnek kayıtlarla dene", "Try it with sample records")}</a></div>}
+                  {raporlar.length ? c("Aramaya uyan rapor yok.", "No reports match your search.") : saltOkunur ? c("Henüz rapor yok.", "No reports yet.") : c("Henüz rapor yok. İlk servis formunu oluştur.", "No reports yet. Create your first service form.")}
+                  {!saltOkunur && <div><button className="btn" style={{ marginTop: 14 }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni servis formu", "New service form")}</button></div>}
+                  {bulut && !raporlar.length && !saltOkunur && <div style={{ marginTop: 14, fontSize: 13 }}>{c("Önce nasıl göründüğüne bakmak istersen:", "Want to see how it looks first?")} <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>{c("Örnek kayıtlarla dene", "Try it with sample records")}</a></div>}
                 </div>
               )}
               <div>
@@ -501,11 +525,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                       <button className="btn btn-wa" style={{ padding: "11px 10px", whiteSpace: "nowrap" }} onClick={() => wa(r)}><Ikon ad="mesaj" boy={15} /><span className="sm:hidden">WhatsApp</span><span className="hidden sm:inline">{c("WhatsApp'la gönder", "Send on WhatsApp")}</span></button>
                     </div>
                   </div>
-                  <div className={teknisyen ? "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-3 sm:flex sm:flex-wrap" : "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap"} style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
-                    <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />{c("Düzenle", "Edit")}</button>
-                    <button className="chip eylem" aria-label={c("Bu müşteriye yeni form", "New form for this customer")} onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">{c("Yeni form", "New form")}</span><span className="hidden sm:inline">{c("Bu müşteriye yeni form", "New form for this customer")}</span></button>
+                  <div className={saltOkunur ? "flex flex-wrap gap-1.5" : teknisyen ? "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-3 sm:flex sm:flex-wrap" : "grid grid-cols-2 gap-1.5 min-[360px]:grid-cols-4 sm:flex sm:flex-wrap"} style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+                    {!saltOkunur && <button className="chip eylem" onClick={() => duzenleAc(r)}><Ikon ad="kalem" boy={14} />{c("Düzenle", "Edit")}</button>}
+                    {!saltOkunur && <button className="chip eylem" aria-label={c("Bu müşteriye yeni form", "New form for this customer")} onClick={() => yeniMusteriden(r)}><Ikon ad="arti" boy={14} /><span className="sm:hidden">{c("Yeni form", "New form")}</span><span className="hidden sm:inline">{c("Bu müşteriye yeni form", "New form for this customer")}</span></button>}
                     <button className="chip eylem" aria-label={c("Müşteri geçmişi", "Customer history")} onClick={() => { setMusteriSec(musteriAnahtar(r.musteri)); setGor("musteriler"); }}><Ikon ad="saat" boy={14} /><span className="sm:hidden">{c("Geçmiş", "History")}</span><span className="hidden sm:inline">{c("Müşteri geçmişi", "Customer history")}</span></button>
-                    {!teknisyen && <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />{c("Sil", "Delete")}</button>}
+                    {!teknisyen && !saltOkunur && <button className="chip eylem" style={{ color: "var(--bad)" }} onClick={() => sil(r)}><Ikon ad="cop" boy={14} />{c("Sil", "Delete")}</button>}
                   </div>
                 </div>
                 <div className="p-onizleme">
@@ -513,7 +537,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 </div>
               </div>
             ) : (
-              <div className="card p-bos hidden lg:block" style={{ padding: 48 }}><div className="p-bos-ikon"><Ikon ad="belge" boy={20} /></div>{c("Bir rapor seç ya da yeni form oluştur.", "Pick a report or create a new form.")}</div>
+              <div className="card p-bos hidden lg:block" style={{ padding: 48 }}><div className="p-bos-ikon"><Ikon ad="belge" boy={20} /></div>{saltOkunur ? c("Bir rapor seç.", "Pick a report.") : c("Bir rapor seç ya da yeni form oluştur.", "Pick a report or create a new form.")}</div>
             )}
           </div>
         </div>
@@ -808,7 +832,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" style={{ marginTop: 14 }}>
-              <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>{c("+ Bu müşteriye yeni form", "+ New form for this customer")}</button>
+              {!saltOkunur && <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>{c("+ Bu müşteriye yeni form", "+ New form for this customer")}</button>}
               <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}><Ikon ad="telefon" boy={15} />{c("Ara", "Call")}</a>
               <a className="btn btn-wa" href={`https://wa.me/${waNumara(m.telefon)}`} target="_blank" rel="noopener noreferrer"><Ikon ad="mesaj" boy={15} />WhatsApp</a>
             </div>
@@ -910,7 +934,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     const alan = (k: keyof Firma, etiket: string, ph = "") => (
       <div>
         <label className="lbl" htmlFor={`f-${k}`}>{etiket}</label>
-        <input id={`f-${k}`} className="field" placeholder={ph} value={String(f[k])} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+        <input id={`f-${k}`} className="field" placeholder={ph} value={String(f[k])} readOnly={saltOkunur} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
       </div>
     );
     const yedekAl = async () => {
@@ -928,7 +952,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       finally { setYedekHazirlaniyor(false); }
     };
     const yedekYukle = async (fl: FileList | null) => {
-      if (!fl?.[0]) return;
+      if (!fl?.[0] || engel()) return;
       let d: { firma?: Firma; raporlar: Rapor[]; sablonlar?: typeof ozelSablon };
       try {
         d = JSON.parse(await fl[0].text());
@@ -957,11 +981,13 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: 12, background: "var(--bg)", border: "1px solid var(--line)", borderRadius: 12, flexWrap: "wrap" }}>
             {f.logo ? <img src={f.logo} alt="Logo" style={{ height: 52, maxWidth: 140, objectFit: "contain", border: "1px solid var(--line)", borderRadius: 8, padding: 4, background: "#fff" }} /> : <div style={{ width: 52, height: 52, borderRadius: 8, background: "var(--accent)", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24 }} className="font-display">{buyukHarf(f.ad.trim()[0] || "S", dil)}</div>}
-            <label className="chip" style={{ cursor: "pointer" }}>
-              {f.logo ? c("Logoyu değiştir", "Change logo") : c("Logo yükle", "Upload logo")}
-              <input type="file" accept="image/*" hidden onChange={async (e) => { const fl = e.target.files?.[0]; if (fl) { const src = await kucult(fl, 400, 0.9, "image/png"); setF({ ...f, logo: src }); } e.target.value = ""; }} />
-            </label>
-            {f.logo && <button className="chip" onClick={() => setF({ ...f, logo: "" })}>{c("Kaldır", "Remove")}</button>}
+            {!saltOkunur && (
+              <label className="chip" style={{ cursor: "pointer" }}>
+                {f.logo ? c("Logoyu değiştir", "Change logo") : c("Logo yükle", "Upload logo")}
+                <input type="file" accept="image/*" hidden onChange={async (e) => { const fl = e.target.files?.[0]; if (fl) { const src = await kucult(fl, 400, 0.9, "image/png"); setF({ ...f, logo: src }); } e.target.value = ""; }} />
+              </label>
+            )}
+            {f.logo && !saltOkunur && <button className="chip" onClick={() => setF({ ...f, logo: "" })}>{c("Kaldır", "Remove")}</button>}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
             {alan("ad", c("Firma adı", "Company name"), c("Örn. Akyol Isı ve Klima Teknik Servis", "e.g. Brightline Heating & Cooling Ltd"))}
@@ -974,17 +1000,17 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {alan("onek", c("Rapor no ön eki", "Report no prefix"), "SR")}
             <div>
               <div className="lbl">{c(`Varsayılan ${vergiAd(fAyar.dil)}`, `Default ${vergiAd(fAyar.dil)}`)}</div>
-              <div style={{ display: "flex", gap: 5 }}>{KDV_ORANLARI.map((k) => <button key={k} className={`chip ${f.kdv === k ? "on" : ""}`} onClick={() => setF({ ...f, kdv: k })}>{oran(k, dil)}</button>)}</div>
+              <div style={{ display: "flex", gap: 5 }}>{KDV_ORANLARI.map((k) => <button key={k} className={`chip ${f.kdv === k ? "on" : ""}`} disabled={saltOkunur} onClick={() => setF({ ...f, kdv: k })}>{oran(k, dil)}</button>)}</div>
             </div>
           </div>
           <div style={{ marginTop: 10 }}>
             <label className="lbl" htmlFor="f-alt">{c("Rapor alt notu (garanti şartları)", "Report footer (warranty terms)")}</label>
-            <textarea id="f-alt" className="field" value={f.altNot} onChange={(e) => setF({ ...f, altNot: e.target.value })} />
+            <textarea id="f-alt" className="field" value={f.altNot} readOnly={saltOkunur} onChange={(e) => setF({ ...f, altNot: e.target.value })} />
           </div>
-          <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
+          {!saltOkunur && <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>}
         </div>
 
-        <MusteriBilgiKarti f={f} dil={dil} raporDil={fAyar.dil} onNot={kvkkNotDegis} />
+        <MusteriBilgiKarti f={f} dil={dil} raporDil={fAyar.dil} onNot={kvkkNotDegis} kilitli={saltOkunur} />
 
         <div className="card" data-dil-ayar style={{ padding: 18, marginTop: 14 }}>
           <div className="p-kbas">
@@ -1004,17 +1030,17 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <div>
               <div className="lbl">{c("Rapor dili", "Report language")}</div>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                {(["tr", "en"] as const).map((d) => <button key={d} data-rapor-dili={d} lang={d} className={`chip ${fAyar.dil === d ? "on" : ""}`} aria-pressed={fAyar.dil === d} onClick={() => setF({ ...f, raporDili: d, paraBirimi: fAyar.para })}>{d === "en" ? "English" : "Türkçe"}</button>)}
+                {(["tr", "en"] as const).map((d) => <button key={d} data-rapor-dili={d} lang={d} className={`chip ${fAyar.dil === d ? "on" : ""}`} aria-pressed={fAyar.dil === d} disabled={saltOkunur} onClick={() => setF({ ...f, raporDili: d, paraBirimi: fAyar.para })}>{d === "en" ? "English" : "Türkçe"}</button>)}
               </div>
             </div>
             <div>
               <div className="lbl">{c("Para birimi", "Currency")}</div>
               <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                {PARA_BIRIMLERI.map((b) => <button key={b} data-para={b} className={`chip ${fAyar.para === b ? "on" : ""}`} aria-pressed={fAyar.para === b} onClick={() => setF({ ...f, paraBirimi: b, raporDili: fAyar.dil })}>{PARA_AD[b]}</button>)}
+                {PARA_BIRIMLERI.map((b) => <button key={b} data-para={b} className={`chip ${fAyar.para === b ? "on" : ""}`} aria-pressed={fAyar.para === b} disabled={saltOkunur} onClick={() => setF({ ...f, paraBirimi: b, raporDili: fAyar.dil })}>{PARA_AD[b]}</button>)}
               </div>
             </div>
           </div>
-          <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>
+          {!saltOkunur && <button className="btn" style={{ marginTop: 12 }} onClick={firmaKaydetDugme}>{c("Kaydet", "Save")}</button>}
         </div>
 
         {bulut && <EkipKarti dil={dil} />}
@@ -1031,10 +1057,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {sablonlar.map((s, i) => (
               <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 14px", minHeight: 46, borderTop: i ? "1px solid var(--line)" : "none" }}>
                 <span><b>{s.ad}</b> <span className="num" style={{ color: "var(--muted)", fontSize: 13 }}>· {s.maddeler.length} {c("madde", "steps")}{s.ozel ? c("  |  senin şablonun", "  |  your template") : ""}</span></span>
-                {s.ozel && <button className="chip" style={{ color: "var(--bad)" }} onClick={() => kaydetSablon(ozelSablon.filter((x) => x.id !== s.id))}>{c("Sil", "Delete")}</button>}
+                {s.ozel && !saltOkunur && <button className="chip" style={{ color: "var(--bad)" }} onClick={() => kaydetSablon(ozelSablon.filter((x) => x.id !== s.id))}>{c("Sil", "Delete")}</button>}
               </div>
             ))}
           </div>
+          {!saltOkunur && <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 14 }}>
             <div><label className="lbl" htmlFor="s-ad">{c("Şablon adı", "Template name")}</label><input id="s-ad" className="field" placeholder={c("Asansör periyodik bakım", "Lift maintenance")} value={sAd} onChange={(e) => setSAd(e.target.value)} /></div>
             <div><label className="lbl" htmlFor="s-tur">{c("Cihaz türü", "Appliance type")}</label><input id="s-tur" className="field" placeholder={c("Asansör", "Lift")} value={sTur} onChange={(e) => setSTur(e.target.value)} /></div>
@@ -1049,6 +1076,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             kaydetSablon([...ozelSablon, { id: "ozel-" + uid(), ad: sAd.trim(), cihazTuru: sTur.trim(), maddeler, ozel: true }]);
             setSAd(""); setSTur(""); setSMad(""); flash(c("Şablon eklendi", "Template added"));
           }}>{c("+ Şablonu ekle", "+ Add template")}</button>
+          </>}
         </div>
 
         <div className="card" style={{ padding: 18, marginTop: 14 }}>
@@ -1065,10 +1093,10 @@ export default function Uygulama({ mod }: { mod: Mod }) {
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button className="chip" onClick={yedekAl} disabled={yedekHazirlaniyor}>{yedekHazirlaniyor ? c("Yedek hazırlanıyor...", "Preparing backup...") : c("Yedek indir (JSON)", "Download backup (JSON)")}</button>
-            <button className="chip" onClick={() => dosyaRef.current?.click()}>{c("Yedek yükle", "Restore backup")}</button>
+            {!saltOkunur && <button className="chip" onClick={() => dosyaRef.current?.click()}>{c("Yedek yükle", "Restore backup")}</button>}
             <input ref={dosyaRef} type="file" accept="application/json" hidden onChange={(e) => { yedekYukle(e.target.files); e.target.value = ""; }} />
             {!bulut && <button className="chip" onClick={() => { depo.ornekYukle(); setF(demoFirma(dil)); }}>{c("Örnek kayıtları yükle", "Load sample records")}</button>}
-            <button className="chip" style={{ color: "var(--bad)" }} onClick={async () => { if (confirm(bulut ? c("Hesabındaki tüm raporlar, fotoğraflar ve imzalar silinsin mi? Bu geri alınamaz.", "Delete every report, photo and signature in your account? This can't be undone.") : c("Tüm raporlar silinsin mi? Bu geri alınamaz.", "Delete all reports? This can't be undone."))) { await depo.tumunuSil(); setSecili(""); } }}>{c("Tüm raporları sil", "Delete all reports")}</button>
+            {!saltOkunur && <button className="chip" style={{ color: "var(--bad)" }} onClick={async () => { if (engel()) return; if (confirm(bulut ? c("Hesabındaki tüm raporlar, fotoğraflar ve imzalar silinsin mi? Bu geri alınamaz.", "Delete every report, photo and signature in your account? This can't be undone.") : c("Tüm raporlar silinsin mi? Bu geri alınamaz.", "Delete all reports? This can't be undone."))) { await depo.tumunuSil(); setSecili(""); } }}>{c("Tüm raporları sil", "Delete all reports")}</button>}
           </div>
         </div>
         {bulut && <HesapSilKarti dil={dil} />}
