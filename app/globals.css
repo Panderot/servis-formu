@@ -467,6 +467,13 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 @property --sayi-lh { syntax: "<length>"; inherits: true; initial-value: 0px; }
 .sayi { --sayi-lh: 1lh; }
 .sayi > number-flow-react { vertical-align: top; margin-block: calc((var(--sayi-lh) - 1em) / 2 - 2 * round(nearest, calc(.25em / 2), 1px)); }
+/* Desktop side menu: the active background is one element that slides between items (NavGosterge). */
+.nav-gosterge { position: absolute; left: 0; right: 0; top: 0; border-radius: 10px; background: var(--accent-soft); pointer-events: none; }
+.panel nav.kayan .navlink { position: relative; }
+.panel nav.kayan .navlink.on, .panel nav.kayan .navlink.on:hover { background: transparent; }
+/* Phone bottom bar: the icon of the newly active tab settles in with a short scale. */
+.alt-sekme[data-on="true"] svg { animation: alt-pop .22s ease-out; }
+@keyframes alt-pop { from { transform: scale(.82); } to { transform: none; } }
 /* Toasts (Sonner, unstyled): the card keeps the old look (dark ink, white bold text, petrol tick). Only the
    card takes taps, so the transparent row around it never blocks the list behind. */
 .panel [data-sonner-toaster], .panel [data-sonner-toast] { pointer-events: none; }
@@ -621,3 +628,6 @@ details.sss[open] .ok-ic { transform: rotate(180deg); }
 .filtre-sira { overflow-x: auto; scrollbar-width: none; }
 .filtre-sira::-webkit-scrollbar { display: none; }
 @media (min-width: 1024px) { .filtre-sira { flex-wrap: wrap; overflow-x: visible; } }
+@media (prefers-reduced-motion: reduce) {
+  .alt-sekme svg { animation: none !important; }
+}

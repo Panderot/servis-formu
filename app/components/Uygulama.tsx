@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import RaporSayfa from "./RaporSayfa";
 import Olcekli from "./Olcekli";
@@ -13,7 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
-import { Liste, Sayi, TostAlani, tostGoster } from "./Hareket";
+import { Gecis, Liste, NavGosterge, Sayi, TostAlani, kaydirGel, kaydirGit, tostGoster, useGenis } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -216,6 +216,31 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     yeniForm({ musteri: { ...m } });
   };
 
+  // ---- motion (task 76; Hareket.tsx): side menu indicator, phone report detail slide ----
+  const genis = useGenis();
+  const navRef = useRef<HTMLElement>(null);
+  const [gosterge, setGosterge] = useState<{ y: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const b = nav?.querySelector<HTMLElement>(".navlink.on");
+    if (!nav || !b) return; // form view: the indicator keeps its place, hidden
+    const n = nav.getBoundingClientRect();
+    const r = b.getBoundingClientRect();
+    if (!r.height) return; // side menu hidden (phone)
+    const y = r.top - n.top;
+    setGosterge((g) => (g && g.y === y && g.h === r.height ? g : { y, h: r.height }));
+  }, [gor, genis, hazir, dil]);
+  const raporKokRef = useRef<HTMLDivElement>(null);
+  const oncekiGor = useRef(gor);
+  useLayoutEffect(() => {
+    const yeniGorunum = oncekiGor.current !== gor; // the view itself just changed: Gecis brings it in
+    oncekiGor.current = gor;
+    kaydirGel(raporKokRef.current, genis || yeniGorunum ? null : mobilDetay ? 24 : -16);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobilDetay]);
+  useEffect(() => { oncekiGor.current = gor; }, [gor]);
+  const detaydanDon = () => kaydirGit(raporKokRef.current, 24, () => setMobilDetay(false));
+
   if (!hazir) return <main style={{ minHeight: "100vh", background: "var(--bg)" }} />;
 
   const demoVar = !bulut;
@@ -256,7 +281,8 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                 <span style={{ width: 22, height: 22, borderRadius: 7, background: "rgba(255,255,255,.2)", display: "grid", placeItems: "center" }}><Ikon ad="arti" boy={14} kalinlik={2.6} /></span>{c("Yeni servis formu", "New service form")}
               </button>
             )}
-            <nav style={{ marginTop: 16, display: "grid", gap: 2 }}>
+            <nav ref={navRef} className={gosterge ? "kayan" : undefined} style={{ marginTop: 16, display: "grid", gap: 2, position: "relative" }}>
+              {gosterge && <NavGosterge y={gosterge.y} h={gosterge.h} gorunur={NAV.some(([g]) => g === gor)} />}
               {NAV.map(([g, t, ik, n]) => (
                 <button key={g} className={`navlink ${gor === g ? "on" : ""}`} onClick={() => git(g)}>
                   <Ikon ad={ik} boy={16} /><span style={{ flex: 1 }}>{t}</span>{n !== null && <span className="num" style={{ fontSize: 11.5, color: "var(--faint)" }}>{n}</span>}
@@ -303,10 +329,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             </header>
 
             <div style={{ paddingBottom: 96 }}>
-              {gor === "raporlar" && RaporlarGorunum()}
-              {gor === "form" && taslak && FormGorunum()}
-              {gor === "musteriler" && MusterilerGorunum()}
-              {gor === "ayarlar" && AyarlarGorunum()}
+              <Gecis key={gor}>
+                {gor === "raporlar" && RaporlarGorunum()}
+                {gor === "form" && taslak && FormGorunum()}
+                {gor === "musteriler" && MusterilerGorunum()}
+                {gor === "ayarlar" && AyarlarGorunum()}
+              </Gecis>
             </div>
           </div>
         </div>
@@ -315,14 +343,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         {gor !== "form" && (
           <nav className="grid lg:hidden" style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30, background: "var(--paper)", borderTop: "1px solid var(--line)", gridTemplateColumns: "1fr 1fr 1.4fr 1fr", alignItems: "center", padding: "6px 8px calc(6px + env(safe-area-inset-bottom))", boxShadow: "0 -8px 24px rgba(16,39,58,.06)" }}>
             {([["raporlar", c("Raporlar", "Reports"), "belge"], ["musteriler", c("Müşteriler", "Customers"), "kisiler"]] as const).map(([g, t, ik]) => (
-              <button key={g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
+              <button key={g} className="alt-sekme" data-on={gor === g} onClick={() => git(g)} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === g ? "var(--ink)" : "var(--faint)" }}><Ikon ad={ik} boy={19} style={{ color: gor === g ? "var(--accent)" : "var(--faint)" }} />{t}</button>
             ))}
             {saltOkunur ? (
               <Link href="/abonelik" data-lisans-al className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }}><Ikon ad="anahtar" boy={15} />{c("Lisans al", "Get a licence")}</Link>
             ) : (
               <button className="btn" style={{ padding: "11px 6px", fontSize: 13.5, gap: 5, whiteSpace: "nowrap" }} onClick={() => yeniForm()}><Ikon ad="arti" boy={15} kalinlik={2.6} />{c("Yeni form", "New form")}</button>
             )}
-            <button onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />{c("Ayarlar", "Settings")}</button>
+            <button className="alt-sekme" data-on={gor === "ayarlar"} onClick={() => git("ayarlar")} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 11.5, padding: "6px 4px", display: "grid", justifyItems: "center", gap: 3, color: gor === "ayarlar" ? "var(--ink)" : "var(--faint)" }}><Ikon ad="ayar" boy={19} style={{ color: gor === "ayarlar" ? "var(--accent)" : "var(--faint)" }} />{c("Ayarlar", "Settings")}</button>
           </nav>
         )}
 
@@ -348,7 +376,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
     const yaklasan = raporlar.filter((x) => x.sonrakiBakim && x.sonrakiBakim >= bg).sort((a, b) => a.sonrakiBakim.localeCompare(b.sonrakiBakim)).slice(0, 4);
     const gunFark = (iso: string) => Math.round((new Date(iso + "T00:00").getTime() - new Date(bg + "T00:00").getTime()) / 86400000);
     return (
-      <div>
+      <div ref={raporKokRef}>
         <div className={mobilDetay ? "hidden lg:block" : "block"} style={{ padding: "22px 16px 0" }}>
           {depo.aktarim && !saltOkunur && (
             <div data-aktarim className="card" style={{ padding: "14px 16px", marginBottom: 14, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", borderColor: "var(--accent)" }}>
@@ -391,7 +419,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             <div className="p-genis">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, minHeight: 20 }}><span className="mini">{c("Bu ay rapor", "Reports this month")}</span>{oz.adet > 0 && <span className="pill ok">{c(`%${oz.imzali} imzalı`, `${oz.imzali}% signed`)}</span>}</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 16, marginTop: 6 }}>
-                <span className="num" style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}><Sayi n={oz.adet} dil={dil} /></span>
+                <span className="num" style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1 }}><Sayi ad="adet" n={oz.adet} dil={dil} /></span>
                 <div style={{ display: "flex", gap: 5, alignItems: "flex-end", height: 40, flex: 1 }} aria-label={c("Son 7 gün rapor sayısı", "Reports in the last 7 days")}>
                   {gunler.map((x, i) => (
                     <div key={i} style={{ flex: 1, textAlign: "center" }} title={c(`${x.g}: ${x.n} rapor`, `${x.g}: ${x.n} reports`)}>
@@ -403,9 +431,9 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
             </div>
             {[
-              ["tutar", c("Bu ay tutar", "This month"), <Sayi key="v" n={oz.ciro} birim={ayar.para} dil={dil} />, <span key="k" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c("KDV dahil", "incl. tax")}</span>],
-              ["bekleyen", c("Tahsil bekleyen", "Unpaid"), <Sayi key="v" n={oz.bekleyen} birim={ayar.para} dil={dil} />, bekleyenN ? <span key="b" className="pill warn">{c(`${bekleyenN} rapor`, `${bekleyenN} ${bekleyenN === 1 ? "report" : "reports"}`)}</span> : raporlar.length ? <span key="b" className="pill ok">{c("Hepsi tahsil", "All paid")}</span> : null],
-              ["musteri", c("Müşteri", "Customers"), <Sayi key="v" n={mList.length} dil={dil} />, <span key="m" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c(`${raporlar.length} raporda`, `across ${raporlar.length} reports`)}</span>],
+              ["tutar", c("Bu ay tutar", "This month"), <Sayi key="v" ad="ciro" n={oz.ciro} birim={ayar.para} dil={dil} />, <span key="k" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c("KDV dahil", "incl. tax")}</span>],
+              ["bekleyen", c("Tahsil bekleyen", "Unpaid"), <Sayi key="v" ad="bekleyen" n={oz.bekleyen} birim={ayar.para} dil={dil} />, bekleyenN ? <span key="b" className="pill warn">{c(`${bekleyenN} rapor`, `${bekleyenN} ${bekleyenN === 1 ? "report" : "reports"}`)}</span> : raporlar.length ? <span key="b" className="pill ok">{c("Hepsi tahsil", "All paid")}</span> : null],
+              ["musteri", c("Müşteri", "Customers"), <Sayi key="v" ad="musteri" n={mList.length} dil={dil} />, <span key="m" style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{c(`${raporlar.length} raporda`, `across ${raporlar.length} reports`)}</span>],
             ].map(([id, k, v, alt]) => (
               <div key={id as string} className={id === "musteri" ? "hidden lg:block" : ""}>
                 <span className="mini">{k as string}</span>
@@ -498,7 +526,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {r ? (
               <div>
                 <div className="lg:hidden" style={{ padding: "4px 0 12px" }}>
-                  <button className="chip" onClick={() => setMobilDetay(false)}><Ikon ad="sol" boy={15} />{c("Raporlar", "Reports")}</button>
+                  <button className="chip" onClick={detaydanDon}><Ikon ad="sol" boy={15} />{c("Raporlar", "Reports")}</button>
                 </div>
                 <div className="card" style={{ padding: 16, marginBottom: 14 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
