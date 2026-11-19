@@ -13,7 +13,7 @@ import HesapSilKarti from "./HesapSilKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
-import { Sayi } from "./Hareket";
+import { Liste, Sayi } from "./Hareket";
 import { dilSec, useDil } from "../lib/dil";
 import { kucult, depoKB } from "../lib/gorsel";
 import {
@@ -455,12 +455,12 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   <Ikon ad="ara" boy={16} style={{ position: "absolute", left: 12, top: 14, color: "var(--faint)" }} />
                   <input className="field" style={{ paddingLeft: 36 }} placeholder={c("Müşteri, telefon, rapor no, seri no", "Customer, phone, report no, serial no")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={c("Raporlarda ara", "Search reports")} />
                 </div>
-                <div className="filtre-sira" style={{ display: "flex", gap: 6, paddingBottom: 2 }}>
-                  <button className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>{c("Tümü", "All")}</button>
+                <Liste className="filtre-sira" style={{ display: "flex", gap: 6, paddingBottom: 2 }}>
+                  <button key="tumu" className={`chip ${filtre === "" ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, flex: "none" }} onClick={() => setFiltre("")}>{c("Tümü", "All")}</button>
                   {sablonlar.map((s) => (
                     <button key={s.id} className={`chip ${filtre === s.id ? "on" : ""}`} style={{ padding: "5px 12px", fontSize: 12.5, whiteSpace: "nowrap", flex: "none" }} onClick={() => setFiltre(s.id)}>{s.ad}</button>
                   ))}
-                </div>
+                </Liste>
               </div>
               {liste.length === 0 && (
                 <div className="p-bos">
@@ -470,7 +470,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                   {bulut && !raporlar.length && !saltOkunur && <div style={{ marginTop: 14, fontSize: 13 }}>{c("Önce nasıl göründüğüne bakmak istersen:", "Want to see how it looks first?")} <a data-ornek-link href="/demo" target="_blank" rel="noopener" style={{ color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", padding: "12px 0" }}>{c("Örnek kayıtlarla dene", "Try it with sample records")}</a></div>}
                 </div>
               )}
-              <div>
+              <Liste>
                 {liste.map((x) => {
                   const h = hesapla(x);
                   return (
@@ -497,7 +497,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
                     </button>
                   );
                 })}
-              </div>
+              </Liste>
             </div>
           </div>
 
@@ -869,6 +869,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
         </div>
         <div className="card" style={{ marginTop: 12, overflow: "hidden" }}>
           {l.length === 0 && <div className="p-bos"><div className="p-bos-ikon"><Ikon ad="kisiler" boy={20} /></div>{c("Müşteri bulunamadı.", "No customers found.")}</div>}
+          <Liste>
           {l.map((x) => (
             <button key={x.anahtar} className="row-btn" onClick={() => setMusteriSec(x.anahtar)}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -886,6 +887,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               </div>
             </button>
           ))}
+          </Liste>
         </div>
       </div>
     );
@@ -1054,14 +1056,14 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <p>{c("Hazır 5 şablon her zaman var. Kendi hizmetin için şablon ekle (asansör bakımı, kamera kurulumu, su arıtma...).", "The 5 ready-made templates are always there. Add a template for your own service (lift maintenance, CCTV installation, water treatment...).")}</p>
             </div>
           </div>
-          <div style={{ border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden" }}>
+          <Liste style={{ border: "1px solid var(--line)", borderRadius: 12, overflow: "hidden" }}>
             {sablonlar.map((s, i) => (
               <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "11px 14px", minHeight: 46, borderTop: i ? "1px solid var(--line)" : "none" }}>
                 <span><b>{s.ad}</b> <span className="num" style={{ color: "var(--muted)", fontSize: 13 }}>· {s.maddeler.length} {c("madde", "steps")}{s.ozel ? c("  |  senin şablonun", "  |  your template") : ""}</span></span>
                 {s.ozel && !saltOkunur && <button className="chip" style={{ color: "var(--bad)" }} onClick={() => kaydetSablon(ozelSablon.filter((x) => x.id !== s.id))}>{c("Sil", "Delete")}</button>}
               </div>
             ))}
-          </div>
+          </Liste>
           {!saltOkunur && <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 14 }}>
             <div><label className="lbl" htmlFor="s-ad">{c("Şablon adı", "Template name")}</label><input id="s-ad" className="field" placeholder={c("Asansör periyodik bakım", "Lift maintenance")} value={sAd} onChange={(e) => setSAd(e.target.value)} /></div>

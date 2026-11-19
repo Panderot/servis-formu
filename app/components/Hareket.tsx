@@ -1,8 +1,9 @@
 "use client";
 // Panel motion (task 76): only transform and opacity, 150-300 ms, ease-out. Every piece turns off with
 // prefers-reduced-motion. Nothing here changes what a screen looks like at rest.
-import { useEffect, useState } from "react";
+import { Children, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import NumberFlow from "@number-flow/react";
+import autoAnimate, { type AnimationController } from "@formkit/auto-animate";
 import { para } from "../lib/servis";
 import type { Dil, ParaBirimi } from "../lib/servis";
 
@@ -26,4 +27,26 @@ export function Sayi({ n, birim, dil }: { n: number; birim?: ParaBirimi; dil: Di
   const son = birim === "TL" ? " TL" : "";
   if (n < 0 || on + new Intl.NumberFormat(yerel, bicim).format(n) + son !== para(n, birim, dil)) return <>{para(n, birim, dil)}</>;
   return <span className="sayi"><NumberFlow {...SAYI_ZAMAN} value={v} locales={yerel} format={bicim} prefix={on || undefined} suffix={son || undefined} /></span>;
+}
+
+// A list whose items slide in and out when they are added, removed, filtered or searched (AutoAnimate).
+// AutoAnimate stays off with prefers-reduced-motion, and for lists longer than 200 items.
+const LISTE_SINIR = 200;
+export function Liste({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const kontrol = useRef<AnimationController | null>(null);
+  const n = Children.count(children);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (n > LISTE_SINIR) {
+      kontrol.current?.disable();
+      kontrol.current?.destroy?.();
+      kontrol.current = null;
+    } else if (!kontrol.current) {
+      kontrol.current = autoAnimate(el, { duration: 200, easing: "ease-out" });
+    }
+  }, [n]);
+  useEffect(() => () => { kontrol.current?.destroy?.(); kontrol.current = null; }, []);
+  return <div ref={ref} className={className} style={style}>{children}</div>;
 }
