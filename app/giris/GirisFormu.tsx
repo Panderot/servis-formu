@@ -5,6 +5,7 @@ import Ikon, { Isaret } from "../components/Ikon";
 import { DilDugmesi } from "../components/Dil";
 import { aktifDil, useDil } from "../lib/dil";
 import { DENEME_GUN, guvenliSonra, hataMetni, hatirlaAyarla, hatirlaniyor, hesapAyarli, supabase } from "../components/supabase";
+import { LISANS_WHATSAPP } from "../lib/paket";
 
 type Mod = "giris" | "kayit" | "unuttum" | "yenile" | "gonderildi";
 
@@ -15,12 +16,6 @@ const DEGERLER = {
 // texts set from event handlers use the language at that moment
 const cAn = (tr: string, en: string) => (aktifDil() === "en" ? en : tr);
 
-// Supabase sends one reset e-mail per address per minute; its error message carries the wait in seconds.
-const BEKLEME = 60;
-const beklemeSaniye = (m: string) => {
-  const x = /after (\d+) seconds?/i.exec(m);
-  return x ? Number(x[1]) : 0;
-};
 
 export default function GirisFormu() {
   const dil = useDil();
@@ -34,8 +29,6 @@ export default function GirisFormu() {
   const [bekle, setBekle] = useState(false);
   const [gonderilen, setGonderilen] = useState<"kayit" | "sifre">("kayit");
   const [sonra, setSonra] = useState("/app");
-  const [kalan, setKalan] = useState(0); // seconds until a new reset link can be requested
-  const [tekrar, setTekrar] = useState(false); // a new link was sent from the "check your e-mail" screen
   const [silindi, setSilindi] = useState(false); // came here after Settings > Delete my account
 
   // Read ?sonra= and ?yenile=1 on the client; an existing session goes straight to the app.
@@ -70,48 +63,22 @@ export default function GirisFormu() {
     });
   }, []);
 
-  useEffect(() => {
-    if (kalan <= 0) return;
-    const t = window.setTimeout(() => setKalan((k) => k - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [kalan]);
-
   const degistir = (m: Mod) => {
     setMod(m);
     setHata("");
     setSifre("");
-    setTekrar(false);
   };
 
-  // Sends the reset e-mail; starts the one-minute countdown (or the wait Supabase asks for).
-  async function baglantiIste() {
-    const sb = supabase();
-    if (!sb) return;
-    const { error } = await sb.auth.resetPasswordForEmail(eposta.trim(), { redirectTo: `${window.location.origin}/giris?yenile=1` });
-    if (error) {
-      setKalan(beklemeSaniye(error.message));
-      throw error;
-    }
-    setKalan(BEKLEME);
-  }
-
-  async function tekrarGonder() {
-    if (bekle || kalan > 0) return;
-    setHata("");
-    setTekrar(false);
-    setBekle(true);
-    try {
-      await baglantiIste();
-      setTekrar(true);
-    } catch (err) {
-      setHata(hataMetni(err instanceof Error ? err.message : String(err)));
-    } finally {
-      setBekle(false);
-    }
-  }
+  // "Şifremi unuttum" (task 78): there is no e-mail service yet, so the customer writes on WhatsApp
+  // and the owner gives a temporary password (../fixnote-kontrol/sifre-ver.cjs). No reset e-mail is requested.
+  const unuttumLink = `https://wa.me/${LISANS_WHATSAPP}?text=${encodeURIComponent(c(`Merhaba, Fixnote şifremi unuttum. Hesabım: ${eposta.trim()}`, `Hello, I forgot my Fixnote password. My account: ${eposta.trim()}`))}`;
 
   async function gonder(e: React.FormEvent) {
     e.preventDefault();
+    if (mod === "unuttum") {
+      window.open(unuttumLink, "_blank", "noopener");
+      return;
+    }
     const sb = supabase();
     if (!sb || bekle) return;
     setHata("");
@@ -144,13 +111,6 @@ export default function GirisFormu() {
         setMod("gonderildi");
         return;
       }
-      if (mod === "unuttum") {
-        await baglantiIste();
-        setGonderilen("sifre");
-        setTekrar(false);
-        setMod("gonderildi");
-        return;
-      }
       if (mod === "yenile") {
         const { data } = await sb.auth.getSession();
         if (!data.session) {
@@ -169,17 +129,17 @@ export default function GirisFormu() {
   }
 
   const kapali = !hesapAyarli || bekle;
-  const baslik = { giris: c("Tekrar hoş geldin", "Welcome back"), kayit: c(`${DENEME_GUN} gün ücretsiz dene`, `Try free for ${DENEME_GUN} days`), unuttum: c("Şifreni sıfırla", "Reset your password"), yenile: c("Yeni şifre belirle", "Set a new password"), gonderildi: c("E-postanı kontrol et", "Check your email") }[mod];
+  const baslik = { giris: c("Tekrar hoş geldin", "Welcome back"), kayit: c(`${DENEME_GUN} gün ücretsiz dene`, `Try free for ${DENEME_GUN} days`), unuttum: c("Şifreni WhatsApp'tan yenileyelim", "Let's reset your password on WhatsApp"), yenile: c("Yeni şifre belirle", "Set a new password"), gonderildi: c("E-postanı kontrol et", "Check your email") }[mod];
   const aciklama = {
     giris: c("Fixnote hesabına giriş yap.", "Sign in to your Fixnote account."),
     kayit: c("Hesabını oluştur, deneme hemen başlasın. Kart istenmez.", "Create your account and the trial starts right away. No card needed."),
-    unuttum: c("Hesabının e-posta adresini yaz; sıfırlama bağlantısı gönderelim.", "Enter your account's email address and we'll send you a reset link."),
+    unuttum: c("Hesabının e-postasını yaz ve bize WhatsApp'tan yaz. Hesabın doğrulandıktan sonra sana geçici bir şifre göndeririz; girdikten sonra Firma ve şablonlar > Hesap bölümünden kendi şifreni belirlersin.", "Type your account e-mail and message us on WhatsApp. Once we verify your account we send you a temporary password; after signing in you set your own in Company and templates > Account."),
     yenile: c("Hesabın için yeni bir şifre yaz.", "Enter a new password for your account."),
     gonderildi: gonderilen === "kayit"
       ? c(`${eposta.trim()} adresine doğrulama bağlantısı gönderdik. Bağlantıya tıklayınca hesabın açılır ve ${DENEME_GUN} günlük deneme başlar.`, `We sent a confirmation link to ${eposta.trim()}. Click it to open your account and start your ${DENEME_GUN}-day trial.`)
       : c(`${eposta.trim()} adresine kayıtlı bir hesap varsa, şifre sıfırlama bağlantısı birkaç dakika içinde gelir. Gelen kutunda göremezsen spam klasörüne de bak.`, `If there is an account for ${eposta.trim()}, a password reset link will arrive within a few minutes. If you can't see it in your inbox, check your spam folder.`),
   }[mod];
-  const dugme = { giris: c("Giriş yap", "Sign in"), kayit: c("Hesap oluştur", "Create account"), unuttum: c("Bağlantı gönder", "Send link"), yenile: c("Şifreyi kaydet", "Save password"), gonderildi: "" }[mod];
+  const dugme = { giris: c("Giriş yap", "Sign in"), kayit: c("Hesap oluştur", "Create account"), unuttum: c("WhatsApp'tan yaz", "Message us on WhatsApp"), yenile: c("Şifreyi kaydet", "Save password"), gonderildi: "" }[mod];
 
   return (
     <main className="gr-sayfa">
@@ -234,17 +194,6 @@ export default function GirisFormu() {
             {mod === "gonderildi" ? (
               <>
                 <button type="button" className="btn btn-ghost gr-dugme gr-google" onClick={() => degistir("giris")}>{c("Girişe dön", "Back to sign in")}</button>
-                {gonderilen === "sifre" && (
-                  <>
-                    {hata && <div role="alert" className="gr-hata gr-hata-alt">{hata}</div>}
-                    <div className="gr-tekrar">
-                      <span role="status">{tekrar ? c("Yeni bağlantı gönderildi.", "A new link has been sent.") : c("E-posta gelmedi mi?", "Didn't get the email?")}</span>
-                      <button type="button" className="gr-baglanti" disabled={kapali || kalan > 0} onClick={tekrarGonder}>
-                        {bekle ? c("Gönderiliyor...", "Sending...") : kalan > 0 ? c(`Tekrar gönder (${kalan} sn)`, `Resend (${kalan} s)`) : c("Tekrar gönder", "Resend")}
-                      </button>
-                    </div>
-                  </>
-                )}
               </>
             ) : (
               <>
@@ -274,7 +223,12 @@ export default function GirisFormu() {
                     </label>
                   )}
                   {hata && <div role="alert" className="gr-hata">{hata}</div>}
-                  <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? c("Bekle...", "Please wait...") : dugme}</button>
+                  {mod === "unuttum" ? (
+                    // a link (opens WhatsApp in a new tab); an empty or invalid e-mail shows the browser's own field message
+                    <a className="btn gr-dugme" data-unuttum-wa href={unuttumLink} target="_blank" rel="noopener noreferrer" onClick={(e) => { const f = e.currentTarget.closest("form"); if (f && !f.reportValidity()) e.preventDefault(); }}>{dugme}</a>
+                  ) : (
+                    <button type="submit" className="btn gr-dugme" disabled={kapali}>{bekle ? c("Bekle...", "Please wait...") : dugme}</button>
+                  )}
                 </form>
                 {mod === "kayit" && <p className="gr-kayit-not">{dil === "en" ? (
                   <>Creating an account starts your free {DENEME_GUN}-day trial. Your service records are stored in your account, so you see them on any phone. By creating an account you accept the <a href="/kosullar" target="_blank" rel="noopener" className="gr-yasal">Terms of use</a>. Your personal data is processed as described in the <a href="/gizlilik" target="_blank" rel="noopener" className="gr-yasal">Privacy policy</a>.</>

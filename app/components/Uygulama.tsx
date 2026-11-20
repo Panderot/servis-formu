@@ -10,6 +10,7 @@ import { useDepo, type Mod } from "./depo";
 import { useEkip, teknisyenAnahtar } from "./ekip";
 import EkipKarti from "./EkipKarti";
 import HesapSilKarti from "./HesapSilKarti";
+import SifreKarti from "./SifreKarti";
 import MusteriBilgiKarti from "./MusteriBilgiKarti";
 import { SALT_OKUNUR_UYARI, useSaltOkunur } from "./HesapKapisi";
 import { DilDugmesi } from "./Dil";
@@ -977,6 +978,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {(["tr", "en"] as const).map((d) => <button key={d} data-uygulama-dili={d} lang={d} className={`chip ${dil === d ? "on" : ""}`} aria-pressed={dil === d} onClick={() => dilSec(d)}>{d === "en" ? "English" : "Türkçe"}</button>)}
           </div>
         </div>
+        <SifreKarti dil={dil} />
         <HesapSilKarti dil={dil} />
       </div>
     );
@@ -1158,6 +1160,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             {!saltOkunur && <button className="chip" style={{ color: "var(--bad)" }} onClick={async () => { if (engel()) return; if (confirm(bulut ? c("Hesabındaki tüm raporlar, fotoğraflar ve imzalar silinsin mi? Bu geri alınamaz.", "Delete every report, photo and signature in your account? This can't be undone.") : c("Tüm raporlar silinsin mi? Bu geri alınamaz.", "Delete all reports? This can't be undone."))) { await depo.tumunuSil(); setSecili(""); } }}>{c("Tüm raporları sil", "Delete all reports")}</button>}
           </div>
         </div>
+        {bulut && <SifreKarti dil={dil} />}
         {bulut && <HesapSilKarti dil={dil} />}
       </div>
     );
