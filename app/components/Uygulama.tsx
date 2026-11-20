@@ -166,12 +166,25 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   // ---- eylemler ----
   const git = (g: Gorunum) => { if (g === "ayarlar") setAf(firma); setGor(g); setMobilDetay(false); setMusteriSec(""); window.scrollTo(0, 0); };
 
+  // The screen a form was opened from (list, report detail, customer card...): "Vazgeç" and step 1 "Geri" return there.
+  const donus = useRef<{ gor: Gorunum; secili: string; mobilDetay: boolean; musteriSec: string } | null>(null);
+  const donusHatirla = () => { if (gor !== "form") donus.current = { gor, secili, mobilDetay, musteriSec }; };
+  const formKapat = () => {
+    if (!confirm(c("Form kapatılsın mı? Kaydedilmeyen bilgiler silinir.", "Close the form? Anything not saved will be lost."))) return;
+    const d = donus.current;
+    donus.current = null;
+    setTaslak(null);
+    if (!d) { git("raporlar"); return; }
+    setGor(d.gor); setSecili(d.secili); setMobilDetay(d.mobilDetay); setMusteriSec(d.musteriSec); window.scrollTo(0, 0);
+  };
+
   function yeniForm(onDolu?: Partial<Rapor>) {
     if (engel()) return;
     const r = { ...bosRapor(formFirma, raporlar, new Date(), dil), ...onDolu };
+    donusHatirla();
     setTaslak(r); setAdim(0); setDuzenle(false); setGor("form"); window.scrollTo(0, 0);
   }
-  const duzenleAc = async (r: Rapor) => { if (engel()) return; const t = await depo.duzenlemeHazirla(r); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
+  const duzenleAc = async (r: Rapor) => { if (engel()) return; const t = await depo.duzenlemeHazirla(r); donusHatirla(); setTaslak(t); setAdim(0); setDuzenle(true); setGor("form"); window.scrollTo(0, 0); };
 
   const tamamla = () => {
     if (!taslak || engel()) return;
@@ -183,6 +196,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
       if (teknisyen) tekAdKaydet(r.teknisyen);
       else kaydetFirma({ ...firma, teknisyen: r.teknisyen });
     }
+    donus.current = null;
     setTaslak(null); setSecili(r.id); setGor("raporlar"); setMobilDetay(true); setQ(""); setFiltre("");
     window.scrollTo(0, 0);
     flash(duzenle ? c("Rapor güncellendi", "Report updated") : c(`Rapor ${r.no} kaydedildi`, `Report ${r.no} saved`));
@@ -209,6 +223,19 @@ export default function Uygulama({ mod }: { mod: Mod }) {
   const wa = (r: Rapor) => {
     if (waNumara(r.musteri.telefon).length < 11) { flash(c("Müşteri telefonu eksik ya da hatalı", "The customer's phone number is missing or invalid")); return; }
     window.open(waLink(r, firma), "_blank", "noopener");
+  };
+
+  // "Ara" on a computer (no coarse pointer): the tel: link still runs (a calling app may open), and the number
+  // is also copied so it can be dialled from a phone. Phones only open the dialer.
+  const numaraKopyala = (tel: string) => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    const n = telefonGoster(tel);
+    const yalniz = () => flash(c(`Numara: ${n}`, `Number: ${n}`));
+    if (!navigator.clipboard?.writeText) { yalniz(); return; }
+    navigator.clipboard.writeText(n).then(
+      () => flash(c(`Numara kopyalandı: ${n} · Aramayı telefondan yapabilirsin`, `Number copied: ${n} · Call it from your phone`)),
+      yalniz,
+    );
   };
 
   const yeniMusteriden = (r: Rapor | MusteriOzet) => {
@@ -589,7 +616,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
               <h1 className="p-bas" style={{ fontSize: 24 }}>{duzenle ? c("Raporu düzenle", "Edit report") : c("Yeni servis formu", "New service form")}</h1>
               <div className="num" style={{ fontSize: 12.5, marginTop: 2, color: "var(--muted)", fontWeight: 700 }}>{t.no} · {tarihTR(t.tarih, dil)} {t.saat}{rd !== dil || pb !== ayar.para ? ` · ${rd === "en" ? "English" : "Türkçe"} / ${pb}` : ""}</div>
             </div>
-            <button className="chip" onClick={() => { if (confirm(c("Form kapatılsın mı? Kaydedilmeyen bilgiler silinir.", "Close the form? Anything not saved will be lost."))) { setTaslak(null); git("raporlar"); } }}>{c("Vazgeç", "Cancel")}</button>
+            <button className="chip" onClick={formKapat}>{c("Vazgeç", "Cancel")}</button>
           </div>
 
           {/* Adım göstergesi */}
@@ -728,7 +755,7 @@ export default function Uygulama({ mod }: { mod: Mod }) {
 
           {/* Alt gezinme */}
           <div style={{ position: "sticky", bottom: 0, zIndex: 10, background: "var(--bg)", borderTop: "1px solid var(--line)", marginTop: 14, padding: "12px 0 calc(12px + env(safe-area-inset-bottom))", display: "grid", gridTemplateColumns: "1fr 2fr", gap: 8 }}>
-            <button className="btn btn-ghost" disabled={adim === 0} onClick={() => { setAdim(adim - 1); window.scrollTo(0, 0); }}>{c("Geri", "Back")}</button>
+            <button className="btn btn-ghost" onClick={() => { if (adim === 0) { formKapat(); return; } setAdim(adim - 1); window.scrollTo(0, 0); }}>{c("Geri", "Back")}</button>
             {adim < ADIMLAR[dil].length - 1 ? (
               <button className="btn" onClick={() => { setAdim(adim + 1); window.scrollTo(0, 0); }}>{c("İleri", "Next")}: {ADIMLAR[dil][adim + 1]}<Ikon ad="ok" boy={15} /></button>
             ) : (
@@ -855,7 +882,11 @@ export default function Uygulama({ mod }: { mod: Mod }) {
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" style={{ marginTop: 14 }}>
               {!saltOkunur && <button className="btn col-span-2" onClick={() => yeniMusteriden(m)}>{c("+ Bu müşteriye yeni form", "+ New form for this customer")}</button>}
-              <a className="btn btn-ghost" href={`tel:${m.telefon.replace(/\s/g, "")}`}><Ikon ad="telefon" boy={15} />{c("Ara", "Call")}</a>
+              {waNumara(m.telefon).length >= 10 ? (
+                <a className="btn btn-ghost" href={`tel:+${waNumara(m.telefon)}`} onClick={() => numaraKopyala(m.telefon)}><Ikon ad="telefon" boy={15} />{c("Ara", "Call")}</a>
+              ) : (
+                <button className="btn btn-ghost" disabled title={c("Telefon numarası yok", "No phone number")}><Ikon ad="telefon" boy={15} />{c("Ara", "Call")}</button>
+              )}
               <a className="btn btn-wa" href={`https://wa.me/${waNumara(m.telefon)}`} target="_blank" rel="noopener noreferrer"><Ikon ad="mesaj" boy={15} />WhatsApp</a>
             </div>
             {m.cihazlar.length > 0 && (
