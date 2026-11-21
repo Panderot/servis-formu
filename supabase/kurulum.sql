@@ -7,7 +7,7 @@
 -- 3) ekip fonksiyonları: davet, katılma, liste, çıkarma (uygulama bunları rpc ile çağırır).
 -- 4) hesap silme: kullanıcı Ayarlar'dan kendi hesabını ve kayıtlarını siler.
 -- 5) ödeme kilidi: aynı kullanıcı için aynı anda tek ödeme sayfası hazırlanır (sadece sunucu).
--- 6) lisans kodları: sahip ödeme sonrası tek kullanımlık kod üretir, müşteri uygulamada girer.
+-- 6) lisans kodları: kaldırıldı (görev 80'de kurulduysa silinir).
 -- 7) kartla ödeme (iyzico): sipariş; ödeme iyzico'dan doğrulanınca lisans kendiliğinden açılır (Edge Functions).
 
 -- ============ 1) Abonelikler ============
@@ -541,40 +541,23 @@ $$;
 revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) to service_role;
 
--- ============ 6) Lisans kodları ============
--- Müşteri WhatsApp'tan öder; sahip ../fixnote-kontrol/kod-uret.cjs ile tek kullanımlık kod üretir
--- (FIX-XXXX-XXXX-XXXX-XXXX, 16 karakter, 23456789ABCDEFGHJKMNPQRSTUVWXYZ) ve WhatsApp'tan gönderir; müşteri kodu
--- /abonelik sayfasında girer, lisans hemen açılır (lisans_kodu_kullan). Android uygulaması da aynı rpc'yi çağırır.
--- Kodun kendisi saklanmaz, sadece özeti: büyük harf, harf ve rakam dışı her şey silinir, baştaki "FIX" atılır,
--- kalan 16 karakterin sha256'sı (hex). Kod 30 gün geçerlidir.
-create table if not exists public.lisans_kodlari (
-  id uuid primary key default gen_random_uuid(),
-  kod_ozeti text not null unique,
-  donem text not null check (donem in ('aylik', 'yillik', 'suresiz')),
-  not_ text check (char_length(not_) <= 200),
-  olusturma timestamptz not null default now(),
-  son_gecerlilik timestamptz not null default now() + interval '30 days',
-  kullanan uuid references auth.users (id) on delete set null,
-  kullanma timestamptz,
-  iptal boolean not null default false
-);
+-- ============ 6) Lisans kodları: kaldırıldı ============
+-- Görev 80'deki tek kullanımlık lisans kodu sistemi kullanıcı kararıyla (21 Kasım) kaldırıldı: lisans kartla ödemeyle
+-- (iyzico) kendiliğinden ya da elle (CLAUDE.md > Lisans) açılır. Daha önce kurulmuşsa tablolar ve fonksiyonlar silinir.
+drop function if exists public.lisans_kodu_kullan(text);
+drop function if exists public.lisans_kod_listesi();
+drop function if exists public.lisans_kodu_iptal(text);
+drop table if exists public.lisans_kod_denemeleri;
+drop table if exists public.lisans_kodlari;
 
--- Hatalı kod denemeleri: kullanıcı başına saatte 5 (kod tahmin edilemesin).
-create table if not exists public.lisans_kod_denemeleri (
-  user_id uuid not null references auth.users (id) on delete cascade,
-  zaman timestamptz not null default now()
-);
-create index if not exists lisans_kod_denemeleri_kullanici on public.lisans_kod_denemeleri (user_id, zaman);
-
-alter table public.lisans_kodlari enable row level security;
-alter table public.lisans_kod_denemeleri enable row level security;
--- Uygulama tablolara doğrudan erişemez (sadece lisans_kodu_kullan). Sahibin komutları gizli anahtarla (service_role)
--- kod ekler, okur, süresini değiştirir; silme sadece test temizliği için (../fixnote-kontrol/gorev-80/kod-test.cjs).
-revoke all on table public.lisans_kodlari, public.lisans_kod_denemeleri from anon, authenticated, service_role;
-grant select, insert, update, delete on table public.lisans_kodlari to service_role;
-grant select, delete on table public.lisans_kod_denemeleri to service_role;
-
--- Lisansı uzatır (iç fonksiyon; lisans kodu ve kartla ödeme ikisi de bunu çağırır, uygulama doğrudan çağıramaz).
+-- ============ 7) Kartla ödeme (iyzico) ============
+-- Akış: uygulama odeme-baslat'ı çağırır (Edge Function, kullanıcının oturumuyla) > sipariş 'bekliyor' yazılır, iyzico ödeme
+-- sayfası açılır > müşteri öder > iyzico tarayıcıyı odeme-donus'a gönderir (ve iyzico-bildirim'e haber verir) > fonksiyon
+-- sonucu gizli anahtarla iyzico'dan yeniden okur, tutar/para/sepet tutarsa odeme_tamamla > lisans_uzat lisansı açar.
+-- Fiyat sadece sunucuda (supabase/functions/_shared/iyzico.ts; app/lib/paket.ts LISANS ile aynı). Kart bilgisi hiç gelmez.
+-- fatura: { ad, telefon, il, adres, vergi_dairesi?, vergi_no? } (e-Arşiv fatura için; TC kimlik alınmaz).
+-- onaylar: { on_bilgilendirme: zaman, isletme: zaman, dil } (ödeme sayfasındaki iki onay kutusu).
+-- Lisansı uzatır (iç fonksiyon; kartla ödeme çağırır, uygulama doğrudan çağıramaz).
 -- Abonelik satırını kilitler. Süresiz lisans (bitiş >= 2099-01-01) varsa hiçbir şey değişmez: {ok:false, hata:'zaten_suresiz'}.
 -- Erken yenileme kalan günleri korur (bitiş = max(şimdiki bitiş, şimdi) + 1 ay / 1 yıl). Süresiz: 2099-12-31.
 -- plan boş kalır (ekip_acik boş planı Firma sayar). Dönüş: {ok:true, donem, bitis}.
@@ -609,103 +592,6 @@ $$;
 revoke all on function public.lisans_uzat(uuid, text, text) from public, anon, authenticated;
 grant execute on function public.lisans_uzat(uuid, text, text) to service_role;
 
--- Müşteri kodu girer. Hatalar geri döner ({ok:false, hata}), atılmaz: atılırsa hatalı deneme kaydı da geri alınırdı.
--- hata: teknisyen, cok_deneme, gecersiz, kullanildi, suresi_doldu, zaten_suresiz. Oturum yoksa 'oturum' atılır.
--- Uzatma lisans_uzat ile; kod sadece uzatma başarılıysa kullanıldı olur (zaten_suresiz'de kullanılmamış kalır).
-create or replace function public.lisans_kodu_kullan(p_kod text)
-returns jsonb
-language plpgsql
-volatile
-security definer
-set search_path = ''
-as $$
-declare
-  u uuid := (select auth.uid());
-  v_kod text;
-  k public.lisans_kodlari%rowtype;
-  v_sonuc jsonb;
-begin
-  if u is null then raise exception 'oturum'; end if;
-  if exists (select 1 from public.ekip_uyeleri e where e.user_id = u) then
-    return jsonb_build_object('ok', false, 'hata', 'teknisyen');
-  end if;
-  -- Aynı kullanıcının aynı anda gelen istekleri sırayla çalışır (deneme sayısı atlanamaz).
-  perform pg_advisory_xact_lock(hashtextextended('lisans_kodu:' || u::text, 0));
-  delete from public.lisans_kod_denemeleri d where d.user_id = u and d.zaman < now() - interval '1 hour';
-  if (select count(*) from public.lisans_kod_denemeleri d where d.user_id = u and d.zaman > now() - interval '1 hour') >= 5 then
-    return jsonb_build_object('ok', false, 'hata', 'cok_deneme');
-  end if;
-
-  v_kod := regexp_replace(upper(left(coalesce(p_kod, ''), 200)), '[^A-Z0-9]', '', 'g');
-  if left(v_kod, 3) = 'FIX' then v_kod := substr(v_kod, 4); end if;
-  if char_length(v_kod) <> 16 then
-    insert into public.lisans_kod_denemeleri (user_id) values (u);
-    return jsonb_build_object('ok', false, 'hata', 'gecersiz');
-  end if;
-
-  select * into k from public.lisans_kodlari l
-  where l.kod_ozeti = encode(sha256(convert_to(v_kod, 'UTF8')), 'hex')
-  for update;
-  if not found or k.iptal then
-    insert into public.lisans_kod_denemeleri (user_id) values (u);
-    return jsonb_build_object('ok', false, 'hata', 'gecersiz');
-  end if;
-  if k.kullanma is not null then return jsonb_build_object('ok', false, 'hata', 'kullanildi'); end if;
-  if k.son_gecerlilik < now() then return jsonb_build_object('ok', false, 'hata', 'suresi_doldu'); end if;
-
-  v_sonuc := public.lisans_uzat(u, k.donem, 'Lisans kodu');
-  if not coalesce((v_sonuc ->> 'ok')::boolean, false) then return v_sonuc; end if;
-  update public.lisans_kodlari set kullanan = u, kullanma = now() where id = k.id;
-  delete from public.lisans_kod_denemeleri d where d.user_id = u;
-  return v_sonuc;
-end;
-$$;
-revoke all on function public.lisans_kodu_kullan(text) from public, anon, service_role;
-grant execute on function public.lisans_kodu_kullan(text) to authenticated;
-
--- Sahibin kod listesi (../fixnote-kontrol/kod-liste.cjs), en yeni önce.
-create or replace function public.lisans_kod_listesi()
-returns table (id uuid, donem text, not_ text, olusturma timestamptz, son_gecerlilik timestamptz, kullanma timestamptz, iptal boolean, kullanan_eposta text)
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select k.id, k.donem, k.not_, k.olusturma, k.son_gecerlilik, k.kullanma, k.iptal, u.email::text
-  from public.lisans_kodlari k
-  left join auth.users u on u.id = k.kullanan
-  order by k.olusturma desc;
-$$;
-
--- Sahip kullanılmamış bir kodu iptal eder (../fixnote-kontrol/kod-iptal.cjs; özetle).
-create or replace function public.lisans_kodu_iptal(p_ozet text)
-returns text
-language plpgsql
-volatile
-security definer
-set search_path = ''
-as $$
-declare
-  k public.lisans_kodlari%rowtype;
-begin
-  select * into k from public.lisans_kodlari l where l.kod_ozeti = p_ozet for update;
-  if not found then return 'yok'; end if;
-  if k.kullanma is not null then return 'kullanilmis'; end if;
-  update public.lisans_kodlari set iptal = true where id = k.id;
-  return 'iptal_edildi';
-end;
-$$;
-
-revoke all on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) from public, anon, authenticated;
-grant execute on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) to service_role;
-
--- ============ 7) Kartla ödeme (iyzico) ============
--- Akış: uygulama odeme-baslat'ı çağırır (Edge Function, kullanıcının oturumuyla) > sipariş 'bekliyor' yazılır, iyzico ödeme
--- sayfası açılır > müşteri öder > iyzico tarayıcıyı odeme-donus'a gönderir (ve iyzico-bildirim'e haber verir) > fonksiyon
--- sonucu gizli anahtarla iyzico'dan yeniden okur, tutar/para/sepet tutarsa odeme_tamamla > lisans_uzat lisansı açar.
--- Fiyat sadece sunucuda (supabase/functions/_shared/iyzico.ts; app/lib/paket.ts LISANS ile aynı). Kart bilgisi hiç gelmez.
--- fatura: { ad, telefon, il, adres, vergi_dairesi?, vergi_no? } (e-Arşiv fatura için; TC kimlik alınmaz).
--- onaylar: { on_bilgilendirme: zaman, isletme: zaman, dil } (ödeme sayfasındaki iki onay kutusu).
 create table if not exists public.odemeler (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

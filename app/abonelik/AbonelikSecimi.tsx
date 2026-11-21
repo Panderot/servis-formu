@@ -10,52 +10,20 @@ import { OdemeLogolari } from "../components/YasalAlt";
 import { GUNCELLEME_YILLIK, IYZICO_ACIK, LISANS, LISANS_TURLERI, LISANS_WHATSAPP, ODEME_ACIK, lisansYazisi, tl, tlSayi, type LisansTuru } from "../lib/paket";
 import KartOdeme from "./KartOdeme";
 
-// /abonelik: the licence page (task 75, licence codes task 80). Three licence types (LISANS in app/lib/paket.ts), sold
-// on WhatsApp: the button opens a chat with the licence, the amount and the account's email. After payment the owner
-// generates a one-time code (../fixnote-kontrol/kod-uret.cjs, FIX-XXXX-XXXX-XXXX-XXXX) and sends it on WhatsApp; the
-// customer enters it in "Lisans kodun var mı?" and rpc lisans_kodu_kullan (supabase/kurulum.sql section 6) opens the
-// licence at once; the licence cache HesapKapisi reads (fixnote_abonelik) is written so /app shows it immediately.
-// A licence opened by hand (SQL in CLAUDE.md, backup method) is still found with "Lisansımı kontrol et".
-// Reached from the trial bar, the read-only bar and the side menu in /app (app/components/HesapKapisi.tsx,
-// Uygulama.tsx); works during the trial too. Old ?paket= / ?donem= links are ignored.
+// /abonelik: the licence page (task 75). Three licence types (LISANS in app/lib/paket.ts), sold on WhatsApp: the
+// button opens a chat with the licence, the amount and the account's email; the owner opens the licence by hand in
+// public.abonelikler (SQL in CLAUDE.md) and the customer checks it here. Reached from the trial bar, the read-only
+// bar and the side menu in /app (app/components/HesapKapisi.tsx, Uygulama.tsx). Old ?paket= / ?donem= links are ignored.
 // The online payment (ODEME_ACIK, Stripe) is kept only for an existing subscription: "manage subscription".
-// Card payment (task 81, IYZICO_ACIK = NEXT_PUBLIC_IYZICO_ACIK=1; off, the page is exactly as in task 80): each card gets
+// Card payment (task 81, IYZICO_ACIK = NEXT_PUBLIC_IYZICO_ACIK=1; off, the page is as before): each card gets
 // "Kartla öde" (billing step KartOdeme.tsx > Edge Function odeme-baslat > iyzico's page) and a small "WhatsApp'tan sor".
 // iyzico brings the customer back to /abonelik?odeme=<order id>; odeme-durum reads the order (and finalises it with iyzico
 // if still waiting), up to 3 tries 2 s apart. On load, an order still waiting from the last hour is checked once.
-// With card payment on, the licence-code card is not shown (the code system stays in the database as a fallback).
+// There are no licence codes (task 80 removed by user decision, 21 Nov).
 type Hal = { tur: "yukleniyor" } | { tur: "hazir"; uid: string; eposta: string; suruyor: boolean; teknisyen: boolean; deneme: boolean };
 type Kontrol = { tur: "" } | { tur: "bakiyor" } | { tur: "yok" } | { tur: "hata" } | { tur: "aktif"; yazi: string };
-type KodHata = "gecersiz" | "kullanildi" | "suresi_doldu" | "cok_deneme" | "zaten_suresiz" | "teknisyen" | "baglanti";
-type KodDurum = { tur: "" } | { tur: "aciliyor" } | { tur: "acildi"; donem: string; bitis: string } | { tur: "hata"; hata: KodHata };
-const KOD_HATALARI: readonly string[] = ["gecersiz", "kullanildi", "suresi_doldu", "cok_deneme", "zaten_suresiz", "teknisyen"];
 type OdemeHal = { tur: "" } | { tur: "kontrol" } | { tur: "odendi"; donem: string; bitis: string | null; hata?: string } | { tur: "basarisiz" } | { tur: "bekliyor"; id: string } | { tur: "hata"; id: string };
 const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-// Licence code alphabet (no 0 O 1 I L), the same as kod-uret.cjs. A code never starts with "FIX" (there is no I).
-const KOD_ALFABE = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-// Field text -> the code's characters (up to 16, without "FIX"), shown as FIX-XXXX-XXXX-XXXX-XXXX.
-// onceki: the field before this change. When the text grows into just "FIX" (typed by hand) "FIX-" stays; when it
-// shrinks the field empties, so the prefix can be deleted. A lone "FI" is held until the X of a typed "FIX" arrives.
-function kodBicimle(girdi: string, onceki: string): string {
-  let s = girdi.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  while (s.startsWith("FIX")) s = s.slice(3);
-  const govde = s === "FI" ? s : [...s].filter((h) => KOD_ALFABE.includes(h)).join("").slice(0, 16);
-  if (!govde) return s === "" && girdi.length > onceki.length && /FIX/i.test(girdi.replace(/[^A-Za-z]/g, "")) ? "FIX-" : "";
-  return "FIX-" + (govde.match(/.{1,4}/g) ?? []).join("-");
-}
-const kodGovdesi = (v: string) => v.replace(/^FIX-?/, "").replace(/-/g, "");
-// A whole code inside pasted text (the WhatsApp message itself, say "Merhaba, Fixnote lisans kodunuz: FIX-…"):
-// four groups of 4, with or without "FIX". "Fixnote" never matches (o is not in the alphabet). Not found: null.
-const KOD_GRUP = "([2-9A-HJKMNP-Z]{4})[\\s-]*";
-const KOD_ARA = [new RegExp(`\\bFIX[\\s-]*${KOD_GRUP.repeat(4)}(?![A-Z0-9])`, "i"), new RegExp(`(?<![A-Z0-9])${KOD_GRUP.repeat(4)}(?![A-Z0-9])`, "i")];
-function koduBul(metin: string): string | null {
-  for (const re of KOD_ARA) {
-    const m = re.exec(metin);
-    if (m) return "FIX-" + m.slice(1, 5).join("-").toUpperCase();
-  }
-  return null;
-}
 
 const SOZLESMELER = {
   tr: [
@@ -80,9 +48,6 @@ export default function AbonelikSecimi() {
   const [hata, setHata] = useState("");
   const [iptal, setIptal] = useState(false);
   const [kontrol, setKontrol] = useState<Kontrol>({ tur: "" });
-  const [kod, setKod] = useState("");
-  const [kodDurum, setKodDurum] = useState<KodDurum>({ tur: "" });
-  const [yapistirVar, setYapistirVar] = useState(false);
   const [secili, setSecili] = useState<LisansTuru | null>(null); // card payment: the licence whose billing step is open
   const [odeme, setOdeme] = useState<OdemeHal>({ tur: "" });
 
@@ -132,11 +97,6 @@ export default function AbonelikSecimi() {
       .order("olusturma", { ascending: false }).limit(1).maybeSingle()
       .then(({ data }) => { if (data?.id) void odemeKontrol(data.id, 1, true); });
   }, [hal.tur]);
-
-  // "Paste" only where the browser can read the clipboard (secure page, Clipboard API).
-  useEffect(() => {
-    setYapistirVar(typeof navigator !== "undefined" && typeof navigator.clipboard?.readText === "function");
-  }, []);
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -201,82 +161,11 @@ export default function AbonelikSecimi() {
     setKontrol(bitis && bitis.getTime() > Date.now() ? { tur: "aktif", yazi: lisansYazisi(s?.donem, bitis, dil) } : { tur: "yok" });
   };
 
-  const kodHazir = kodGovdesi(kod).length === 16 && [...kodGovdesi(kod)].every((h) => KOD_ALFABE.includes(h));
-  const kodYaz = (v: string) => {
-    setKod(v);
-    if (kodDurum.tur === "hata") setKodDurum({ tur: "" });
-  };
-  // Pasting bypasses maxLength (a code copied from WhatsApp may carry spaces or words around it): a whole code
-  // replaces the field, anything else is inserted at the caret.
-  const kodYapistir = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const metin = e.clipboardData.getData("text");
-    if (!metin) return;
-    e.preventDefault();
-    const bulunan = koduBul(metin);
-    if (bulunan) return kodYaz(bulunan);
-    const tam = kodBicimle(metin, "");
-    if (kodGovdesi(tam).length === 16) return kodYaz(tam);
-    const el = e.currentTarget;
-    const yeni = kod.slice(0, el.selectionStart ?? kod.length) + metin + kod.slice(el.selectionEnd ?? kod.length);
-    kodYaz(kodBicimle(yeni, kod));
-  };
-  const panodan = async () => {
-    try {
-      const metin = await navigator.clipboard.readText();
-      if (metin) kodYaz(koduBul(metin) ?? kodBicimle(metin, ""));
-    } catch {
-      setYapistirVar(false);
-    }
-  };
-  // "Activate licence": redeems the code (rpc lisans_kodu_kullan, supabase/kurulum.sql section 6).
-  const kodAc = async (e?: { preventDefault(): void }) => {
-    e?.preventDefault();
-    const sb = supabase();
-    if (!sb || hal.tur !== "hazir" || !kodHazir || kodDurum.tur === "aciliyor") return;
-    setKodDurum({ tur: "aciliyor" });
-    const { data, error } = await sb.rpc("lisans_kodu_kullan", { p_kod: kod }).retry(false);
-    const r = data as { ok?: boolean; hata?: string; donem?: string; bitis?: string } | null;
-    if (!error && r?.ok && r.bitis) {
-      const donem = r.donem ?? "";
-      // The cache HesapKapisi reads (fixnote_abonelik): /app shows the new licence at once.
-      try {
-        localStorage.setItem("fixnote_abonelik", JSON.stringify({ id: hal.uid, bitis: r.bitis, donem: donem || null }));
-      } catch {}
-      setKod("");
-      setKodDurum({ tur: "acildi", donem, bitis: r.bitis });
-      return;
-    }
-    const h = !error && r?.hata && KOD_HATALARI.includes(r.hata) ? (r.hata as KodHata) : "baglanti";
-    setKodDurum({ tur: "hata", hata: h });
-  };
-  const yardimHref = () => {
-    const eposta = hal.tur === "hazir" ? hal.eposta : "";
-    const metin = dil === "en"
-      ? `Hello, I need help with my Fixnote licence code. My account: ${eposta}`
-      : `Merhaba, Fixnote lisans kodumla ilgili yardım istiyorum. Hesabım: ${eposta}`;
-    return `https://wa.me/${LISANS_WHATSAPP}?text=${encodeURIComponent(metin)}`;
-  };
-  const waLink = (metin: string) => (
-    <a data-kod-whatsapp href={yardimHref()} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 3 }}>{metin}</a>
-  );
   const odemeWa = (metin: string) => {
     const eposta = hal.tur === "hazir" ? hal.eposta : "";
     const m = dil === "en" ? `Hello, I need help with my Fixnote card payment. My account: ${eposta}` : `Merhaba, Fixnote kartla ödememle ilgili yardım istiyorum. Hesabım: ${eposta}`;
     return <a data-odeme-whatsapp href={`https://wa.me/${LISANS_WHATSAPP}?text=${encodeURIComponent(m)}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 3 }}>{metin}</a>;
   };
-  const kodHataMetni = (h: KodHata): React.ReactNode => {
-    const en = dil === "en";
-    switch (h) {
-      case "gecersiz": return c("Bu kod geçerli değil. Harfleri kontrol edip tekrar dene.", "This code isn't valid. Check the characters and try again.");
-      case "kullanildi": return en ? <>This code has already been used. If something&apos;s wrong, {waLink("message us on WhatsApp")}.</> : <>Bu kod daha önce kullanılmış. Bir sorun varsa {waLink("bize WhatsApp'tan yaz")}.</>;
-      case "suresi_doldu": return en ? <>This code has expired. {waLink("Message us on WhatsApp")} and we&apos;ll send a new one.</> : <>Bu kodun süresi dolmuş. {waLink("Bize WhatsApp'tan yaz")}, yenisini gönderelim.</>;
-      case "cok_deneme": return en ? <>Too many attempts. Try again in an hour or {waLink("message us on WhatsApp")}.</> : <>Çok fazla deneme yapıldı. Bir saat sonra tekrar dene ya da {waLink("bize WhatsApp'tan yaz")}.</>;
-      case "zaten_suresiz": return c("Süresiz lisansın zaten var; bu kodu kullanmana gerek yok.", "You already have a lifetime licence; you don't need this code.");
-      case "teknisyen": return c("Lisansı firma sahibi açar.", "The licence is activated by the company owner.");
-      default: return c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.");
-    }
-  };
-
   const ad = (t: LisansTuru) => ({ aylik: c("Aylık lisans", "Monthly licence"), yillik: c("Yıllık lisans", "Yearly licence"), suresiz: c("Süresiz lisans", "Lifetime licence") })[t];
   const mesajAd = (t: LisansTuru) => ({ aylik: c("Aylık", "monthly"), yillik: c("Yıllık", "yearly"), suresiz: c("Süresiz", "lifetime") })[t];
   const birim = (t: LisansTuru) => ({ aylik: c("/ ay", "/ month"), yillik: c("/ yıl", "/ year"), suresiz: c("tek seferlik", "one-off") })[t];
@@ -421,66 +310,18 @@ export default function AbonelikSecimi() {
             />
           )}
 
-          {/* Licence code card (task 80): only while card payment is off (user decision, 21 Nov); the code system stays in the
-             database and the owner commands as a fallback (bank transfer, buying for someone else, Android later). */}
-          {!IYZICO_ACIK && (
-          <form data-lisans-kodu-kart className="card" onSubmit={kodAc} noValidate style={{ ...kart, maxWidth: 520, margin: "20px auto 0", padding: "18px 20px", textAlign: "center", boxShadow: "none" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", margin: 0 }}>{c("Lisans kodun var mı?", "Have a licence code?")}</h2>
-            <p style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.55, margin: "6px 0 0" }}>{c("Ödemeden sonra lisans kodun WhatsApp'tan gelir. Kodu buraya yaz ya da yapıştır; lisansın hemen açılır.", "After payment your licence code arrives on WhatsApp. Type or paste it here and your licence opens at once.")}</p>
-            <label htmlFor="lisans-kodu" className="sr-only">{c("Lisans kodu", "Licence code")}</label>
-            {/* Phones: "Paste" wraps under the field so the whole code (23 characters) stays visible; the field grows 1000x faster, so beside it the button keeps its own width and alone on its line it fills the row. */}
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-              <input
-                id="lisans-kodu"
-                className="field num"
-                type="text"
-                value={kod}
-                onChange={(e) => kodYaz(kodBicimle(e.target.value, kod))}
-                onPaste={kodYapistir}
-                placeholder="FIX-XXXX-XXXX-XXXX-XXXX"
-                autoComplete="off"
-                autoCapitalize="characters"
-                autoCorrect="off"
-                spellCheck={false}
-                inputMode="text"
-                maxLength={23}
-                aria-invalid={kodDurum.tur === "hata" && kodDurum.hata === "gecersiz" ? true : undefined}
-                style={{ flex: "1000 1 250px", minWidth: 0, paddingLeft: 8, paddingRight: 8, textAlign: "center", fontWeight: 600, letterSpacing: 0 }}
-              />
-              {yapistirVar && (
-                <button type="button" data-kod-yapistir className="btn btn-ghost" onClick={panodan} style={{ flex: "1 0 auto", paddingLeft: 14, paddingRight: 14 }}>{c("Yapıştır", "Paste")}</button>
-              )}
-            </div>
-            <button type="submit" data-kod-ac className="btn" disabled={!kodHazir || kodDurum.tur === "aciliyor"} style={{ width: "100%", marginTop: 10 }}>
-              {kodDurum.tur === "aciliyor" ? c("Açılıyor…", "Activating…") : c("Lisansı aç", "Activate licence")}
-            </button>
-            {kodDurum.tur === "acildi" && (
-              <div role="status" data-kod-sonuc="ok" style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ok)" }}>
-                  {c("Lisansın açıldı: ", "Your licence is active: ")}{lisansYazisi(kodDurum.donem, new Date(kodDurum.bitis), dil)}
-                </div>
-                <Link href="/app" className="btn" style={{ width: "100%", marginTop: 10 }}>{c("Uygulamaya dön", "Back to the app")}</Link>
-              </div>
-            )}
-            {kodDurum.tur === "hata" && (
-              <div role="alert" data-kod-sonuc={kodDurum.hata} style={{ marginTop: 12, padding: "10px 12px", borderRadius: 10, background: "var(--bad-soft)", color: "var(--bad)", fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>
-                {kodHataMetni(kodDurum.hata)}
-              </div>
-            )}
-          </form>
-          )}
-          <div style={{ maxWidth: 520, margin: "10px auto 0", textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
-            {c("Lisansın elle açıldıysa:", "Licence activated by hand?")}{" "}
-            <button type="button" data-lisans-kontrol onClick={lisansKontrol} disabled={kontrol.tur === "bakiyor"} style={{ background: "none", border: 0, padding: "6px 0", font: "inherit", fontWeight: 700, color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, cursor: kontrol.tur === "bakiyor" ? "default" : "pointer" }}>
+          <div className="card" style={{ ...kart, maxWidth: 520, margin: "20px auto 0", padding: "18px 20px", textAlign: "center", boxShadow: "none" }}>
+            <p style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>{c("Ödemeden sonra lisansın aynı gün açılır.", "Your licence is activated the same day after payment.")}</p>
+            <button data-lisans-kontrol className="btn btn-ghost" onClick={lisansKontrol} disabled={kontrol.tur === "bakiyor"} style={{ width: "100%", marginTop: 12 }}>
               {kontrol.tur === "bakiyor" ? c("Kontrol ediliyor…", "Checking…") : c("Lisansımı kontrol et", "Check my licence")}
             </button>
             {kontrol.tur === "aktif" && (
-              <div role="status" data-lisans-sonuc="aktif" style={{ marginTop: 4, fontSize: 14, fontWeight: 700, color: "var(--ok)" }}>
+              <div role="status" data-lisans-sonuc="aktif" style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "var(--ok)" }}>
                 {kontrol.yazi} · <Link href="/app" style={{ textDecoration: "underline", textUnderlineOffset: 3 }}>{c("Uygulamaya dön", "Back to the app")}</Link>
               </div>
             )}
-            {kontrol.tur === "yok" && <div role="status" data-lisans-sonuc="yok" style={{ marginTop: 4, fontSize: 14, fontWeight: 700, color: "var(--warn)" }}>{c("Henüz açılmadı", "Not active yet")}</div>}
-            {kontrol.tur === "hata" && <div role="alert" data-lisans-sonuc="hata" style={{ marginTop: 4, fontSize: 13.5, fontWeight: 700, color: "var(--bad)" }}>{c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.")}</div>}
+            {kontrol.tur === "yok" && <div role="status" data-lisans-sonuc="yok" style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: "var(--warn)" }}>{c("Henüz açılmadı", "Not active yet")}</div>}
+            {kontrol.tur === "hata" && <div role="alert" data-lisans-sonuc="hata" style={{ marginTop: 10, fontSize: 13.5, fontWeight: 700, color: "var(--bad)" }}>{c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.")}</div>}
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "6px 16px", marginTop: 16, fontSize: 12.5, fontWeight: 600, color: "var(--muted)" }}>
