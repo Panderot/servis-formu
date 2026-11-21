@@ -8,6 +8,7 @@
 -- 4) hesap silme: kullanıcı Ayarlar'dan kendi hesabını ve kayıtlarını siler.
 -- 5) ödeme kilidi: aynı kullanıcı için aynı anda tek ödeme sayfası hazırlanır (sadece sunucu).
 -- 6) lisans kodları: sahip ödeme sonrası tek kullanımlık kod üretir, müşteri uygulamada girer.
+-- 7) kartla ödeme (iyzico): sipariş; ödeme iyzico'dan doğrulanınca lisans kendiliğinden açılır (Edge Functions).
 
 -- ============ 1) Abonelikler ============
 create table if not exists public.abonelikler (
@@ -573,10 +574,44 @@ revoke all on table public.lisans_kodlari, public.lisans_kod_denemeleri from ano
 grant select, insert, update, delete on table public.lisans_kodlari to service_role;
 grant select, delete on table public.lisans_kod_denemeleri to service_role;
 
+-- Lisansı uzatır (iç fonksiyon; lisans kodu ve kartla ödeme ikisi de bunu çağırır, uygulama doğrudan çağıramaz).
+-- Abonelik satırını kilitler. Süresiz lisans (bitiş >= 2099-01-01) varsa hiçbir şey değişmez: {ok:false, hata:'zaten_suresiz'}.
+-- Erken yenileme kalan günleri korur (bitiş = max(şimdiki bitiş, şimdi) + 1 ay / 1 yıl). Süresiz: 2099-12-31.
+-- plan boş kalır (ekip_acik boş planı Firma sayar). Dönüş: {ok:true, donem, bitis}.
+create or replace function public.lisans_uzat(p_user uuid, p_donem text, p_not text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  v_bitis timestamptz;
+  v_yeni timestamptz;
+begin
+  if p_user is null then raise exception 'kullanici'; end if;
+  if p_donem is null or p_donem not in ('aylik', 'yillik', 'suresiz') then raise exception 'donem'; end if;
+  select a.bitis into v_bitis from public.abonelikler a where a.user_id = p_user for update;
+  if v_bitis >= '2099-01-01'::timestamptz then
+    return jsonb_build_object('ok', false, 'hata', 'zaten_suresiz');
+  end if;
+  v_yeni := case p_donem
+    when 'suresiz' then '2099-12-31'::timestamptz
+    when 'yillik' then greatest(coalesce(v_bitis, now()), now()) + interval '1 year'
+    else greatest(coalesce(v_bitis, now()), now()) + interval '1 month'
+  end;
+  insert into public.abonelikler (user_id, bitis, donem, not_)
+  values (p_user, v_yeni, p_donem, p_not)
+  on conflict (user_id) do update set bitis = excluded.bitis, donem = excluded.donem, not_ = excluded.not_, guncelleme = now();
+  return jsonb_build_object('ok', true, 'donem', p_donem, 'bitis', v_yeni);
+end;
+$$;
+revoke all on function public.lisans_uzat(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.lisans_uzat(uuid, text, text) to service_role;
+
 -- Müşteri kodu girer. Hatalar geri döner ({ok:false, hata}), atılmaz: atılırsa hatalı deneme kaydı da geri alınırdı.
 -- hata: teknisyen, cok_deneme, gecersiz, kullanildi, suresi_doldu, zaten_suresiz. Oturum yoksa 'oturum' atılır.
--- Erken yenileme kalan günleri korur (bitiş = max(şimdiki bitiş, şimdi) + 1 ay / 1 yıl). Süresiz: 2099-12-31.
--- plan boş kalır (ekip_acik boş planı Firma sayar).
+-- Uzatma lisans_uzat ile; kod sadece uzatma başarılıysa kullanıldı olur (zaten_suresiz'de kullanılmamış kalır).
 create or replace function public.lisans_kodu_kullan(p_kod text)
 returns jsonb
 language plpgsql
@@ -588,8 +623,7 @@ declare
   u uuid := (select auth.uid());
   v_kod text;
   k public.lisans_kodlari%rowtype;
-  v_bitis timestamptz;
-  v_yeni timestamptz;
+  v_sonuc jsonb;
 begin
   if u is null then raise exception 'oturum'; end if;
   if exists (select 1 from public.ekip_uyeleri e where e.user_id = u) then
@@ -619,22 +653,11 @@ begin
   if k.kullanma is not null then return jsonb_build_object('ok', false, 'hata', 'kullanildi'); end if;
   if k.son_gecerlilik < now() then return jsonb_build_object('ok', false, 'hata', 'suresi_doldu'); end if;
 
-  select a.bitis into v_bitis from public.abonelikler a where a.user_id = u for update;
-  if v_bitis >= '2099-01-01'::timestamptz then
-    return jsonb_build_object('ok', false, 'hata', 'zaten_suresiz');
-  end if;
-  v_yeni := case k.donem
-    when 'suresiz' then '2099-12-31'::timestamptz
-    when 'yillik' then greatest(coalesce(v_bitis, now()), now()) + interval '1 year'
-    else greatest(coalesce(v_bitis, now()), now()) + interval '1 month'
-  end;
-
-  insert into public.abonelikler (user_id, bitis, donem, not_)
-  values (u, v_yeni, k.donem, 'Lisans kodu')
-  on conflict (user_id) do update set bitis = excluded.bitis, donem = excluded.donem, not_ = excluded.not_, guncelleme = now();
+  v_sonuc := public.lisans_uzat(u, k.donem, 'Lisans kodu');
+  if not coalesce((v_sonuc ->> 'ok')::boolean, false) then return v_sonuc; end if;
   update public.lisans_kodlari set kullanan = u, kullanma = now() where id = k.id;
   delete from public.lisans_kod_denemeleri d where d.user_id = u;
-  return jsonb_build_object('ok', true, 'donem', k.donem, 'bitis', v_yeni);
+  return v_sonuc;
 end;
 $$;
 revoke all on function public.lisans_kodu_kullan(text) from public, anon, service_role;
@@ -675,3 +698,144 @@ $$;
 
 revoke all on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) from public, anon, authenticated;
 grant execute on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) to service_role;
+
+-- ============ 7) Kartla ödeme (iyzico) ============
+-- Akış: uygulama odeme-baslat'ı çağırır (Edge Function, kullanıcının oturumuyla) > sipariş 'bekliyor' yazılır, iyzico ödeme
+-- sayfası açılır > müşteri öder > iyzico tarayıcıyı odeme-donus'a gönderir (ve iyzico-bildirim'e haber verir) > fonksiyon
+-- sonucu gizli anahtarla iyzico'dan yeniden okur, tutar/para/sepet tutarsa odeme_tamamla > lisans_uzat lisansı açar.
+-- Fiyat sadece sunucuda (supabase/functions/_shared/iyzico.ts; app/lib/paket.ts LISANS ile aynı). Kart bilgisi hiç gelmez.
+-- fatura: { ad, telefon, il, adres, vergi_dairesi?, vergi_no? } (e-Arşiv fatura için; TC kimlik alınmaz).
+-- onaylar: { on_bilgilendirme: zaman, isletme: zaman, dil } (ödeme sayfasındaki iki onay kutusu).
+create table if not exists public.odemeler (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  donem text not null check (donem in ('aylik', 'yillik', 'suresiz')),
+  tutar numeric(10, 2) not null,
+  para text not null default 'TRY',
+  durum text not null default 'bekliyor' check (durum in ('bekliyor', 'odendi', 'basarisiz', 'iade')),
+  donus text not null default 'web' check (donus in ('web', 'apk')),
+  iyzico_token text unique,
+  iyzico_odeme_id text,
+  fatura jsonb not null,
+  onaylar jsonb not null,
+  olusturma timestamptz not null default now(),
+  odeme_zamani timestamptz,
+  fatura_kesildi boolean not null default false,
+  hata text
+);
+create index if not exists odemeler_kullanici on public.odemeler (user_id, olusturma desc);
+
+alter table public.odemeler enable row level security;
+-- Kullanıcı sadece kendi siparişlerini okur; yazma sadece Edge Functions'ta (service_role). Silme yok (hesap silinince gider).
+revoke all on table public.odemeler from anon, authenticated, service_role;
+grant select on table public.odemeler to authenticated;
+grant select, insert, update on table public.odemeler to service_role;
+drop policy if exists "kendi odemelerini gorur" on public.odemeler;
+create policy "kendi odemelerini gorur" on public.odemeler for select to authenticated
+  using (user_id = (select auth.uid()));
+
+-- Ödeme iyzico'dan doğrulandıktan sonra (Edge Function, service_role). Aynı sipariş ikinci kez gelirse (dönüş + bildirim +
+-- durum sorgusu) lisans bir daha uzatılmaz: {ok:true, tekrar:true}. Süresiz lisansı zaten olan müşteri ödediyse sipariş yine
+-- 'odendi' olur, hata 'zaten_suresiz' yazılır (sahip iade eder) ve o sonuç döner.
+create or replace function public.odeme_tamamla(p_odeme uuid, p_iyzico_odeme_id text)
+returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  o public.odemeler%rowtype;
+  v_sonuc jsonb;
+begin
+  select * into o from public.odemeler where id = p_odeme for update;
+  if not found then return jsonb_build_object('ok', false, 'hata', 'yok'); end if;
+  if o.durum = 'odendi' then return jsonb_build_object('ok', true, 'tekrar', true); end if;
+  if o.durum = 'iade' then return jsonb_build_object('ok', false, 'hata', 'iade'); end if;
+  v_sonuc := public.lisans_uzat(o.user_id, o.donem, 'iyzico ödeme');
+  update public.odemeler set
+    durum = 'odendi',
+    odeme_zamani = now(),
+    iyzico_odeme_id = p_iyzico_odeme_id,
+    hata = case when coalesce((v_sonuc ->> 'ok')::boolean, false) then null else left(v_sonuc ->> 'hata', 200) end
+  where id = o.id;
+  return v_sonuc;
+end;
+$$;
+
+-- Sahibin listesi (../fixnote-kontrol/odeme-liste.cjs): ödenmiş siparişler, e-posta ve fatura bilgisiyle, en yeni önce.
+-- Varsayılan: faturası henüz kesilmemiş olanlar; p_hepsi: ödenen ve iade edilen hepsi.
+create or replace function public.odeme_listesi(p_hepsi boolean default false)
+returns table (id uuid, olusturma timestamptz, odeme_zamani timestamptz, eposta text, donem text, tutar numeric, para text,
+  durum text, fatura jsonb, fatura_kesildi boolean, hata text, iyzico_odeme_id text)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select o.id, o.olusturma, o.odeme_zamani, u.email::text, o.donem, o.tutar, o.para, o.durum, o.fatura, o.fatura_kesildi, o.hata, o.iyzico_odeme_id
+  from public.odemeler o
+  left join auth.users u on u.id = o.user_id
+  where case when p_hepsi then o.durum in ('odendi', 'iade') else o.durum = 'odendi' and not o.fatura_kesildi end
+  order by coalesce(o.odeme_zamani, o.olusturma) desc;
+$$;
+
+-- Sahip e-Arşiv faturayı kesince işaretler (odeme-fatura.cjs). Dönüş: tamam | odenmedi | yok.
+create or replace function public.odeme_fatura_kesildi(p_odeme uuid)
+returns text
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  o public.odemeler%rowtype;
+begin
+  select * into o from public.odemeler where id = p_odeme for update;
+  if not found then return 'yok'; end if;
+  if o.durum not in ('odendi', 'iade') then return 'odenmedi'; end if;
+  update public.odemeler set fatura_kesildi = true where id = o.id;
+  return 'tamam';
+end;
+$$;
+
+-- İade (odeme-iade.cjs; para iyzico panelinden ayrıca iade edilir): sipariş 'iade' olur, lisans geri alınır.
+-- Aylık/yıllık: bitişten dönem düşülür (şimdiden geriye gitmez); süresiz: bitiş = şimdi. Ödeme lisansı uzatmamışsa
+-- (hata 'zaten_suresiz') lisansa dokunulmaz. Dönüş: yeni bitiş (abonelik satırı yoksa null).
+-- Hata: 'yok', 'odenmedi', 'zaten_iade'.
+create or replace function public.odeme_iade(p_odeme uuid)
+returns timestamptz
+language plpgsql
+volatile
+security definer
+set search_path = ''
+as $$
+declare
+  o public.odemeler%rowtype;
+  v_bitis timestamptz;
+  v_yeni timestamptz;
+begin
+  select * into o from public.odemeler where id = p_odeme for update;
+  if not found then raise exception 'yok'; end if;
+  if o.durum = 'iade' then raise exception 'zaten_iade'; end if;
+  if o.durum <> 'odendi' then raise exception 'odenmedi'; end if;
+  select a.bitis into v_bitis from public.abonelikler a where a.user_id = o.user_id for update;
+  if o.hata = 'zaten_suresiz' or v_bitis is null then
+    v_yeni := v_bitis;
+  else
+    v_yeni := case o.donem
+      when 'suresiz' then now()
+      when 'yillik' then greatest(v_bitis - interval '1 year', now())
+      else greatest(v_bitis - interval '1 month', now())
+    end;
+    update public.abonelikler set bitis = v_yeni, not_ = 'iyzico iade', guncelleme = now() where user_id = o.user_id;
+  end if;
+  update public.odemeler set durum = 'iade' where id = o.id;
+  return v_yeni;
+end;
+$$;
+
+revoke all on function public.odeme_tamamla(uuid, text), public.odeme_listesi(boolean), public.odeme_fatura_kesildi(uuid),
+  public.odeme_iade(uuid) from public, anon, authenticated;
+grant execute on function public.odeme_tamamla(uuid, text), public.odeme_listesi(boolean), public.odeme_fatura_kesildi(uuid),
+  public.odeme_iade(uuid) to service_role;
