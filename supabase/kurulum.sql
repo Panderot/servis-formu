@@ -7,7 +7,7 @@
 -- 3) ekip fonksiyonları: davet, katılma, liste, çıkarma (uygulama bunları rpc ile çağırır).
 -- 4) hesap silme: kullanıcı Ayarlar'dan kendi hesabını ve kayıtlarını siler.
 -- 5) ödeme kilidi: aynı kullanıcı için aynı anda tek ödeme sayfası hazırlanır (sadece sunucu).
--- 6) lisans kodları: sahip ödeme sonrası tek kullanımlık kod üretir, müşteri uygulamada girer.
+-- 6) lisans kodları: kaldırıldı (görev 80'de kurulduysa silinir).
 
 -- ============ 1) Abonelikler ============
 create table if not exists public.abonelikler (
@@ -540,138 +540,11 @@ $$;
 revoke all on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.odeme_kilidi_al(uuid), public.odeme_kilidi_tut(uuid, uuid), public.odeme_kilidi_birak(uuid, uuid), public.abonelik_yaz(uuid, uuid, jsonb) to service_role;
 
--- ============ 6) Lisans kodları ============
--- Müşteri WhatsApp'tan öder; sahip ../fixnote-kontrol/kod-uret.cjs ile tek kullanımlık kod üretir
--- (FIX-XXXX-XXXX-XXXX-XXXX, 16 karakter, 23456789ABCDEFGHJKMNPQRSTUVWXYZ) ve WhatsApp'tan gönderir; müşteri kodu
--- /abonelik sayfasında girer, lisans hemen açılır (lisans_kodu_kullan). Android uygulaması da aynı rpc'yi çağırır.
--- Kodun kendisi saklanmaz, sadece özeti: büyük harf, harf ve rakam dışı her şey silinir, baştaki "FIX" atılır,
--- kalan 16 karakterin sha256'sı (hex). Kod 30 gün geçerlidir.
-create table if not exists public.lisans_kodlari (
-  id uuid primary key default gen_random_uuid(),
-  kod_ozeti text not null unique,
-  donem text not null check (donem in ('aylik', 'yillik', 'suresiz')),
-  not_ text check (char_length(not_) <= 200),
-  olusturma timestamptz not null default now(),
-  son_gecerlilik timestamptz not null default now() + interval '30 days',
-  kullanan uuid references auth.users (id) on delete set null,
-  kullanma timestamptz,
-  iptal boolean not null default false
-);
-
--- Hatalı kod denemeleri: kullanıcı başına saatte 5 (kod tahmin edilemesin).
-create table if not exists public.lisans_kod_denemeleri (
-  user_id uuid not null references auth.users (id) on delete cascade,
-  zaman timestamptz not null default now()
-);
-create index if not exists lisans_kod_denemeleri_kullanici on public.lisans_kod_denemeleri (user_id, zaman);
-
-alter table public.lisans_kodlari enable row level security;
-alter table public.lisans_kod_denemeleri enable row level security;
--- Uygulama tablolara doğrudan erişemez (sadece lisans_kodu_kullan). Sahibin komutları gizli anahtarla (service_role)
--- kod ekler, okur, süresini değiştirir; silme sadece test temizliği için (../fixnote-kontrol/gorev-80/kod-test.cjs).
-revoke all on table public.lisans_kodlari, public.lisans_kod_denemeleri from anon, authenticated, service_role;
-grant select, insert, update, delete on table public.lisans_kodlari to service_role;
-grant select, delete on table public.lisans_kod_denemeleri to service_role;
-
--- Müşteri kodu girer. Hatalar geri döner ({ok:false, hata}), atılmaz: atılırsa hatalı deneme kaydı da geri alınırdı.
--- hata: teknisyen, cok_deneme, gecersiz, kullanildi, suresi_doldu, zaten_suresiz. Oturum yoksa 'oturum' atılır.
--- Erken yenileme kalan günleri korur (bitiş = max(şimdiki bitiş, şimdi) + 1 ay / 1 yıl). Süresiz: 2099-12-31.
--- plan boş kalır (ekip_acik boş planı Firma sayar).
-create or replace function public.lisans_kodu_kullan(p_kod text)
-returns jsonb
-language plpgsql
-volatile
-security definer
-set search_path = ''
-as $$
-declare
-  u uuid := (select auth.uid());
-  v_kod text;
-  k public.lisans_kodlari%rowtype;
-  v_bitis timestamptz;
-  v_yeni timestamptz;
-begin
-  if u is null then raise exception 'oturum'; end if;
-  if exists (select 1 from public.ekip_uyeleri e where e.user_id = u) then
-    return jsonb_build_object('ok', false, 'hata', 'teknisyen');
-  end if;
-  -- Aynı kullanıcının aynı anda gelen istekleri sırayla çalışır (deneme sayısı atlanamaz).
-  perform pg_advisory_xact_lock(hashtextextended('lisans_kodu:' || u::text, 0));
-  delete from public.lisans_kod_denemeleri d where d.user_id = u and d.zaman < now() - interval '1 hour';
-  if (select count(*) from public.lisans_kod_denemeleri d where d.user_id = u and d.zaman > now() - interval '1 hour') >= 5 then
-    return jsonb_build_object('ok', false, 'hata', 'cok_deneme');
-  end if;
-
-  v_kod := regexp_replace(upper(left(coalesce(p_kod, ''), 200)), '[^A-Z0-9]', '', 'g');
-  if left(v_kod, 3) = 'FIX' then v_kod := substr(v_kod, 4); end if;
-  if char_length(v_kod) <> 16 then
-    insert into public.lisans_kod_denemeleri (user_id) values (u);
-    return jsonb_build_object('ok', false, 'hata', 'gecersiz');
-  end if;
-
-  select * into k from public.lisans_kodlari l
-  where l.kod_ozeti = encode(sha256(convert_to(v_kod, 'UTF8')), 'hex')
-  for update;
-  if not found or k.iptal then
-    insert into public.lisans_kod_denemeleri (user_id) values (u);
-    return jsonb_build_object('ok', false, 'hata', 'gecersiz');
-  end if;
-  if k.kullanma is not null then return jsonb_build_object('ok', false, 'hata', 'kullanildi'); end if;
-  if k.son_gecerlilik < now() then return jsonb_build_object('ok', false, 'hata', 'suresi_doldu'); end if;
-
-  select a.bitis into v_bitis from public.abonelikler a where a.user_id = u for update;
-  if v_bitis >= '2099-01-01'::timestamptz then
-    return jsonb_build_object('ok', false, 'hata', 'zaten_suresiz');
-  end if;
-  v_yeni := case k.donem
-    when 'suresiz' then '2099-12-31'::timestamptz
-    when 'yillik' then greatest(coalesce(v_bitis, now()), now()) + interval '1 year'
-    else greatest(coalesce(v_bitis, now()), now()) + interval '1 month'
-  end;
-
-  insert into public.abonelikler (user_id, bitis, donem, not_)
-  values (u, v_yeni, k.donem, 'Lisans kodu')
-  on conflict (user_id) do update set bitis = excluded.bitis, donem = excluded.donem, not_ = excluded.not_, guncelleme = now();
-  update public.lisans_kodlari set kullanan = u, kullanma = now() where id = k.id;
-  delete from public.lisans_kod_denemeleri d where d.user_id = u;
-  return jsonb_build_object('ok', true, 'donem', k.donem, 'bitis', v_yeni);
-end;
-$$;
-revoke all on function public.lisans_kodu_kullan(text) from public, anon, service_role;
-grant execute on function public.lisans_kodu_kullan(text) to authenticated;
-
--- Sahibin kod listesi (../fixnote-kontrol/kod-liste.cjs), en yeni önce.
-create or replace function public.lisans_kod_listesi()
-returns table (id uuid, donem text, not_ text, olusturma timestamptz, son_gecerlilik timestamptz, kullanma timestamptz, iptal boolean, kullanan_eposta text)
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select k.id, k.donem, k.not_, k.olusturma, k.son_gecerlilik, k.kullanma, k.iptal, u.email::text
-  from public.lisans_kodlari k
-  left join auth.users u on u.id = k.kullanan
-  order by k.olusturma desc;
-$$;
-
--- Sahip kullanılmamış bir kodu iptal eder (../fixnote-kontrol/kod-iptal.cjs; özetle).
-create or replace function public.lisans_kodu_iptal(p_ozet text)
-returns text
-language plpgsql
-volatile
-security definer
-set search_path = ''
-as $$
-declare
-  k public.lisans_kodlari%rowtype;
-begin
-  select * into k from public.lisans_kodlari l where l.kod_ozeti = p_ozet for update;
-  if not found then return 'yok'; end if;
-  if k.kullanma is not null then return 'kullanilmis'; end if;
-  update public.lisans_kodlari set iptal = true where id = k.id;
-  return 'iptal_edildi';
-end;
-$$;
-
-revoke all on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) from public, anon, authenticated;
-grant execute on function public.lisans_kod_listesi(), public.lisans_kodu_iptal(text) to service_role;
+-- ============ 6) Lisans kodları: kaldırıldı ============
+-- Görev 80'deki tek kullanımlık lisans kodu sistemi kullanıcı kararıyla (21 Kasım) kaldırıldı: lisans kartla ödemeyle
+-- (iyzico) kendiliğinden ya da elle (CLAUDE.md > Lisans) açılır. Daha önce kurulmuşsa tablolar ve fonksiyonlar silinir.
+drop function if exists public.lisans_kodu_kullan(text);
+drop function if exists public.lisans_kod_listesi();
+drop function if exists public.lisans_kodu_iptal(text);
+drop table if exists public.lisans_kod_denemeleri;
+drop table if exists public.lisans_kodlari;
