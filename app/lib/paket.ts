@@ -13,6 +13,7 @@ export const tutar = (p: Plan, d: Donem) => (d === "aylik" ? PAKET[p].ay : PAKET
 // Licences (task 75): one product, three licence types, TL, VAT included. Sold on WhatsApp (LISANS_WHATSAPP);
 // the owner opens the licence by hand in public.abonelikler (donem = the type, plan empty; SQL in CLAUDE.md).
 // PAKET above stays for the legal pages and the payment API.
+// Card payment (task 81) charges the server's own prices: FIYAT in supabase/functions/_shared/iyzico.ts MUST stay equal to LISANS.
 export const LISANS = { aylik: 499, yillik: 4790, suresiz: 8990 } as const;
 export type LisansTuru = keyof typeof LISANS;
 export const LISANS_TURLERI: LisansTuru[] = ["aylik", "yillik", "suresiz"];

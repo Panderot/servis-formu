@@ -1,0 +1,16 @@
+# Fixnote Supabase CLI settings (task 81): only what the Edge Functions need.
+# odeme-donus (iyzico sends the customer's browser) and iyzico-bildirim (iyzico webhook) are called without a user JWT;
+# odeme-baslat and odeme-durum require the signed-in user's JWT (and check it again in code).
+project_id = "wpvivfwzqrkgghqgqhig"
+
+[functions.odeme-baslat]
+verify_jwt = true
+
+[functions.odeme-durum]
+verify_jwt = true
+
+[functions.odeme-donus]
+verify_jwt = false
+
+[functions.iyzico-bildirim]
+verify_jwt = false
