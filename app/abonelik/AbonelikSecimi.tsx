@@ -7,7 +7,8 @@ import { useDil } from "../lib/dil";
 import { DENEME_GUN, supabase } from "../components/supabase";
 import { aboneligiYonet, odemeHataMetni } from "../components/odeme";
 import { OdemeLogolari } from "../components/YasalAlt";
-import { GUNCELLEME_YILLIK, LISANS, LISANS_TURLERI, LISANS_WHATSAPP, ODEME_ACIK, lisansYazisi, tl, tlSayi, type LisansTuru } from "../lib/paket";
+import { GUNCELLEME_YILLIK, IYZICO_ACIK, LISANS, LISANS_TURLERI, LISANS_WHATSAPP, ODEME_ACIK, lisansYazisi, tl, tlSayi, type LisansTuru } from "../lib/paket";
+import KartOdeme from "./KartOdeme";
 
 // /abonelik: the licence page (task 75, licence codes task 80). Three licence types (LISANS in app/lib/paket.ts), sold
 // on WhatsApp: the button opens a chat with the licence, the amount and the account's email. After payment the owner
@@ -18,11 +19,18 @@ import { GUNCELLEME_YILLIK, LISANS, LISANS_TURLERI, LISANS_WHATSAPP, ODEME_ACIK,
 // Reached from the trial bar, the read-only bar and the side menu in /app (app/components/HesapKapisi.tsx,
 // Uygulama.tsx); works during the trial too. Old ?paket= / ?donem= links are ignored.
 // The online payment (ODEME_ACIK, Stripe) is kept only for an existing subscription: "manage subscription".
+// Card payment (task 81, IYZICO_ACIK = NEXT_PUBLIC_IYZICO_ACIK=1; off, the page is exactly as in task 80): each card gets
+// "Kartla öde" (billing step KartOdeme.tsx > Edge Function odeme-baslat > iyzico's page) and a small "WhatsApp'tan sor".
+// iyzico brings the customer back to /abonelik?odeme=<order id>; odeme-durum reads the order (and finalises it with iyzico
+// if still waiting), up to 3 tries 2 s apart. On load, an order still waiting from the last hour is checked once.
+// With card payment on, the licence-code card is not shown (the code system stays in the database as a fallback).
 type Hal = { tur: "yukleniyor" } | { tur: "hazir"; uid: string; eposta: string; suruyor: boolean; teknisyen: boolean; deneme: boolean };
 type Kontrol = { tur: "" } | { tur: "bakiyor" } | { tur: "yok" } | { tur: "hata" } | { tur: "aktif"; yazi: string };
 type KodHata = "gecersiz" | "kullanildi" | "suresi_doldu" | "cok_deneme" | "zaten_suresiz" | "teknisyen" | "baglanti";
 type KodDurum = { tur: "" } | { tur: "aciliyor" } | { tur: "acildi"; donem: string; bitis: string } | { tur: "hata"; hata: KodHata };
 const KOD_HATALARI: readonly string[] = ["gecersiz", "kullanildi", "suresi_doldu", "cok_deneme", "zaten_suresiz", "teknisyen"];
+type OdemeHal = { tur: "" } | { tur: "kontrol" } | { tur: "odendi"; donem: string; bitis: string | null; hata?: string } | { tur: "basarisiz" } | { tur: "bekliyor"; id: string } | { tur: "hata"; id: string };
+const bekle = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Licence code alphabet (no 0 O 1 I L), the same as kod-uret.cjs. A code never starts with "FIX" (there is no I).
 const KOD_ALFABE = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -75,6 +83,55 @@ export default function AbonelikSecimi() {
   const [kod, setKod] = useState("");
   const [kodDurum, setKodDurum] = useState<KodDurum>({ tur: "" });
   const [yapistirVar, setYapistirVar] = useState(false);
+  const [secili, setSecili] = useState<LisansTuru | null>(null); // card payment: the licence whose billing step is open
+  const [odeme, setOdeme] = useState<OdemeHal>({ tur: "" });
+
+  // Card payment result (odeme-durum). sessiz: the automatic check on load, which only speaks up when the order was paid.
+  const odemeKontrol = async (id: string, deneme: number, sessiz = false) => {
+    const sb = supabase();
+    if (!sb) return;
+    if (!sessiz) setOdeme({ tur: "kontrol" });
+    let ulasti = false;
+    for (let i = 0; i < deneme; i++) {
+      if (i) await bekle(2000);
+      const { data, error } = await sb.functions.invoke("odeme-durum", { body: { odeme: id } });
+      if (error || !data) continue;
+      ulasti = true;
+      const r = data as { durum?: string; donem?: string; bitis?: string; hata?: string };
+      if (r.durum === "odendi") {
+        if (r.bitis && r.hata !== "zaten_suresiz") {
+          const { data: s } = await sb.auth.getSession();
+          try {
+            if (s.session) localStorage.setItem("fixnote_abonelik", JSON.stringify({ id: s.session.user.id, bitis: r.bitis, donem: r.donem ?? null }));
+          } catch {}
+        }
+        setOdeme({ tur: "odendi", donem: r.donem ?? "", bitis: r.bitis ?? null, hata: r.hata });
+        window.history.replaceState(null, "", "/abonelik");
+        return;
+      }
+      if (r.durum === "basarisiz" || r.durum === "iade") {
+        if (!sessiz) setOdeme({ tur: "basarisiz" });
+        window.history.replaceState(null, "", "/abonelik");
+        return;
+      }
+    }
+    if (!sessiz) setOdeme(ulasti ? { tur: "bekliyor", id } : { tur: "hata", id });
+  };
+
+  // Back from iyzico (?odeme=<id>), or an order still waiting from the last hour (a customer who closed the tab).
+  useEffect(() => {
+    if (!IYZICO_ACIK || hal.tur !== "hazir" || hal.teknisyen || hal.suruyor) return;
+    const id = new URLSearchParams(window.location.search).get("odeme");
+    if (id && /^[0-9a-f-]{36}$/i.test(id)) {
+      void odemeKontrol(id, 3);
+      return;
+    }
+    const sb = supabase();
+    if (!sb) return;
+    sb.from("odemeler").select("id").eq("user_id", hal.uid).eq("durum", "bekliyor").gte("olusturma", new Date(Date.now() - 3_600_000).toISOString())
+      .order("olusturma", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data?.id) void odemeKontrol(data.id, 1, true); });
+  }, [hal.tur]);
 
   // "Paste" only where the browser can read the clipboard (secure page, Clipboard API).
   useEffect(() => {
@@ -202,6 +259,11 @@ export default function AbonelikSecimi() {
   const waLink = (metin: string) => (
     <a data-kod-whatsapp href={yardimHref()} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 3 }}>{metin}</a>
   );
+  const odemeWa = (metin: string) => {
+    const eposta = hal.tur === "hazir" ? hal.eposta : "";
+    const m = dil === "en" ? `Hello, I need help with my Fixnote card payment. My account: ${eposta}` : `Merhaba, Fixnote kartla ödememle ilgili yardım istiyorum. Hesabım: ${eposta}`;
+    return <a data-odeme-whatsapp href={`https://wa.me/${LISANS_WHATSAPP}?text=${encodeURIComponent(m)}`} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 3 }}>{metin}</a>;
+  };
   const kodHataMetni = (h: KodHata): React.ReactNode => {
     const en = dil === "en";
     switch (h) {
@@ -270,6 +332,43 @@ export default function AbonelikSecimi() {
             </div>
           )}
 
+          {/* Card payment result (iyzico, task 81) */}
+          {odeme.tur === "kontrol" && (
+            <div role="status" data-odeme-sonuc="kontrol" style={{ margin: "16px auto 0", maxWidth: 520, padding: "12px 14px", borderRadius: 10, background: "var(--accent-soft)", color: "var(--accent)", fontSize: 14, fontWeight: 700, textAlign: "center" }}>
+              {c("Ödeme kontrol ediliyor…", "Checking your payment…")}
+            </div>
+          )}
+          {odeme.tur === "odendi" && (
+            odeme.hata === "zaten_suresiz" ? (
+              <div role="status" data-odeme-sonuc="zaten_suresiz" style={{ margin: "16px auto 0", maxWidth: 520, padding: "12px 14px", borderRadius: 10, background: "var(--warn-soft)", color: "var(--warn)", fontSize: 14, fontWeight: 700, lineHeight: 1.5 }}>
+                {dil === "en" ? <>You already had a lifetime licence; your payment will be refunded. You can {odemeWa("message us on WhatsApp")}.</> : <>Süresiz lisansın zaten vardı; ödemen iade edilecek. {odemeWa("Bize WhatsApp'tan yazabilirsin")}.</>}
+              </div>
+            ) : (
+              <div role="status" data-odeme-sonuc="odendi" className="card" style={{ ...kart, maxWidth: 520, margin: "16px auto 0", textAlign: "center", padding: "20px" }}>
+                <span style={{ width: 44, height: 44, borderRadius: 14, background: "var(--accent-soft)", color: "var(--accent)", display: "inline-grid", placeItems: "center" }}><Ikon ad="tik" boy={20} /></span>
+                <p style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: "-0.01em", margin: "12px 0 0", lineHeight: 1.45 }}>
+                  {c("Ödemen alındı. ", "Payment received. ")}{odeme.bitis ? c(`${lisansYazisi(odeme.donem, new Date(odeme.bitis), dil)} açıldı.`, `${lisansYazisi(odeme.donem, new Date(odeme.bitis), dil)} is active.`) : c("Lisansın açıldı.", "Your licence is active.")}
+                </p>
+                <Link href="/app" className="btn" style={{ width: "100%", marginTop: 14 }}>{c("Uygulamaya dön", "Back to the app")}</Link>
+              </div>
+            )
+          )}
+          {odeme.tur === "basarisiz" && (
+            <div role="alert" data-odeme-sonuc="basarisiz" style={{ margin: "16px auto 0", maxWidth: 520, padding: "10px 12px", borderRadius: 10, background: "var(--warn-soft)", color: "var(--warn)", fontSize: 13.5, fontWeight: 700 }}>
+              {c("Ödeme tamamlanmadı, kartından para çekilmedi. İstersen tekrar deneyebilirsin.", "The payment wasn't completed and your card wasn't charged. You can try again.")}
+            </div>
+          )}
+          {(odeme.tur === "bekliyor" || odeme.tur === "hata") && (
+            <div role="status" data-odeme-sonuc={odeme.tur} style={{ margin: "16px auto 0", maxWidth: 520, padding: "12px 14px", borderRadius: 10, background: "var(--warn-soft)", color: "var(--warn)", fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>
+              {odeme.tur === "hata"
+                ? c("Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.", "Couldn't connect. Check your internet connection and try again.")
+                : dil === "en"
+                  ? <>Your payment hasn&apos;t reached us yet. Press &quot;Check my payment&quot; in a few minutes or {odemeWa("message us on WhatsApp")}.</>
+                  : <>Ödemen henüz bize ulaşmadı. Birkaç dakika sonra &apos;Ödememi kontrol et&apos;e bas ya da {odemeWa("bize WhatsApp'tan yaz")}.</>}
+              <button type="button" data-odeme-kontrol className="btn btn-ghost" onClick={() => void odemeKontrol(odeme.id, 1)} style={{ width: "100%", marginTop: 10 }}>{c("Ödememi kontrol et", "Check my payment")}</button>
+            </div>
+          )}
+
           <div className="grid gap-3 md:grid-cols-3" style={{ marginTop: 22, alignItems: "stretch" }}>
             {LISANS_TURLERI.map((t) => {
               const one = t === "yillik";
@@ -285,15 +384,46 @@ export default function AbonelikSecimi() {
                   </div>
                   <div className="num" style={{ fontSize: 13, color: t === "suresiz" ? "var(--muted)" : "var(--faint)", fontWeight: 600, marginTop: 6, lineHeight: 1.5 }}>{altYazi(t)}</div>
                   <div aria-hidden style={{ flex: 1, minHeight: 18 }} />
-                  <a data-lisans-al={t} className={one ? "btn" : "btn btn-ghost"} href={waHref(t)} target="_blank" rel="noopener noreferrer" style={{ width: "100%", paddingTop: 13, paddingBottom: 13 }}>
-                    <Ikon ad="mesaj" boy={15} />{c("Bu lisansı al", "Get this licence")}
-                  </a>
+                  {IYZICO_ACIK ? (
+                    <>
+                      <button type="button" data-kart-ode={t} className={one ? "btn" : "btn btn-ghost"} onClick={() => setSecili(t)} aria-expanded={secili === t} aria-controls="kart-odeme" style={{ width: "100%", paddingTop: 13, paddingBottom: 13 }}>
+                        <Ikon ad="kart" boy={16} />{c("Kartla öde", "Pay by card")}
+                      </button>
+                      <a data-lisans-al={t} href={waHref(t)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, alignSelf: "center", marginTop: 6, padding: "6px 4px", fontSize: 13, fontWeight: 700, color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                        <Ikon ad="mesaj" boy={13} />{c("WhatsApp'tan sor", "Ask on WhatsApp")}
+                      </a>
+                    </>
+                  ) : (
+                    <a data-lisans-al={t} className={one ? "btn" : "btn btn-ghost"} href={waHref(t)} target="_blank" rel="noopener noreferrer" style={{ width: "100%", paddingTop: 13, paddingBottom: 13 }}>
+                      <Ikon ad="mesaj" boy={15} />{c("Bu lisansı al", "Get this licence")}
+                    </a>
+                  )}
                 </div>
               );
             })}
           </div>
           <p style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, textAlign: "center", margin: "12px 0 0" }}>{c("Fiyatlara KDV dahildir. Lisans tek cihazda kullanılır.", "Prices include VAT. A licence is used on one device.")}</p>
 
+          {IYZICO_ACIK && secili && hal.tur === "hazir" && (
+            <KartOdeme
+              key={secili}
+              donem={secili}
+              dil={dil === "en" ? "en" : "tr"}
+              uid={hal.uid}
+              eposta={hal.eposta}
+              onBilgiHref={SOZLESMELER[dil === "en" ? "en" : "tr"][2][0]}
+              mesafeliHref={SOZLESMELER[dil === "en" ? "en" : "tr"][1][0]}
+              onKapat={() => {
+                const t = secili;
+                setSecili(null);
+                requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-kart-ode="${t}"]`)?.focus());
+              }}
+            />
+          )}
+
+          {/* Licence code card (task 80): only while card payment is off (user decision, 21 Nov); the code system stays in the
+             database and the owner commands as a fallback (bank transfer, buying for someone else, Android later). */}
+          {!IYZICO_ACIK && (
           <form data-lisans-kodu-kart className="card" onSubmit={kodAc} noValidate style={{ ...kart, maxWidth: 520, margin: "20px auto 0", padding: "18px 20px", textAlign: "center", boxShadow: "none" }}>
             <h2 style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", margin: 0 }}>{c("Lisans kodun var mı?", "Have a licence code?")}</h2>
             <p style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600, lineHeight: 1.55, margin: "6px 0 0" }}>{c("Ödemeden sonra lisans kodun WhatsApp'tan gelir. Kodu buraya yaz ya da yapıştır; lisansın hemen açılır.", "After payment your licence code arrives on WhatsApp. Type or paste it here and your licence opens at once.")}</p>
@@ -338,6 +468,7 @@ export default function AbonelikSecimi() {
               </div>
             )}
           </form>
+          )}
           <div style={{ maxWidth: 520, margin: "10px auto 0", textAlign: "center", fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
             {c("Lisansın elle açıldıysa:", "Licence activated by hand?")}{" "}
             <button type="button" data-lisans-kontrol onClick={lisansKontrol} disabled={kontrol.tur === "bakiyor"} style={{ background: "none", border: 0, padding: "6px 0", font: "inherit", fontWeight: 700, color: "var(--accent)", textDecoration: "underline", textUnderlineOffset: 3, cursor: kontrol.tur === "bakiyor" ? "default" : "pointer" }}>

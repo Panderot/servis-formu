@@ -63,3 +63,6 @@ export function fiyatSatirlari(dil: "tr" | "en"): string[] {
 // Online payment is switched on with NEXT_PUBLIC_ODEME_ACIK=1. Off, subscriptions are opened by
 // email (ABONELIK_EPOSTA) and entered by hand, as before.
 export const ODEME_ACIK = process.env.NEXT_PUBLIC_ODEME_ACIK === "1";
+// Card payment with iyzico (task 81) is switched on with NEXT_PUBLIC_IYZICO_ACIK=1: licence cards get "Kartla öde" and the
+// licence opens by itself after payment (supabase/functions). Off, /abonelik is exactly as in task 80 (WhatsApp + licence code).
+export const IYZICO_ACIK = process.env.NEXT_PUBLIC_IYZICO_ACIK === "1";

@@ -6,7 +6,7 @@ import { DilDugmesi } from "./Dil";
 import { Iskelet } from "./Hareket";
 import { useDil, type Dil } from "../lib/dil";
 import { ABONELIK_EPOSTA, durumHesapla, supabase, type Durum } from "./supabase";
-import { ODEME_ACIK, lisansYazisi } from "../lib/paket";
+import { IYZICO_ACIK, ODEME_ACIK, lisansYazisi } from "../lib/paket";
 import { aboneligiYonet, odemeHataMetni } from "./odeme";
 import { BEKLEYEN_DAVET, EkipBaglam, ekipCevir, ekipOnbellekOku, ekipOnbellekYaz, tekBasina, type EkipBilgi } from "./ekip";
 
@@ -243,7 +243,12 @@ export default function HesapKapisi({ children }: { children: React.ReactNode })
             ) : durum.tur === "deneme" ? (
               <span><span className="hidden min-[380px]:inline">{c("Ücretsiz deneme: ", "Free trial: ")}</span><span className="min-[380px]:hidden">{c("Deneme: ", "Trial: ")}</span><b style={{ color: "#fff", whiteSpace: "nowrap" }}>{dil === "en" ? `${durum.kalanGun} ${durum.kalanGun === 1 ? "day" : "days"} left` : `${durum.kalanGun} gün kaldı`}</b></span>
             ) : (
-              <span data-lisans={donem ?? ""}><span className="hidden min-[380px]:inline">{lisansYazisi(donem, durum.bitis, dil)}</span><span className="min-[380px]:hidden">{lisansYazisi(donem, durum.bitis, dil, true)}</span></span>
+              <span data-lisans={donem ?? ""}><span className="hidden min-[380px]:inline">{lisansYazisi(donem, durum.bitis, dil)}</span><span className="min-[380px]:hidden">{lisansYazisi(donem, durum.bitis, dil, true)}</span>
+                {/* Renewal reminder (card payment on, task 81): a monthly or yearly licence with 3 days or less left. */}
+                {!teknisyen && IYZICO_ACIK && durum.tur === "aktif" && (donem === "aylik" || donem === "yillik") && durum.bitis.getTime() - Date.now() <= 3 * 86_400_000 && (
+                  <> · <Link href="/abonelik" data-lisans-yenile className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap" }}>{c("Yenile", "Renew")}</Link></>
+                )}
+              </span>
             )}
           </span>
           {!teknisyen && (durum.tur === "deneme" || durum.tur === "bitti") && <Link href="/abonelik" data-lisans-al className="hover:text-white" style={{ color: "#fff", textDecoration: "underline", textUnderlineOffset: 3, whiteSpace: "nowrap", flex: "none", display: "inline-block", padding: "11px 4px", margin: "-11px -4px" }}>{c("Lisans al", "Get a licence")}</Link>}
