@@ -7,6 +7,8 @@ export const SATICI = {
   vergiDairesi: "Zincirlikuyu",
   vkn: "4380649547",
   eposta: "info@motiqai.com",
+  // Registered e-mail (KEP): plain text only, never a mailto link (it only accepts mail from another KEP address).
+  kep: "baret.gungormezer@hs03.kep.tr",
   telefon: "+44 7476 196133",
   web: "https://www.motiqai.com",
 } as const;
@@ -20,6 +22,7 @@ export function saticiSatirlari(dil: "tr" | "en"): string[] {
         `Address: ${s.adres}, Türkiye`,
         `Tax office / tax number: ${s.vergiDairesi} / ${s.vkn}`,
         `Email: ${s.eposta}`,
+        `Registered e-mail (KEP): ${s.kep}`,
         `Phone / WhatsApp: ${s.telefon}`,
         `Website: ${s.web}`,
       ]
@@ -28,6 +31,7 @@ export function saticiSatirlari(dil: "tr" | "en"): string[] {
         `Adres: ${s.adres}`,
         `Vergi dairesi / VKN: ${s.vergiDairesi} / ${s.vkn}`,
         `E-posta: ${s.eposta}`,
+        `KEP adresi: ${s.kep}`,
         `Telefon / WhatsApp: ${s.telefon}`,
         `Web: ${s.web}`,
       ];

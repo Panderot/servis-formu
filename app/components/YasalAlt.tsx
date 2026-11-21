@@ -60,6 +60,7 @@ export function AltBilgi({ koyu, marka }: { koyu?: boolean; marka?: React.ReactN
             <span>{en ? `Tax office / no.: ${s.vergiDairesi} / ${s.vkn}` : `Vergi dairesi / VKN: ${s.vergiDairesi} / ${s.vkn}`}</span>
             <span>{s.adres}</span>
             <span><a href={`mailto:${s.eposta}`} className={renk.ust}>{s.eposta}</a> · {s.telefon}</span>
+            <span>{en ? `Registered e-mail (KEP): ${s.kep}` : `KEP adresi: ${s.kep}`}</span>
           </address>
         ))}
       </div>
